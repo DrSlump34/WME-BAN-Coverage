@@ -175,6 +175,13 @@ manquantes, **à des conditions strictes** :
 **Rien n'est enregistré** : le script n'appelle jamais l'enregistrement ; l'éditeur relit les numéros
 posés, puis enregistre (ou annule) avec WME.
 
+**Un seul numéro (0.15)** : dans la voie dépliée, survoler la pastille d'un numéro manquant fait paraître un
+« + » à son angle ; sur la carte, un clic sur le point d'une adresse manquante ouvre une bulle « + Ajouter ce
+numéro » (grisée, avec sa raison, si le nom ou le quota l'interdit). Le clic sur la pastille continue de centrer
+la carte. Mêmes contrôles, même quota et même conversion en RPP hors agglomération qu'« Ajouter les numéros » ;
+la carte ne bouge que si l'adresse est hors de la vue ou sous le zoom 16. Le « + » n'est jamais « ✚ », qui
+marque un numéro déjà posé.
+
 **Voie suivante (0.14)** : à côté d'« Ajouter », un bouton ouvre et cadre la voie de la commune où l'ajout a
 le plus de numéros à poser (nom BAN en principal ou en alternatif, mêmes numéros posables que le bouton
 « Ajouter »), parmi les voies du tableau (filtres et recherche compris), en sautant celles déjà ouvertes par

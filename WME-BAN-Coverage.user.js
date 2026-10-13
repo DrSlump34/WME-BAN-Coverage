@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.14.03
+// @version      0.15.00
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; kein Ergebnis wird gespeichert.
@@ -334,10 +334,15 @@
             ajHnSaved: (c, r, q) => 'Save: ' + c + (un1(c) ? ' number counted' : ' numbers counted') + ', ' + r + ' given back to the quota (removed before saving). Quota left: ' + q + '.',
             ajHnSavedTip: 'Placed by WBC and saved.',
             hHnT: 'Adding house numbers (L6)',
-            hHnB: '<p>Reserved for <b>L6</b> editors. In the expanded row of a street, <i>Add the house numbers</i> places its missing addresses in WME — <b>one street at a time</b>, never a whole commune.</p><p><b>Conditions</b>: the primary name of the segments is exactly the BAN name (only accents, case, apostrophes and spaces are tolerated) and their city is the commune or “Village (Commune)”. Each number goes to the nearest admitted segment (80 m at most); a number already present, even pending, is never placed again; a different or numeric suffix is left to the editor.</p><p><b>Nothing is saved</b>: placed numbers are circled in turquoise on the map (even with the window closed) and marked ✚ in the street; check them, then save or undo in WME.</p><p><b>Quota</b>: 150 numbers per sliding hour. A number is reserved when placed, then counted if it is found on the server after saving; removed or changed before, it is given back. Numbers typed by hand never count. Once saved, they become “found” without running the analysis again; an older saved scan says so (“run again”).</p><p><b>Out of town</b>: on a segment whose primary name has no city and which carries the BAN name with the commune as an alternate, the address becomes a <b>residential place (RPP)</b> — the same conversion as the ⚡ of WME Naming Auditor: place created at the number, its address, the number\u2019s entry point kept, number removed; any failed step is undone. The button then shows both counts, numbers and RPP; RPP count in the quota.</p>',
+            hHnB: '<p>Reserved for <b>L6</b> editors. In the expanded row of a street, <i>Add the house numbers</i> places its missing addresses in WME — <b>one street at a time</b>, never a whole commune. For a single number: the “+” on its chip (on hover), or a click on its point on the map.</p><p><b>Conditions</b>: the primary name of the segments is exactly the BAN name (only accents, case, apostrophes and spaces are tolerated) and their city is the commune or “Village (Commune)”. Each number goes to the nearest admitted segment (80 m at most); a number already present, even pending, is never placed again; a different or numeric suffix is left to the editor.</p><p><b>Nothing is saved</b>: placed numbers are circled in turquoise on the map (even with the window closed) and marked ✚ in the street; check them, then save or undo in WME.</p><p><b>Quota</b>: 150 numbers per sliding hour. A number is reserved when placed, then counted if it is found on the server after saving; removed or changed before, it is given back. Numbers typed by hand never count. Once saved, they become “found” without running the analysis again; an older saved scan says so (“run again”).</p><p><b>Out of town</b>: on a segment whose primary name has no city and which carries the BAN name with the commune as an alternate, the address becomes a <b>residential place (RPP)</b> — the same conversion as the ⚡ of WME Naming Auditor: place created at the number, its address, the number\u2019s entry point kept, number removed; any failed step is undone. The button then shows both counts, numbers and RPP; RPP count in the quota.</p>',
             ajHnQuotaTip: 'Sliding hour: a number counts for one hour from when it was placed. Only numbers placed by this button and actually saved are counted.',
             ajHnLeft: n => 'Quota: ' + n + ' left this hour',
             ajHnFull: h => 'Quota reached — next adding at ' + h,
+            ajHn1: 'Add this number',
+            ajHn1Tip: 'L6 only: places this single number in WME, with the checks of “Add the house numbers” (BAN name, city, segment within 80 m); counts in the quota. Nothing is saved.',
+            ajHn1Exists: n => 'Number ' + n + ' is already in WME on this street: nothing placed.',
+            ajHn1Far: n => 'No admitted segment (BAN name, right city) within 80 m of number ' + n + ': nothing placed.',
+            tipGoAdd: 'Show on the map. On hover, “+” adds this single number.',
             cmpBtn: 'Compare',
             cmpTip: 'Load a CSV exported earlier for the same commune or département: the progress since then is shown.',
             cmpLine: (d, w, m, x) => 'Since the export of ' + d + ': ' + w + ' in WME · ' + m + ' missing · ' + x + ' extra',
@@ -604,10 +609,15 @@
             ajHnSaved: (c, r, q) => 'Enregistrement\xa0: ' + c + (un(c) ? ' numéro compté' : ' numéros comptés') + ', ' + r + ' rendu(s) au quota (retirés avant l’enregistrement). Reste au quota\xa0: ' + q + '.',
             ajHnSavedTip: 'Posé par WBC et enregistré.',
             hHnT: 'Ajouter les numéros (L6)',
-            hHnB: '<p>Réservé aux éditeurs <b>L6</b>. Dans la ligne dépliée d’une voie, <i>Ajouter les numéros</i> pose dans WME ses adresses manquantes — <b>voie par voie</b>, jamais pour toute la commune.</p><p><b>Conditions</b>\u00a0: le nom principal des segments est exactement celui de la BAN (seuls les accents, la casse, les apostrophes et les espaces sont tolérés) et leur ville est la commune ou «\u00a0Village (Commune)\u00a0». Chaque numéro va au segment admis le plus proche (80\u00a0m au plus)\u00a0; un numéro déjà présent, même en attente, n’est jamais reposé\u00a0; un suffixe différent ou chiffré est laissé à l’éditeur.</p><p><b>Rien n’est enregistré</b>\u00a0: les numéros posés sont entourés en turquoise sur la carte (même fenêtre fermée) et marqués ✚ dans la voie\u00a0; relisez-les, puis enregistrez ou annulez avec WME.</p><p><b>Quota</b>\u00a0: 150 numéros par heure glissante. Un numéro est réservé à l’ajout, puis compté s’il se retrouve sur le serveur après l’enregistrement\u00a0; retiré ou modifié avant, il est rendu. Les numéros saisis à la main ne comptent jamais. Une fois enregistrés, ils passent en «\u00a0trouvés\u00a0» sans relancer l’analyse\u00a0; un balayage gardé plus ancien le signale («\u00a0relancez\u00a0»).</p><p><b>Hors agglomération</b>\u00a0: sur un segment dont le nom principal n’a pas de ville et qui porte le nom BAN avec la commune en alternatif, l’adresse devient un <b>POI résidentiel (RPP)</b> — même conversion que le ⚡ de WME Naming Auditor\u00a0: POI créé à la place du numéro, son adresse, le point d’entrée du numéro repris, numéro retiré\u00a0; une étape qui échoue est défaite. Le bouton donne alors les deux comptes, numéros et RPP\u00a0; les RPP comptent au quota.</p>',
+            hHnB: '<p>Réservé aux éditeurs <b>L6</b>. Dans la ligne dépliée d’une voie, <i>Ajouter les numéros</i> pose dans WME ses adresses manquantes — <b>voie par voie</b>, jamais pour toute la commune. Pour un seul numéro\u00a0: le «\u00a0+\u00a0» de sa pastille (au survol), ou un clic sur son point de la carte.</p><p><b>Conditions</b>\u00a0: le nom principal des segments est exactement celui de la BAN (seuls les accents, la casse, les apostrophes et les espaces sont tolérés) et leur ville est la commune ou «\u00a0Village (Commune)\u00a0». Chaque numéro va au segment admis le plus proche (80\u00a0m au plus)\u00a0; un numéro déjà présent, même en attente, n’est jamais reposé\u00a0; un suffixe différent ou chiffré est laissé à l’éditeur.</p><p><b>Rien n’est enregistré</b>\u00a0: les numéros posés sont entourés en turquoise sur la carte (même fenêtre fermée) et marqués ✚ dans la voie\u00a0; relisez-les, puis enregistrez ou annulez avec WME.</p><p><b>Quota</b>\u00a0: 150 numéros par heure glissante. Un numéro est réservé à l’ajout, puis compté s’il se retrouve sur le serveur après l’enregistrement\u00a0; retiré ou modifié avant, il est rendu. Les numéros saisis à la main ne comptent jamais. Une fois enregistrés, ils passent en «\u00a0trouvés\u00a0» sans relancer l’analyse\u00a0; un balayage gardé plus ancien le signale («\u00a0relancez\u00a0»).</p><p><b>Hors agglomération</b>\u00a0: sur un segment dont le nom principal n’a pas de ville et qui porte le nom BAN avec la commune en alternatif, l’adresse devient un <b>POI résidentiel (RPP)</b> — même conversion que le ⚡ de WME Naming Auditor\u00a0: POI créé à la place du numéro, son adresse, le point d’entrée du numéro repris, numéro retiré\u00a0; une étape qui échoue est défaite. Le bouton donne alors les deux comptes, numéros et RPP\u00a0; les RPP comptent au quota.</p>',
             ajHnQuotaTip: 'Heure glissante\u00a0: un numéro compte pendant une heure à partir de son ajout. Seuls les numéros posés par ce bouton et réellement enregistrés sont comptés.',
             ajHnLeft: n => 'Quota\xa0: ' + n + (un(n) ? ' restant' : ' restants') + ' dans l’heure',
             ajHnFull: h => 'Quota atteint — prochain ajout à ' + h,
+            ajHn1: 'Ajouter ce numéro',
+            ajHn1Tip: 'Réservé aux L6\xa0: pose ce seul numéro dans WME, avec les contrôles d’«\xa0Ajouter les numéros\xa0» (nom BAN, ville, segment à moins de 80\xa0m)\xa0; il compte au quota. Rien n’est enregistré.',
+            ajHn1Exists: n => 'Le ' + n + ' est déjà dans WME sur cette voie\xa0: rien n’est posé.',
+            ajHn1Far: n => 'Aucun segment admis (nom BAN, bonne ville) à moins de 80\xa0m du ' + n + '\xa0: rien n’est posé.',
+            tipGoAdd: 'Montrer sur la carte. Au survol, «\xa0+\xa0» ajoute ce seul numéro.',
             cmpBtn: 'Comparer',
             cmpTip: 'Charger un CSV exporté plus tôt pour la même commune ou le même département\u00a0: l’avancement depuis s’affiche.',
             cmpLine: (d, w, m, x) => 'Depuis l’export du ' + d + '\u00a0: ' + w + ' dans WME · ' + m + ' manquantes · ' + x + ' en trop',
@@ -874,10 +884,15 @@
             ajHnSaved: (c, r, q) => 'Gespeichert: ' + c + (un1(c) ? ' Nummer gezählt' : ' Nummern gezählt') + ', ' + r + ' dem Kontingent zurückgegeben (vor dem Speichern entfernt). Verbleibendes Kontingent: ' + q + '.',
             ajHnSavedTip: 'Von WBC gesetzt und gespeichert.',
             hHnT: 'Hausnummern hinzufügen (L6)',
-            hHnB: '<p>Nur für <b>L6</b>-Editoren. In der aufgeklappten Zeile einer Straße setzt <i>Hausnummern hinzufügen</i> ihre fehlenden Adressen im WME — <b>Straße für Straße</b>, nie für eine ganze Gemeinde.</p><p><b>Bedingungen</b>: der Hauptname der Segmente ist genau der BAN-Name (nur Akzente, Groß-/Kleinschreibung, Apostrophe und Leerzeichen werden toleriert) und ihre Stadt ist die Gemeinde oder „Ortsteil (Gemeinde)“. Jede Nummer kommt auf das nächste zugelassene Segment (höchstens 80 m); eine schon vorhandene Nummer, auch ungespeichert, wird nie erneut gesetzt; ein abweichender oder numerischer Zusatz bleibt dem Editor überlassen.</p><p><b>Nichts wird gespeichert</b>: gesetzte Nummern sind auf der Karte türkis eingekreist (auch bei geschlossenem Fenster) und in der Straße mit ✚ markiert; prüfen, dann im WME speichern oder rückgängig machen.</p><p><b>Kontingent</b>: 150 Nummern pro gleitender Stunde. Eine Nummer wird beim Setzen reserviert und gezählt, wenn sie nach dem Speichern auf dem Server steht; vorher entfernt oder geändert, wird sie zurückgegeben. Von Hand eingegebene Nummern zählen nie. Gespeichert gelten sie als „gefunden“, ohne neue Analyse; ein älterer gespeicherter Scan weist darauf hin („neu starten“).</p><p><b>Außerorts</b>: Auf einem Segment, dessen Hauptname keine Stadt hat und das den BAN-Namen mit der Gemeinde als Alternativnamen trägt, wird die Adresse zu einem <b>Wohnort-POI (RPP)</b> — gleiche Umwandlung wie das ⚡ von WME Naming Auditor: POI an der Stelle der Nummer, seine Adresse, Einfahrtspunkt der Nummer übernommen, Nummer entfernt; ein fehlgeschlagener Schritt wird rückgängig gemacht. Die Schaltfläche zeigt dann beide Zahlen, Nummern und RPP; RPP zählen zum Kontingent.</p>',
+            hHnB: '<p>Nur für <b>L6</b>-Editoren. In der aufgeklappten Zeile einer Straße setzt <i>Hausnummern hinzufügen</i> ihre fehlenden Adressen im WME — <b>Straße für Straße</b>, nie für eine ganze Gemeinde. Für eine einzelne Nummer: das „+“ an ihrem Feld (beim Überfahren) oder ein Klick auf ihren Punkt auf der Karte.</p><p><b>Bedingungen</b>: der Hauptname der Segmente ist genau der BAN-Name (nur Akzente, Groß-/Kleinschreibung, Apostrophe und Leerzeichen werden toleriert) und ihre Stadt ist die Gemeinde oder „Ortsteil (Gemeinde)“. Jede Nummer kommt auf das nächste zugelassene Segment (höchstens 80 m); eine schon vorhandene Nummer, auch ungespeichert, wird nie erneut gesetzt; ein abweichender oder numerischer Zusatz bleibt dem Editor überlassen.</p><p><b>Nichts wird gespeichert</b>: gesetzte Nummern sind auf der Karte türkis eingekreist (auch bei geschlossenem Fenster) und in der Straße mit ✚ markiert; prüfen, dann im WME speichern oder rückgängig machen.</p><p><b>Kontingent</b>: 150 Nummern pro gleitender Stunde. Eine Nummer wird beim Setzen reserviert und gezählt, wenn sie nach dem Speichern auf dem Server steht; vorher entfernt oder geändert, wird sie zurückgegeben. Von Hand eingegebene Nummern zählen nie. Gespeichert gelten sie als „gefunden“, ohne neue Analyse; ein älterer gespeicherter Scan weist darauf hin („neu starten“).</p><p><b>Außerorts</b>: Auf einem Segment, dessen Hauptname keine Stadt hat und das den BAN-Namen mit der Gemeinde als Alternativnamen trägt, wird die Adresse zu einem <b>Wohnort-POI (RPP)</b> — gleiche Umwandlung wie das ⚡ von WME Naming Auditor: POI an der Stelle der Nummer, seine Adresse, Einfahrtspunkt der Nummer übernommen, Nummer entfernt; ein fehlgeschlagener Schritt wird rückgängig gemacht. Die Schaltfläche zeigt dann beide Zahlen, Nummern und RPP; RPP zählen zum Kontingent.</p>',
             ajHnQuotaTip: 'Gleitende Stunde: eine Nummer zählt eine Stunde ab dem Setzen. Gezählt werden nur mit dieser Schaltfläche gesetzte und tatsächlich gespeicherte Nummern.',
             ajHnLeft: n => 'Kontingent: ' + n + ' übrig in dieser Stunde',
             ajHnFull: h => 'Kontingent erreicht — nächstes Hinzufügen um ' + h,
+            ajHn1: 'Diese Nummer hinzufügen',
+            ajHn1Tip: 'Nur L6: setzt nur diese Nummer im WME, mit den Prüfungen von „Hausnummern hinzufügen“ (BAN-Name, Stadt, Segment innerhalb von 80 m); zählt zum Kontingent. Nichts wird gespeichert.',
+            ajHn1Exists: n => 'Nummer ' + n + ' ist auf dieser Straße schon im WME: nichts gesetzt.',
+            ajHn1Far: n => 'Kein zugelassenes Segment (BAN-Name, richtige Stadt) innerhalb von 80 m um Nummer ' + n + ': nichts gesetzt.',
+            tipGoAdd: 'Auf der Karte zeigen. Beim Überfahren fügt „+“ nur diese Nummer hinzu.',
             cmpBtn: 'Vergleichen',
             cmpTip: 'Eine früher exportierte CSV derselben Gemeinde oder desselben Départements laden: der Fortschritt seitdem wird angezeigt.',
             cmpLine: (d, w, m, x) => 'Seit dem Export vom ' + d + ': ' + w + ' im WME · ' + m + ' fehlend · ' + x + ' zu viel',
@@ -1144,10 +1159,15 @@
             ajHnSaved: (c, r, q) => 'Guardado: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devueltos a la cuota (retirados antes de guardar). Cuota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado por WBC y guardado.',
             hHnT: 'Añadir los números (L6)',
-            hHnB: '<p>Reservado a los editores <b>L6</b>. En la fila desplegada de una calle, <i>Añadir los números</i> coloca en WME sus direcciones que faltan — <b>calle por calle</b>, nunca para todo el municipio.</p><p><b>Condiciones</b>: el nombre principal de los segmentos es exactamente el de la BAN (solo se toleran acentos, mayúsculas, apóstrofos y espacios) y su ciudad es el municipio o «Pueblo (Municipio)». Cada número va al segmento admitido más cercano (80 m como máximo); un número ya presente, incluso pendiente, nunca se vuelve a colocar; un sufijo distinto o numérico se deja al editor.</p><p><b>No se guarda nada</b>: los números colocados aparecen rodeados en turquesa en el mapa (incluso con la ventana cerrada) y marcados con ✚ en la calle; revíselos y luego guarde o deshaga en WME.</p><p><b>Cuota</b>: 150 números por hora móvil. Un número se reserva al colocarlo y se cuenta si aparece en el servidor tras guardar; retirado o modificado antes, se devuelve. Los números escritos a mano nunca cuentan. Una vez guardados, pasan a «encontrados» sin volver a analizar; un análisis guardado más antiguo lo indica («relance»).</p><p><b>Fuera de poblado</b>: en un segmento cuyo nombre principal no tiene ciudad y que lleva el nombre BAN con el municipio como alternativo, la dirección se convierte en un <b>lugar residencial (RPP)</b> — misma conversión que el ⚡ de WME Naming Auditor: lugar creado en el número, su dirección, el punto de entrada del número conservado, número retirado; un paso fallido se deshace. El botón muestra entonces ambos recuentos, números y RPP; los RPP cuentan en la cuota.</p>',
+            hHnB: '<p>Reservado a los editores <b>L6</b>. En la fila desplegada de una calle, <i>Añadir los números</i> coloca en WME sus direcciones que faltan — <b>calle por calle</b>, nunca para todo el municipio. Para un solo número: el «+» de su etiqueta (al pasar el ratón) o un clic en su punto del mapa.</p><p><b>Condiciones</b>: el nombre principal de los segmentos es exactamente el de la BAN (solo se toleran acentos, mayúsculas, apóstrofos y espacios) y su ciudad es el municipio o «Pueblo (Municipio)». Cada número va al segmento admitido más cercano (80 m como máximo); un número ya presente, incluso pendiente, nunca se vuelve a colocar; un sufijo distinto o numérico se deja al editor.</p><p><b>No se guarda nada</b>: los números colocados aparecen rodeados en turquesa en el mapa (incluso con la ventana cerrada) y marcados con ✚ en la calle; revíselos y luego guarde o deshaga en WME.</p><p><b>Cuota</b>: 150 números por hora móvil. Un número se reserva al colocarlo y se cuenta si aparece en el servidor tras guardar; retirado o modificado antes, se devuelve. Los números escritos a mano nunca cuentan. Una vez guardados, pasan a «encontrados» sin volver a analizar; un análisis guardado más antiguo lo indica («relance»).</p><p><b>Fuera de poblado</b>: en un segmento cuyo nombre principal no tiene ciudad y que lleva el nombre BAN con el municipio como alternativo, la dirección se convierte en un <b>lugar residencial (RPP)</b> — misma conversión que el ⚡ de WME Naming Auditor: lugar creado en el número, su dirección, el punto de entrada del número conservado, número retirado; un paso fallido se deshace. El botón muestra entonces ambos recuentos, números y RPP; los RPP cuentan en la cuota.</p>',
             ajHnQuotaTip: 'Hora móvil: un número cuenta durante una hora desde que se coloca. Solo se cuentan los números colocados con este botón y guardados de verdad.',
             ajHnLeft: n => 'Cuota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' en esta hora',
             ajHnFull: h => 'Cuota alcanzada — próxima adición a las ' + h,
+            ajHn1: 'Añadir este número',
+            ajHn1Tip: 'Solo L6: coloca solo este número en WME, con los controles de «Añadir los números» (nombre BAN, ciudad, segmento a menos de 80 m); cuenta en la cuota. No se guarda nada.',
+            ajHn1Exists: n => 'El número ' + n + ' ya está en WME en esta calle: no se coloca nada.',
+            ajHn1Far: n => 'Ningún segmento admitido (nombre BAN, ciudad correcta) a menos de 80 m del número ' + n + ': no se coloca nada.',
+            tipGoAdd: 'Mostrar en el mapa. Al pasar el ratón, «+» añade solo este número.',
             cmpBtn: 'Comparar',
             cmpTip: 'Cargar un CSV exportado antes para el mismo municipio o departamento: se muestra el avance desde entonces.',
             cmpLine: (d, w, m, x) => 'Desde la exportación del ' + d + ': ' + w + ' en WME · ' + m + ' faltan · ' + x + ' de más',
@@ -1414,10 +1434,15 @@
             ajHnSaved: (c, r, q) => 'Salvataggio: ' + c + (un1(c) ? ' numero contato' : ' numeri contati') + ', ' + r + ' restituiti alla quota (rimossi prima del salvataggio). Quota residua: ' + q + '.',
             ajHnSavedTip: 'Inserito da WBC e salvato.',
             hHnT: 'Aggiungere i numeri (L6)',
-            hHnB: '<p>Riservato agli editor <b>L6</b>. Nella riga aperta di una via, <i>Aggiungi i numeri</i> inserisce in WME i suoi indirizzi mancanti — <b>via per via</b>, mai per un intero comune.</p><p><b>Condizioni</b>: il nome principale dei segmenti è esattamente quello della BAN (sono tollerati solo accenti, maiuscole, apostrofi e spazi) e la loro città è il comune o «Frazione (Comune)». Ogni numero va al segmento ammesso più vicino (al massimo 80 m); un numero già presente, anche in attesa, non viene mai reinserito; un suffisso diverso o numerico è lasciato all’editor.</p><p><b>Niente viene salvato</b>: i numeri inseriti sono cerchiati in turchese sulla mappa (anche a finestra chiusa) e segnati con ✚ nella via; controllali, poi salva o annulla in WME.</p><p><b>Quota</b>: 150 numeri per ora mobile. Un numero è riservato quando viene inserito e contato se si trova sul server dopo il salvataggio; rimosso o modificato prima, viene restituito. I numeri inseriti a mano non contano mai. Una volta salvati, risultano «trovati» senza rilanciare l’analisi; un’analisi salvata più vecchia lo segnala («rilancia»).</p><p><b>Fuori dal centro abitato</b>: su un segmento il cui nome principale non ha città e che porta il nome BAN con il comune come alternativo, l’indirizzo diventa un <b>luogo residenziale (RPP)</b> — stessa conversione del ⚡ di WME Naming Auditor: luogo creato al posto del numero, il suo indirizzo, il punto d’ingresso del numero ripreso, numero rimosso; un passaggio fallito viene annullato. Il pulsante mostra allora i due conteggi, numeri e RPP; gli RPP contano nella quota.</p>',
+            hHnB: '<p>Riservato agli editor <b>L6</b>. Nella riga aperta di una via, <i>Aggiungi i numeri</i> inserisce in WME i suoi indirizzi mancanti — <b>via per via</b>, mai per un intero comune. Per un solo numero: il «+» della sua etichetta (al passaggio del mouse) o un clic sul suo punto sulla mappa.</p><p><b>Condizioni</b>: il nome principale dei segmenti è esattamente quello della BAN (sono tollerati solo accenti, maiuscole, apostrofi e spazi) e la loro città è il comune o «Frazione (Comune)». Ogni numero va al segmento ammesso più vicino (al massimo 80 m); un numero già presente, anche in attesa, non viene mai reinserito; un suffisso diverso o numerico è lasciato all’editor.</p><p><b>Niente viene salvato</b>: i numeri inseriti sono cerchiati in turchese sulla mappa (anche a finestra chiusa) e segnati con ✚ nella via; controllali, poi salva o annulla in WME.</p><p><b>Quota</b>: 150 numeri per ora mobile. Un numero è riservato quando viene inserito e contato se si trova sul server dopo il salvataggio; rimosso o modificato prima, viene restituito. I numeri inseriti a mano non contano mai. Una volta salvati, risultano «trovati» senza rilanciare l’analisi; un’analisi salvata più vecchia lo segnala («rilancia»).</p><p><b>Fuori dal centro abitato</b>: su un segmento il cui nome principale non ha città e che porta il nome BAN con il comune come alternativo, l’indirizzo diventa un <b>luogo residenziale (RPP)</b> — stessa conversione del ⚡ di WME Naming Auditor: luogo creato al posto del numero, il suo indirizzo, il punto d’ingresso del numero ripreso, numero rimosso; un passaggio fallito viene annullato. Il pulsante mostra allora i due conteggi, numeri e RPP; gli RPP contano nella quota.</p>',
             ajHnQuotaTip: 'Ora mobile: un numero conta per un’ora da quando è inserito. Sono contati solo i numeri inseriti con questo pulsante e salvati davvero.',
             ajHnLeft: n => 'Quota: ' + n + ' rimanenti in quest’ora',
             ajHnFull: h => 'Quota raggiunta — prossima aggiunta alle ' + h,
+            ajHn1: 'Aggiungi questo numero',
+            ajHn1Tip: 'Solo L6: inserisce in WME solo questo numero, con i controlli di «Aggiungi i numeri» (nome BAN, città, segmento entro 80 m); conta nella quota. Niente viene salvato.',
+            ajHn1Exists: n => 'Il numero ' + n + ' è già in WME su questa via: niente inserito.',
+            ajHn1Far: n => 'Nessun segmento ammesso (nome BAN, città giusta) entro 80 m dal numero ' + n + ': niente inserito.',
+            tipGoAdd: 'Mostra sulla mappa. Al passaggio del mouse, «+» aggiunge solo questo numero.',
             cmpBtn: 'Confronta',
             cmpTip: 'Carica un CSV esportato in precedenza per lo stesso comune o dipartimento: si vede l’avanzamento da allora.',
             cmpLine: (d, w, m, x) => 'Dall’esportazione del ' + d + ': ' + w + ' in WME · ' + m + ' mancanti · ' + x + ' in più',
@@ -1684,10 +1709,15 @@
             ajHnSaved: (c, r, q) => 'Salvamento: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à cota (removidos antes de salvar). Cota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e salvo.',
             hHnT: 'Adicionar os números (L6)',
-            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços que faltam — <b>rua por rua</b>, nunca para o município inteiro.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou “Vila (Município)”. Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é salvo</b>: os números colocados aparecem circulados em turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; confira e depois salve ou desfaça no WME.</p><p><b>Cota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor após salvar; retirado ou alterado antes, ele é devolvido. Números digitados à mão nunca contam. Depois de salvos, passam a «encontrados» sem refazer a análise; uma varredura guardada mais antiga avisa («refaça»).</p><p><b>Fora da área urbana</b>: num segmento cujo nome principal não tem cidade e que leva o nome BAN com o município como alternativo, o endereço vira um <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, seu endereço, ponto de entrada do número mantido, número removido; uma etapa que falha é desfeita. O botão mostra então as duas contagens, números e RPP; os RPP contam na cota.</p>',
+            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços que faltam — <b>rua por rua</b>, nunca para o município inteiro. Para um só número: o “+” da sua etiqueta (ao passar o mouse) ou um clique no seu ponto no mapa.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou “Vila (Município)”. Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é salvo</b>: os números colocados aparecem circulados em turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; confira e depois salve ou desfaça no WME.</p><p><b>Cota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor após salvar; retirado ou alterado antes, ele é devolvido. Números digitados à mão nunca contam. Depois de salvos, passam a «encontrados» sem refazer a análise; uma varredura guardada mais antiga avisa («refaça»).</p><p><b>Fora da área urbana</b>: num segmento cujo nome principal não tem cidade e que leva o nome BAN com o município como alternativo, o endereço vira um <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, seu endereço, ponto de entrada do número mantido, número removido; uma etapa que falha é desfeita. O botão mostra então as duas contagens, números e RPP; os RPP contam na cota.</p>',
             ajHnQuotaTip: 'Hora móvel: um número conta durante uma hora a partir de quando é colocado. Só contam os números colocados por este botão e realmente salvos.',
             ajHnLeft: n => 'Cota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' nesta hora',
             ajHnFull: h => 'Cota atingida — próxima adição às ' + h,
+            ajHn1: 'Adicionar este número',
+            ajHn1Tip: 'Somente L6: coloca só este número no WME, com as verificações de “Adicionar os números” (nome BAN, cidade, segmento a menos de 80 m); conta na cota. Nada é salvo.',
+            ajHn1Exists: n => 'O número ' + n + ' já está no WME nesta rua: nada foi colocado.',
+            ajHn1Far: n => 'Nenhum segmento admitido (nome BAN, cidade certa) a menos de 80 m do número ' + n + ': nada foi colocado.',
+            tipGoAdd: 'Mostrar no mapa. Ao passar o mouse, “+” adiciona só este número.',
             cmpBtn: 'Comparar',
             cmpTip: 'Carregar um CSV exportado antes para o mesmo município ou departamento: o avanço desde então é mostrado.',
             cmpLine: (d, w, m, x) => 'Desde a exportação de ' + d + ': ' + w + ' no WME · ' + m + ' faltando · ' + x + ' a mais',
@@ -1954,10 +1984,15 @@
             ajHnSaved: (c, r, q) => 'Gravação: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à quota (retirados antes de guardar). Quota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e guardado.',
             hHnT: 'Adicionar os números (L6)',
-            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços em falta — <b>rua a rua</b>, nunca para o município inteiro.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou «Aldeia (Município)». Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é guardado</b>: os números colocados aparecem rodeados a turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; verifique e depois guarde ou anule no WME.</p><p><b>Quota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor depois de guardar; retirado ou alterado antes, é devolvido. Números escritos à mão nunca contam. Depois de guardados, passam a «encontrados» sem voltar a analisar; uma análise guardada mais antiga avisa («volte a correr»).</p><p><b>Fora da localidade</b>: num segmento cujo nome principal não tem cidade e que tem o nome BAN com o município como alternativo, a morada passa a <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, a sua morada, ponto de entrada do número mantido, número retirado; um passo que falhe é desfeito. O botão mostra então as duas contagens, números e RPP; os RPP contam na quota.</p>',
+            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços em falta — <b>rua a rua</b>, nunca para o município inteiro. Para um só número: o «+» da sua etiqueta (ao passar o rato) ou um clique no seu ponto no mapa.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou «Aldeia (Município)». Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é guardado</b>: os números colocados aparecem rodeados a turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; verifique e depois guarde ou anule no WME.</p><p><b>Quota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor depois de guardar; retirado ou alterado antes, é devolvido. Números escritos à mão nunca contam. Depois de guardados, passam a «encontrados» sem voltar a analisar; uma análise guardada mais antiga avisa («volte a correr»).</p><p><b>Fora da localidade</b>: num segmento cujo nome principal não tem cidade e que tem o nome BAN com o município como alternativo, a morada passa a <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, a sua morada, ponto de entrada do número mantido, número retirado; um passo que falhe é desfeito. O botão mostra então as duas contagens, números e RPP; os RPP contam na quota.</p>',
             ajHnQuotaTip: 'Hora móvel: um número conta durante uma hora a partir de quando é colocado. Só contam os números colocados por este botão e realmente guardados.',
             ajHnLeft: n => 'Quota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' nesta hora',
             ajHnFull: h => 'Quota atingida — próxima adição às ' + h,
+            ajHn1: 'Adicionar este número',
+            ajHn1Tip: 'Só L6: coloca apenas este número no WME, com as verificações de «Adicionar os números» (nome BAN, localidade, segmento a menos de 80 m); conta na quota. Nada é guardado.',
+            ajHn1Exists: n => 'O número ' + n + ' já está no WME nesta rua: nada foi colocado.',
+            ajHn1Far: n => 'Nenhum segmento admitido (nome BAN, localidade certa) a menos de 80 m do número ' + n + ': nada foi colocado.',
+            tipGoAdd: 'Mostrar no mapa. Ao passar o rato, «+» adiciona apenas este número.',
             cmpBtn: 'Comparar',
             cmpTip: 'Carregar um CSV exportado antes para o mesmo município ou departamento: é mostrado o avanço desde então.',
             cmpLine: (d, w, m, x) => 'Desde a exportação de ' + d + ': ' + w + ' no WME · ' + m + ' em falta · ' + x + ' a mais',
@@ -2224,10 +2259,15 @@
             ajHnSaved: (c, r, q) => 'שמירה: ' + (un1(c) ? 'מספר אחד נספר' : c + ' מספרים נספרו') + ', ' + r + ' הוחזרו למכסה (הוסרו לפני השמירה). יתרת המכסה: ' + q + '.',
             ajHnSavedTip: 'הוצב על ידי WBC ונשמר.',
             hHnT: 'הוספת המספרים (L6)',
-            hHnB: '<p>שמור לעורכי <b>L6</b>. בשורה הפתוחה של רחוב, <i>הוספת המספרים</i> מציבה ב-WME את הכתובות החסרות שלו — <b>רחוב אחר רחוב</b>, לעולם לא לרשות שלמה.</p><p><b>תנאים</b>: השם הראשי של המקטעים זהה בדיוק לשם ב-BAN (רק סימנים דיאקריטיים, אותיות רישיות, גרשים ורווחים נסבלים) והעיר שלהם היא הרשות או «כפר (רשות)». כל מספר מוצב על המקטע המותר הקרוב ביותר (80 מ׳ לכל היותר); מספר שכבר קיים, גם אם טרם נשמר, לעולם אינו מוצב שוב; סיומת שונה או מספרית נשארת לעורך.</p><p><b>דבר אינו נשמר</b>: המספרים שהוצבו מוקפים בטורקיז על המפה (גם כשהחלון סגור) ומסומנים ✚ ברחוב; יש לבדוק אותם ואז לשמור או לבטל ב-WME.</p><p><b>מכסה</b>: 150 מספרים בשעה נעה. מספר נשמר במכסה בעת ההצבה, ונספר אם הוא נמצא בשרת אחרי השמירה; אם הוסר או שונה לפני כן, הוא מוחזר. מספרים שהוקלדו ידנית לעולם אינם נספרים. לאחר השמירה הם עוברים ל«נמצאו» בלי להריץ שוב את הניתוח; סריקה שמורה ישנה יותר מציינת זאת («הרצה מחדש»).</p><p><b>מחוץ ליישוב</b>: על מקטע שלשמו הראשי אין עיר ושנושא את שם ה-BAN עם הרשות כשם חלופי, הכתובת הופכת ל<b>מקום מגורים (RPP)</b> — אותה המרה כמו ⚡ של WME Naming Auditor: מקום שנוצר במקום המספר, הכתובת שלו, נקודת הכניסה של המספר נשמרת, המספר מוסר; שלב שנכשל מבוטל. הכפתור מציג אז את שני המניינים, מספרים ו-RPP; ה-RPP נספרים במכסה.</p>',
+            hHnB: '<p>שמור לעורכי <b>L6</b>. בשורה הפתוחה של רחוב, <i>הוספת המספרים</i> מציבה ב-WME את הכתובות החסרות שלו — <b>רחוב אחר רחוב</b>, לעולם לא לרשות שלמה. למספר בודד: ה־„+” שעל התווית שלו (במעבר העכבר), או לחיצה על הנקודה שלו במפה.</p><p><b>תנאים</b>: השם הראשי של המקטעים זהה בדיוק לשם ב-BAN (רק סימנים דיאקריטיים, אותיות רישיות, גרשים ורווחים נסבלים) והעיר שלהם היא הרשות או «כפר (רשות)». כל מספר מוצב על המקטע המותר הקרוב ביותר (80 מ׳ לכל היותר); מספר שכבר קיים, גם אם טרם נשמר, לעולם אינו מוצב שוב; סיומת שונה או מספרית נשארת לעורך.</p><p><b>דבר אינו נשמר</b>: המספרים שהוצבו מוקפים בטורקיז על המפה (גם כשהחלון סגור) ומסומנים ✚ ברחוב; יש לבדוק אותם ואז לשמור או לבטל ב-WME.</p><p><b>מכסה</b>: 150 מספרים בשעה נעה. מספר נשמר במכסה בעת ההצבה, ונספר אם הוא נמצא בשרת אחרי השמירה; אם הוסר או שונה לפני כן, הוא מוחזר. מספרים שהוקלדו ידנית לעולם אינם נספרים. לאחר השמירה הם עוברים ל«נמצאו» בלי להריץ שוב את הניתוח; סריקה שמורה ישנה יותר מציינת זאת («הרצה מחדש»).</p><p><b>מחוץ ליישוב</b>: על מקטע שלשמו הראשי אין עיר ושנושא את שם ה-BAN עם הרשות כשם חלופי, הכתובת הופכת ל<b>מקום מגורים (RPP)</b> — אותה המרה כמו ⚡ של WME Naming Auditor: מקום שנוצר במקום המספר, הכתובת שלו, נקודת הכניסה של המספר נשמרת, המספר מוסר; שלב שנכשל מבוטל. הכפתור מציג אז את שני המניינים, מספרים ו-RPP; ה-RPP נספרים במכסה.</p>',
             ajHnQuotaTip: 'שעה נעה: מספר נספר במשך שעה מרגע הצבתו. נספרים רק מספרים שהוצבו בכפתור זה ונשמרו בפועל.',
             ajHnLeft: n => 'מכסה: נותרו ' + n + ' בשעה זו',
             ajHnFull: h => 'המכסה נוצלה — ההוספה הבאה בשעה ' + h,
+            ajHn1: 'הוספת המספר הזה',
+            ajHn1Tip: 'ל־L6 בלבד: מציב ב־WME רק את המספר הזה, עם הבדיקות של „הוספת המספרים” (שם BAN, עיר, מקטע בטווח 80 מ׳); נספר במכסה. דבר אינו נשמר.',
+            ajHn1Exists: n => 'המספר ' + n + ' כבר קיים ב־WME ברחוב הזה: לא הוצב דבר.',
+            ajHn1Far: n => 'אין מקטע מאושר (שם BAN, עיר נכונה) בטווח 80 מ׳ מהמספר ' + n + ': לא הוצב דבר.',
+            tipGoAdd: 'הצגה על המפה. במעבר העכבר, „+” מוסיף רק את המספר הזה.',
             cmpBtn: 'השוואה',
             cmpTip: 'טעינת CSV שיוצא קודם עבור אותה רשות או אותו מחוז: מוצגת ההתקדמות מאז.',
             cmpLine: (d, w, m, x) => 'מאז הייצוא של ' + d + ': ' + w + ' ב-WME · ' + m + ' חסרים · ' + x + ' עודפים',
@@ -3583,26 +3623,31 @@
     function cacherFiche() { if (fiche) fiche.hidden = true; }
     // Un mouvement traité après un plus récent (SDK async) est abandonné : c'est le dernier qui compte.
     let generationSurvol = 0;
-    async function surSurvol(ev) {
-        if (!opts.survol || !calqueAffiche() || (!pointsVus.length && !communesVisibles())) { cacherFiche(); return; }
-        const generation = ++generationSurvol;
-        // Le SDK prend des pixels d'ÉCRAN, comme clientX/clientY (voir WJN) : soustraire la position de
-        // la carte décalait la recherche de la largeur du volet gauche, et aucune fiche n'apparaissait.
-        let ll, ll2;
-        try {
-            ll = await sdk.Map.getLonLatFromPixel({ x: ev.clientX, y: ev.clientY });
-            ll2 = await sdk.Map.getLonLatFromPixel({ x: ev.clientX + SURVOL_PX, y: ev.clientY });
-        } catch (e) { cacherFiche(); return; }
-        if (generation !== generationSurvol) return;
-        if (!ll || !ll2) { cacherFiche(); return; }
+    // Le point dessiné le plus proche du pointeur, à moins de SURVOL_PX (adresse ou numéro en trop) ; `ll` : le
+    // pointeur. Le SDK prend des pixels d'ÉCRAN, comme clientX/clientY (voir WJN) : soustraire la position de
+    // la carte décalait la recherche de la largeur du volet gauche, et aucune fiche n'apparaissait.
+    async function pointSous(x, y) {
+        const ll = await sdk.Map.getLonLatFromPixel({ x, y }), ll2 = await sdk.Map.getLonLatFromPixel({ x: x + SURVOL_PX, y });
+        if (!ll || !ll2) return { ll: null, best: null };
         const kx = Math.cos(ll.lat * Math.PI / 180);
-        const r2 = Math.pow((ll2.lon - ll.lon) * kx, 2);
-        let best = null, bd = r2;
+        let best = null, bd = Math.pow((ll2.lon - ll.lon) * kx, 2);
         for (const p of pointsVus) {
             if (!p.ad && !p.trop) continue;
             const d = Math.pow((p.lon - ll.lon) * kx, 2) + Math.pow(p.lat - ll.lat, 2);
             if (d <= bd) { bd = d; best = p; }
         }
+        return { ll, best };
+    }
+    async function surSurvol(ev) {
+        if (!opts.survol || !calqueAffiche() || (!pointsVus.length && !communesVisibles())) { cacherFiche(); return; }
+        // Bulle épinglée ouverte (clic sur un point) : pas de fiche par-dessus.
+        if (bulleAdr) { cacherFiche(); return; }
+        const generation = ++generationSurvol;
+        let sous;
+        try { sous = await pointSous(ev.clientX, ev.clientY); } catch (e) { cacherFiche(); return; }
+        if (generation !== generationSurvol) return;
+        const { ll, best } = sous;
+        if (!ll) { cacherFiche(); return; }
         // Pas de point sous le pointeur : la commune colorée (carte du département), s'il y en a une.
         let html = best ? htmlFiche(best) : null;
         if (!html) { const c = communeSous(ll); if (c) html = htmlFicheCommune(c); }
@@ -3621,6 +3666,48 @@
         fiche.style.left = Math.max(4, Math.min(ev.clientX + 14, window.innerWidth - w - 4)) + 'px';
         fiche.style.top = Math.max(4, Math.min(ev.clientY - h - 10, window.innerHeight - h - 4)) + 'px';
     }
+    // ---- Clic sur une adresse manquante : « Ajouter ce numéro » (0.15.00, L6) ---------------------------
+    // La fiche du survol ne capte pas la souris. Un CLIC sur une adresse que l'ajout peut poser ouvre à sa place une
+    // bulle épinglée : la fiche, et le bouton (grisé avec sa raison si le nom ou le quota l'interdit). Elle se
+    // ferme au déplacement de la carte, à Échap, à la croix, ou au clic suivant sur la carte.
+    let bulle = null, bulleAdr = null;
+    function fermerBulle() { if (bulle) bulle.hidden = true; bulleAdr = null; }
+    function ouvrirBulle(p, cx, cy) {
+        const v = p.voie, i = resultat ? resultat.voies.indexOf(v) : -1, k = i < 0 ? -1 : v.adresses.indexOf(p.ad);
+        if (k < 0) return false;
+        const q = Core.quotaHn(lireHorodatages(), Date.now());
+        const raison = !nomOkHn(v) ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : '';
+        if (!bulle) {
+            bulle = document.createElement('div');
+            bulle.id = 'wbc-bulle';
+            bulle.setAttribute('role', 'dialog');
+            document.body.appendChild(bulle);
+            bulle.addEventListener('click', ev => {
+                if (ev.target.closest('[data-bulle-fermer]')) { fermerBulle(); return; }
+                const b = ev.target.closest('[data-hn1]');
+                if (!b || b.disabled || !resultat || !droitHn || hnEnCours) return;
+                const [bi, bk] = b.dataset.hn1.split(':').map(Number);
+                fermerBulle();
+                vue.curseur = bk;
+                ajouterHnVoie(bi, bk);
+            });
+        }
+        bulle.dir = _lang === 'he' ? 'rtl' : 'ltr';
+        bulle.setAttribute('aria-label', t('ajHn1') + ' ' + p.ad.brut);
+        bulle.innerHTML = '<button type="button" class="wbc-bulle-x" data-bulle-fermer title="' + esc(t('close')) + '" aria-label="' + esc(t('close')) + '">&#x2715;</button>' + htmlFiche(p) +
+            '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn" data-hn1="' + i + ':' + k + '" title="' + esc(raison || t('ajHn1Tip')) + '"' + (raison || hnEnCours ? ' disabled' : '') + '>+ ' + esc(t('ajHn1')) + '</button>' +
+            (raison ? '<div class="wbc-bulle-raison">' + esc(raison) + '</div>' : '') + '</div>';
+        bulle.hidden = false;
+        bulleAdr = [i, k];
+        const w = bulle.offsetWidth, h = bulle.offsetHeight;
+        bulle.style.left = Math.max(4, Math.min(cx + 14, window.innerWidth - w - 4)) + 'px';
+        bulle.style.top = Math.max(4, Math.min(cy - h - 10, window.innerHeight - h - 4)) + 'px';
+        cacherFiche();
+        const btn = bulle.querySelector('.wbc-bulle-btn:not([disabled])');
+        if (btn) btn.focus({ preventScroll: true });
+        return true;
+    }
+    document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && bulleAdr) fermerBulle(); });
     async function brancherSurvol() {
         let vueEl;
         try { vueEl = await sdk.Map.getMapViewportElement(); } catch (e) { log('survol : ' + e.message); return; }
@@ -3638,8 +3725,15 @@
         // seulement, là où WME n'a rien à sélectionner.
         let bas = null;
         vueEl.addEventListener('mousedown', ev => { bas = ev.button === 0 ? [ev.clientX, ev.clientY] : null; }, true);
+        vueEl.addEventListener('mousedown', fermerBulle);
         vueEl.addEventListener('mouseup', async ev => {
-            if (!bas || ev.button !== 0 || Math.hypot(ev.clientX - bas[0], ev.clientY - bas[1]) > 4 || !communesVisibles() || !calqueAffiche()) return;
+            if (!bas || ev.button !== 0 || Math.hypot(ev.clientX - bas[0], ev.clientY - bas[1]) > 4 || !calqueAffiche()) return;
+            if (droitHn && resultat && pointsVus.length) {
+                let sous = null;
+                try { sous = await pointSous(ev.clientX, ev.clientY); } catch (e) { }
+                if (sous && sous.best && sous.best.ad && hnPosable(sous.best.ad) && ouvrirBulle(sous.best, ev.clientX, ev.clientY)) return;
+            }
+            if (!communesVisibles()) return;
             let z = 99;
             try { z = await sdk.Map.getZoomLevel(); } catch (e) { }
             if (z >= ZOOM_CLIC_MAX) return;
@@ -3649,7 +3743,7 @@
             if (!c || !(resCommunes.has(c.commune.code) || c.memo)) return;
             ouvrirCommuneDep(c.commune.code).then(() => { if (c.commune.bbox) cadrer(c.commune.bbox); });
         });
-        try { sdk.Events.on({ eventName: 'wme-map-move', eventHandler: cacherFiche }); } catch (e) { }
+        try { sdk.Events.on({ eventName: 'wme-map-move', eventHandler: () => { cacherFiche(); fermerBulle(); } }); } catch (e) { }
     }
 
     function dessiner(points) {
@@ -4031,6 +4125,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-pt.present { background: #43a047; }
 .wbc-pt.trop { background: #fb8c00; }
 .wbc-num.courant { outline: 2px solid var(--wbc-blue-dk); outline-offset: 1px; }
+/* « + » d'une adresse seule (0.15.00) : pastille à l'angle, montrée au survol, au focus et sur la pastille courante —
+   jamais « ✚ », qui marque déjà un numéro POSÉ. Turquoise de la pose (blanc sur #00838f : 4,6:1). */
+.wbc-num-g { position: relative; display: inline-flex; }
+.wbc-num-plus { position: absolute; top: -6px; inset-inline-end: -6px; z-index: 1; display: flex; align-items: center; justify-content: center;
+    width: 17px; height: 17px; min-height: 0; margin: 0; padding: 0; border: 1px solid #fff; border-radius: 50%; background: #00838f; color: #fff;
+    font: 700 13px/1 'Rubik','Open Sans',sans-serif; cursor: pointer; opacity: 0; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.wbc-num-g:hover .wbc-num-plus, .wbc-num-g:focus-within .wbc-num-plus, .wbc-num-g.courant .wbc-num-plus { opacity: 1; }
+.wbc-num-plus:hover { background: #006064; }
+.wbc-num-plus:focus-visible { outline: 2px solid var(--wbc-blue-dk); outline-offset: 1px; }
 .wbc-tag { display: inline-block; padding: 0 6px; border-radius: 50px; background: #eceff1; color: #37474f; font-size: 10px; font-weight: 600; cursor: help; white-space: nowrap; }
 .wbc-principal { color: var(--wbc-text2); font-size: 11px; }
 .wbc-suivant { margin-inline-start: 6px; padding: 1px 8px; font-size: 10.5px; vertical-align: middle; }
@@ -4081,6 +4184,22 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     font: 11px/1.55 'Rubik','Open Sans',sans-serif; color: var(--wbc-text); }
 #wbc-fiche[hidden] { display: none; }
 #wbc-fiche b { font-size: 12px; }
+/* Bulle épinglée d'une adresse cliquée (0.15.00) : la fiche, qui capte la souris, et « + Ajouter ce numéro ». */
+#wbc-bulle { position: fixed; z-index: 10051; max-width: 300px; padding: 6px 26px 8px 9px; background: #fff; border: 1px solid var(--wbc-border);
+    border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.25); font: 11px/1.55 'Rubik','Open Sans',sans-serif; color: var(--wbc-text); }
+#wbc-bulle[dir="rtl"] { padding: 6px 9px 8px 26px; }
+#wbc-bulle[hidden] { display: none; }
+#wbc-bulle b { font-size: 12px; }
+.wbc-bulle-x { position: absolute; top: 3px; inset-inline-end: 3px; width: 20px; height: 20px; margin: 0; padding: 0; border: 0; border-radius: 50%;
+    background: transparent; color: var(--wbc-text2); font-size: 12px; line-height: 20px; cursor: pointer; }
+.wbc-bulle-x:hover { background: #eceff1; }
+.wbc-bulle-act { margin-top: 6px; }
+.wbc-bulle-btn { height: 26px; margin: 0; padding: 0 12px; border: 1px solid #006064; border-radius: 50px; background: #00838f; color: #fff;
+    font: 600 11.5px 'Rubik','Open Sans',sans-serif; cursor: pointer; }
+.wbc-bulle-btn:hover { background: #006064; }
+.wbc-bulle-btn:focus-visible { outline: 2px solid var(--wbc-blue-dk); outline-offset: 2px; }
+.wbc-bulle-btn[disabled] { border-color: #b0bec5; background: #eceff1; color: #78909c; cursor: not-allowed; }
+.wbc-bulle-raison { margin-top: 4px; color: #b23c00; }
 .wbc-f-etat { display: inline-block; margin-top: 2px; padding: 0 7px; border-radius: 50px; font-weight: 600; }
 .wbc-f-etat.manquant { background: #ffebee; color: #c62828; }
 .wbc-f-etat.present { background: #e8f5e9; color: #2e7d32; }
@@ -4450,7 +4569,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // Le corps de la fenêtre se reconstruit en entier ; l'élément qui avait le focus (filtre, tri,
     // ligne, numéro…) et la position de défilement sont RENDUS après coup — sans cela, chaque clic de
     // filtre ou de tri renvoyait le clavier au début de la page (audit du 26/09, M19).
-    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-act', 'data-trop', 'data-doublon'];
+    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-hn1', 'data-act', 'data-trop', 'data-doublon'];
     function rendre() {
         if (!ovEl) return;
         const corps = $('#wbc-corps');
@@ -4595,6 +4714,18 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // L'en-tête triable porte un BOUTON : atteignable au clavier, annoncé comme commande (M23).
     const th = (cle, lbl, num) => '<th scope="col"' + (num ? ' class="num"' : '') + (vue.tri === cle ? ' aria-sort="' + (vue.sens > 0 ? 'ascending' : 'descending') + '"' : '') + '><button type="button" class="wbc-th" data-tri="' + cle + '" title="' + esc(t('tipSort')) + '">' + esc(lbl) + '</button></th>';
 
+    // Les pastilles des numéros manquants d'une voie ouverte. Le « + » (0.15.00, L6) ajoute l'adresse SEULE : visible
+    // au survol, au focus et sur la pastille courante, seulement si l'ajout peut la poser (pré-contrôle du bouton).
+    function htmlNums(v, i) {
+        const plus = droitHn && !hnEnCours && nomOkHn(v) && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
+        return '<div class="wbc-nums">' + v.adresses.map((a, k) => {
+            if (a.trouve) return '';
+            const p = plus && hnPosable(a);
+            const tip = a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) : p ? t('tipGoAdd') : t('tipGo');
+            const num = '<button type="button" class="wbc-num' + (a.hnPose ? ' pose' : a.hnEnregistre ? ' enregistre' : a.suffixe ? ' suffixe' : '') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '">' + (a.hnPose ? '&#x271A; ' : a.hnEnregistre ? '&#x2713; ' : '') + esc(a.brut) + (a.suffixe && !a.hnPose ? ' ≠ ' + esc(a.suffixe) : '') + '</button>';
+            return p ? '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + '<button type="button" class="wbc-num-plus" data-hn1="' + i + ':' + k + '" title="' + esc(t('ajHn1') + ' — ' + t('ajHn1Tip')) + '" aria-label="' + esc(t('ajHn1') + ' ' + a.brut) + '">+</button></span>' : num;
+        }).join('') + '</div>';
+    }
     function htmlCommune(r) {
         const T = totauxVus(r), c = r.commune;
         // Chaque filtre porte son nombre de voies (la ligne « N voies complètes sur M » disparaît) ; le détail
@@ -4639,8 +4770,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     esc(t('selSegsTip')) + '"' + ((v.segs || []).length ? '' : ' disabled') + '>' + esc(t('selSegs', nb((v.segs || []).length))) + '</button>' + (droitHn ? boutonHn(v) : '') + '</p>' +
                     (droitHn && vue.hnMsg && vue.hnMsg.i === i ? '<p class="wbc-hn-msg' + (vue.hnMsg.err ? ' erreur' : '') + '" role="status">' + esc(vue.hnMsg.txt) + '</p>' : '') + '<h4>' + esc(t('missingT')) +
                     (v.manquants.length ? ' <button type="button" class="wbc-btn wbc-btn-neutral wbc-suivant" data-act="suivant" title="' + esc(t('tipNext')) + '">' + esc(t('nextMissing')) + ' <span class="wbc-fl">&#x25B6;</span></button>' : '') + '</h4>' +
-                    (v.manquants.length ? '<div class="wbc-nums">' + v.adresses.map((a, k) => a.trouve ? '' :
-                        '<button type="button" class="wbc-num' + (a.hnPose ? ' pose' : a.hnEnregistre ? ' enregistre' : a.suffixe ? ' suffixe' : '') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) : t('tipGo')) + '">' + (a.hnPose ? '&#x271A; ' : a.hnEnregistre ? '&#x2713; ' : '') + esc(a.brut) + (a.suffixe && !a.hnPose ? ' ≠ ' + esc(a.suffixe) : '') + '</button>').join('') + '</div>'
+                    (v.manquants.length ? htmlNums(v, i)
                         : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') + '</td></tr>';
             }
             h += '</tbody></table>';
@@ -5422,6 +5552,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (tr) { const k = tr.dataset.tri; vue.sens = vue.tri === k ? -vue.sens : (k === 'nom' || k === 'wme' ? 1 : -1); vue.tri = k; rendre(); return; }
         const trd = ev.target.closest('[data-tridep]');
         if (trd) { const k = trd.dataset.tridep; vue.sensDep = (vue.triDep || 'ecart') === k ? -(vue.sensDep || -1) : (k === 'nom' ? 1 : -1); vue.triDep = k; rendre(); return; }
+        const h1 = ev.target.closest('[data-hn1]');
+        if (h1 && resultat) {
+            const [i, k] = h1.dataset.hn1.split(':').map(Number);
+            if (droitHn && !hnEnCours) { vue.curseur = k; ajouterHnVoie(i, k); }
+            return;
+        }
         const adr = ev.target.closest('[data-adr]');
         if (adr && resultat) {
             const [i, k] = adr.dataset.adr.split(':').map(Number);
@@ -5462,7 +5598,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // incomplète qui suit dans le tableau tel qu'il est trié et filtré — la saisie s'enchaîne sans
     // revenir au tableau.
     // Les numéros manquants qu'« Ajouter » peut poser sur cette voie (même pré-contrôle que son bouton).
-    const posablesHn = v => v.adresses.filter(a => !a.trouve && !a.hnPose && !a.hnEnregistre && !a.suffixe && Core.numeroHn(a.brut)).length;
+    const hnPosable = a => !!a && !a.trouve && !a.hnPose && !a.hnEnregistre && !a.suffixe && !!Core.numeroHn(a.brut);
+    const posablesHn = v => v.adresses.filter(hnPosable).length;
+    // Le nom BAN est-il porté (principal, alternatif, ou RPP prévu par l'aperçu) ? Pré-contrôle du bouton
+    // « Ajouter » et du « + » d'une adresse seule ; le nom exact de chaque segment est relu au clic.
+    const nomOkHn = v => v.statutNom === 'identique' || v.statutNom === 'alternatif' || !!(v.apercuHn && v.apercuHn.rpp);
     // « Voie suivante » (0.14.00) : parmi les voies du tableau (filtres et recherche compris), celle dont le nom
     // BAN est porté en principal ou en alternatif et qui a le plus de numéros posables — hors voie ouverte et
     // hors voies déjà ouvertes par ce bouton dans cette commune. -1 : aucune.
@@ -5764,7 +5904,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         // Pré-contrôle sur le calcul ; le nom EXACT de chaque segment est relu dans WME au clic.
         // 0.13.00 : le nom BAN en ALTERNATIF suffit aussi (segment hors agglomération : l'adresse y devient un RPP).
         const ap = v.apercuHn;
-        const nomOk = v.statutNom === 'identique' || v.statutNom === 'alternatif' || !!(ap && ap.rpp), k = Math.min(n, q.reste);
+        const nomOk = nomOkHn(v), k = Math.min(n, q.reste);
         const tip = !nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !n ? t('ajHnNone') : t('ajHnAddTip', nb(q.reste));
         // Comptes séparés numéros / RPP (02/10), d'après l'aperçu lu à l'ouverture de la voie.
         let lib = t('ajHnAdd', nb(k));
@@ -5928,9 +6068,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         return { ok: true };
     }
 
-    async function ajouterHnVoie(i) {
+    // `k` (0.15.00) : l'adresse k SEULE — le « + » d'une pastille ou d'un point de la carte. Mêmes contrôles,
+    // même quota, même conversion hors agglo ; la voie entière sert encore à lire les numéros existants.
+    async function ajouterHnVoie(i, k) {
         if (hnEnCours) return;
         const v = resultat.voies[i], commune = resultat.commune.nom;
+        const seule = k != null ? v.adresses[k] : null;
+        if (k != null && !hnPosable(seule)) return;
+        const vPlan = seule ? Object.assign({}, v, { adresses: [seule] }) : v;
         // Le droit est relu à chaque clic, pas seulement au démarrage.
         if (!(await lireDroitHn())) { droitHn = false; rendre(); statut(t('ajHnRights'), true); return; }
         const q = Core.quotaHn(lireHorodatages(), Date.now());
@@ -5946,7 +6091,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             let sansAlt = 0;
             const passe = async (cadrerSiBesoin, zone) => {
                 const { segs, existants } = await lireVoieHn(v, cadrerSiBesoin, zone);
-                const plan = Core.planHn(v, commune, segs, existants, Core.quotaHn(horo, Date.now()).reste);
+                const plan = Core.planHn(vPlan, commune, segs, existants, Core.quotaHn(horo, Date.now()).reste);
                 log('numéros ' + v.nom + ' : ' + plan.poses.length + ' à poser, segments admis ' + plan.admis + '/' + segs.length +
                     ' (hors agglo ' + plan.hors + ', autre nom ' + plan.refus.nom + ', autre ville ' + plan.refus.ville + '), écartés ' + JSON.stringify(plan.ecartes));
                 admisTotal += plan.admis;
@@ -5979,11 +6124,31 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 }
                 return plan;
             };
-            let plan = await passe(true);
+            let plan;
+            if (seule) {
+                // Une adresse : on ne cadre pas la voie entière, on lit les segments chargés autour d'elle. La carte
+                // ne bouge que si l'adresse est hors de la vue ou sous le zoom 16 (WME n'y charge pas les rues).
+                let ext = null, zoom = 0;
+                try { ext = await sdk.Map.getMapExtent(); zoom = await sdk.Map.getZoomLevel(); } catch (e) { }
+                const dedans = ext && seule.lon >= ext[0] && seule.lon <= ext[2] && seule.lat >= ext[1] && seule.lat <= ext[3];
+                if (!dedans || zoom < 16) {
+                    await sdk.Map.setMapCenter({ lonLat: { lon: seule.lon, lat: seule.lat }, zoomLevel: Math.max(17, zoom) });
+                    await new Promise(r => setTimeout(r, 2500));
+                }
+                plan = await passe(false, { lon: seule.lon, lat: seule.lat, adresses: [seule] });
+                if (!n && !nRpp && !err) {
+                    const e = plan.ecartes, num = Core.numeroHn(seule.brut);
+                    if (!admisTotal) msg = [t('ajHnNoSeg') + (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : ''), true];
+                    else if (e.existe) msg = [t('ajHn1Exists', num), true];
+                    else if (e.loin) msg = [t('ajHn1Far', num) + (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : ''), true];
+                    else msg = [t('ajHnNone'), true];
+                    return;
+                }
+            } else plan = await passe(true);
             // 0.13.03 : une voie plus longue que la vue au zoom 16 se parcourt par zones — on se recentre sur chaque
             // groupe d'adresses restées « trop loin » (segment non chargé), on relit, on pose. Une zone sans progrès
             // n'est pas retentée ; le quota arrête tout.
-            if (plan.ecartes.loin && Core.quotaHn(horo, Date.now()).reste) {
+            if (!seule && plan.ecartes.loin && Core.quotaHn(horo, Date.now()).reste) {
                 const restantes = () => v.adresses.filter(a => !a.trouve && !a.hnPose && !a.hnEnregistre && !a.suffixe && Core.numeroHn(a.brut));
                 const zones = Core.zonesHn(restantes(), 400, 220);
                 for (const z of zones) {
@@ -5997,7 +6162,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 plan.ecartes.existe = 0; plan.ecartes.quota = 0;
             }
             if (!admisTotal) { msg = [t('ajHnNoSeg') + (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : ''), true]; return; }
-            const e = plan.ecartes, ecartes = e.existe + e.suffixe + e.format + e.loin + e.quota;
+            const e = plan.ecartes, ecartes = seule ? 0 : e.existe + e.suffixe + e.format + e.loin + e.quota;
             msg = [(critiques.length ? t('ajRppCrit', critiques.join(' · ')) + ' ' : '') +
                 (nRpp ? t('ajHnDoneMix', nb(n), nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : t('ajHnDone', nb(n), nb(Core.quotaHn(horo, Date.now()).reste))) +
                 (n + nRpp ? ' ' + t('ajHnSee') : '') + (ecartes ? ' ' + t('ajHnSkip', nb(ecartes)) : '') +
