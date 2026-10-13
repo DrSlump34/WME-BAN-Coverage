@@ -12,6 +12,23 @@ le centre de la carte et les recherches de commune), et WME sur les serveurs de 
 couleurs des points) restent dans le navigateur. Seuls GreasyFork et GitHub sont lus en plus, sans
 rien recevoir : la version publiée et la version minimale (voir ci-dessous).
 
+## Captures (0.14.03)
+
+Un département entier — ici le Gard, 349 communes balayées : chaque commune colorée selon sa
+couverture, le tableau des communes, et le panneau de l'onglet Scripts.
+
+![Carte du département du Gard](capture_0.14.03_departement.jpg)
+
+Une commune — Uzès : les adresses BAN manquantes en rouge sur la carte, les chiffres et l'état des
+lieux voie par voie.
+
+![Uzès, adresses manquantes](capture_0.14.03_commune.jpg)
+
+Une voie dépliée : ses numéros manquants, « Sélectionner les segments », « Ajouter les numéros »
+(L6) avec le quota restant, et « Voie suivante ».
+
+![Voie dépliée](capture_0.14.03_voie.jpg)
+
 ## Installation et mises à jour
 
 - **Installation** : depuis GreasyFork, [script 600088](https://greasyfork.org/scripts/600088-wme-ban-coverage),
