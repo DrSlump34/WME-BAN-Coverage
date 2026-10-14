@@ -257,6 +257,8 @@ aucun segment de la voie (nom BAN principal, commune pour ville) à moins de 80 
 
 - **Un RPP par clic** : dans la voie dépliée (nom WME identique au nom BAN), la ligne « RPP de cette voie » ; au
   survol d'une pastille, « ⇄ ». Le clic simple centre la carte sur le RPP.
+- **Depuis la carte** (0.16.05) : un clic sur le point d'une adresse trouvée en RPP ouvre la même bulle que le
+  « + » des numéros manquants, avec « ⇄ Remplacer ce RPP par un numéro ».
 - Le RPP est **retrouvé en direct** dans WME (l'analyse ne garde que sa position : POI résidentiel à moins de 10 m,
   même numéro), puis le numéro est posé à sa position sur le segment, puis le RPP retiré. Un RPP qui ne se retire pas
   fait retirer le numéro posé : jamais d'adresse en double.
