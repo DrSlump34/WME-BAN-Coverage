@@ -241,6 +241,27 @@ restaient sans solution.
   une conversion qui aurait laissé un POI sans adresse. Tout est attendu ; `tools/check-await.js` le garde. Essai du
   14/10 : « 1 Minette, La Chapelle-Fleurigné » posé (5 actions, point d'entrée repris), puis annulé.
 
+### RPP en agglomération → numéro (0.16)
+
+Demandé le 12/10/2026. En agglomération, le numéro va sur le segment ; mais un RPP y reste souvent **légitime** :
+son entrée donne sur une autre voie que l'adresse postale, ce qu'un numéro de segment ne sait pas exprimer. WBC
+reprend donc à l'identique la doctrine et les seuils de WME Naming Auditor (`verdictRppAgglo`, mesurés à Coursan
+le 26/07) et ne convertit que l'**écart franc** (`Core.verdictRppHn`) :
+1. le même numéro est déjà posé sur la même rue à moins de **150 m** : le RPP fait doublon, il est **retiré seul** ;
+2. le **point d'accès** du RPP donne sur la voie même de son adresse, sans autre voie à moins de **10 m** de plus ;
+3. faute de point d'accès, la **position** du RPP longe sa propre rue, avec la même marge.
+
+Un point d'accès qui donne sur une **autre** voie prouve le décalage : le RPP reste (« conforme »). Tout le reste
+est « à trancher » et reste aussi. Refus supplémentaires : RPP **nommé** ou **photographié**, autre ville, autre rue,
+aucun segment de la voie (nom BAN principal, commune pour ville) à moins de 80 m — sans doute hors agglo.
+
+- **Un RPP par clic** : dans la voie dépliée (nom WME identique au nom BAN), la ligne « RPP de cette voie » ; au
+  survol d'une pastille, « ⇄ ». Le clic simple centre la carte sur le RPP.
+- Le RPP est **retrouvé en direct** dans WME (l'analyse ne garde que sa position : POI résidentiel à moins de 10 m,
+  même numéro), puis le numéro est posé à sa position sur le segment, puis le RPP retiré. Un RPP qui ne se retire pas
+  fait retirer le numéro posé : jamais d'adresse en double.
+- **Même quota** que l'ajout (une conversion = un numéro), compté à l'enregistrement ; rien n'est enregistré par WBC.
+
 ## Mesures qui ont fixé la conception (26/09/2026)
 
 - Le serveur de WME **allège une zone trop grande sans le dire** : à Nîmes, un carreau de 0,1° rend

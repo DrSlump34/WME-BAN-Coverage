@@ -360,6 +360,21 @@ function cas(Core) {
         const plV = Core.planHn({ nom: 'Chapifeu', adresses: [ad('1', 20, 10)] }, 'La Chapelle-Fleurigné', segsV, [], 100);
         ok('RPP : « Village (Commune) » en alternatif ⇒ ville du RPP = la commune', plV.poses.length === 1 && plV.poses[0].rpp && plV.poses[0].rpp.ville === 'La Chapelle-Fleurigné', JSON.stringify(plV.poses.map(p => p.rpp)));
         ok('RPP : ville sans parenthèse gardée telle quelle', Core.villeRpp('Brie') === 'Brie' && Core.villeRpp('') === '' && Core.villeRpp('Saint-Malo ( Paramé )') === 'Paramé');
+        // 0.16.00 — RPP en agglo → numéro : voie la plus proche et verdict (repris de WNA).
+        const rue = (dy, noms) => ({ coords: [P(0, dy), P(300, dy)], noms });
+        const vH = Core.voieLaPlusProche(...P(100, 8), [rue(0, ['Rue Haute']), rue(40, ['Rue Basse']), rue(20, [])]);
+        ok('voie la plus proche : Rue Haute à 8 m ; l’autre voie la plus proche est l’allée ANONYME à 12 m', vH.noms[0] === 'rue haute' && Math.abs(vH.dist - 8) < 0.5 && Math.abs(vH.distAutreVoie - 12) < 0.5, JSON.stringify(vH));
+        const VR = (dist, autre, noms) => ({ noms: noms || ['rue haute'], dist, distAutreVoie: autre });
+        const vd = x => Core.verdictRppHn(Object.assign({ rue: 'Rue Haute', acces: null, pos: null, doublon: null }, x));
+        ok('verdict : doublon ⇒ écart', vd({ doublon: { dist: 95 } }).verdict === 'ecart' && vd({ doublon: { dist: 95 } }).motif === 'doublon');
+        ok('verdict : accès sur sa propre rue, autre voie à 30 m ⇒ écart', vd({ acces: VR(5, 30) }).verdict === 'ecart' && vd({ acces: VR(5, 30) }).motif === 'acces');
+        ok('verdict : accès sur sa rue mais autre voie à moins de 10 m de plus ⇒ à trancher', vd({ acces: VR(18, 27) }).verdict === 'trancher');
+        ok('verdict : accès sur une AUTRE voie ⇒ conforme (le RPP reste)', vd({ acces: VR(4, 40, ['rue basse']) }).verdict === 'conforme');
+        ok('verdict : sans accès, position le long de sa rue ⇒ écart', vd({ pos: VR(12, 40) }).verdict === 'ecart' && vd({ pos: VR(12, 40) }).motif === 'position');
+        ok('verdict : sans accès, position près d\'une autre voie ⇒ à trancher (la position n\'est pas l\'entrée)', vd({ pos: VR(4, 40, ['rue basse']) }).verdict === 'trancher');
+        ok('voie la plus proche : le libellé garde la casse de WME', vH.libelle === 'Rue Haute', vH.libelle);
+        ok('verdict : l\'accès prime sur la position', vd({ acces: VR(4, 40, ['rue basse']), pos: VR(3, 50) }).verdict === 'conforme');
+        ok('verdict : trop loin de toute voie ⇒ à trancher', vd({ pos: VR(130, Infinity) }).verdict === 'trancher');
         const plH2 = Core.planHn(voieH, 'Brie', segsH, ['23'], 100);
         ok('hors agglo : un RPP déjà présent (même en attente) n’est pas reposé', !plH2.poses.some(x => x.number === '23') && plH2.ecartes.existe === 1, JSON.stringify(plH2.ecartes));
         // Rapprochement d'un RPP : enregistré compté, disparu rendu, indécidable gardé réservé.
@@ -452,6 +467,11 @@ const TEMOINS = [
     ['0.13.03 : centre pris au premier point', 'const lon = dedans.reduce((t, a) => t + a.lon, 0) / dedans.length', 'const lon = a0.lon'],
     ['0.15.01 : numéro de route sans alternatif jamais compté', '!nomSouple(s.ville) && !horsAgglo(s) && probables.has(s.id)).length,', '!nomSouple(s.ville) && !horsAgglo(s) && false).length,'],
     ['0.15.01 : toute départementale voisine comptée', '!nomSouple(s.ville) && !horsAgglo(s) && probables.has(s.id)).length,', '!nomSouple(s.ville) && !horsAgglo(s)).length,'],
+    ['0.16.00 : doublon ignoré', "if (doublon) return { verdict: 'ecart', motif: 'doublon' };", ''],
+    ['0.16.00 : marge entre voies ignorée', 'if (isFinite(base.distAutreVoie) && base.distAutreVoie - base.dist < RPP_MARGE_VOIE_M) return', 'if (false) return'],
+    ['0.16.00 : accès sur une autre voie pris pour un écart', "return { verdict: 'conforme', motif: 'acces', voie: base.libelle || base.noms[0] };", "return { verdict: 'ecart', motif: 'acces' };"],
+    ['0.16.00 : la position seule conclut « conforme »', 'if (acces && base.noms.length && (!isFinite', 'if (base.noms.length && (!isFinite'],
+    ['0.16.00 : voie anonyme ignorée', "if (d <= RPP_PORTEE_VOIE_M) cand.push({ d,", "if (d <= RPP_PORTEE_VOIE_M && (sg.noms || []).length) cand.push({ d,"],
     ['0.13.04 : nommage incomplet jamais compté', 'sansAlt: segs.filter(s => bonNom(s) && !nomSouple(s.ville) && !horsAgglo(s)).length,', 'sansAlt: 0,'],
     ['0.13.00 : hors agglo jamais admis', 'const horsA = segs.filter(s => horsAgglo(s) && traceOk(s));', 'const horsA = [];'],
     ['0.13.00 : principal avec ville pris pour hors agglo', 'const horsAgglo = s => !nomSouple(s.ville) && !!altBan(s);', 'const horsAgglo = s => !!altBan(s);'],

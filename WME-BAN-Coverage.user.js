@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.15.05
+// @version      0.16.02
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; kein Ergebnis wird gespeichert.
@@ -329,6 +329,23 @@
             ajRppCritDbl: n => 'address ' + n + ' in DOUBLE (house number + RPP)',
             ajHnSansAlt: (r, c) => 'Some out-of-town segments carry “' + r + '” without a city but lack the alternate “' + r + ' / ' + c + '”: no RPP can be placed there until it is added.',
             ajHnSansAltRoute: (r, c) => 'Some out-of-town segments have a road number as primary name, without a city, but lack the alternate “' + r + ' / ' + c + '”: no RPP can be placed there until it is added.',
+            rhnT: n => 'RPP of this street (' + n + ')',
+            rhnTip: 'Show the RPP on the map. On hover, “⇄” replaces it with a segment number when it is a clear-cut case.',
+            rhnConv: 'Replace this RPP with a number',
+            rhnConvTip: 'L6 only: in town, replaces this RPP with a number on the segment — clear-cut cases only (same number already on the street, or access point / position along its own street, as in WME Naming Auditor). Refused if the RPP has a name or a photo. Counts in the quota; nothing is saved.',
+            rhnDone: (n, q) => 'RPP no. ' + n + ' replaced with a number on the segment — check it, then save in WME. Left in the quota: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'No. ' + n + ' was already on the street: the duplicate RPP is removed — check, then save in WME. Left in the quota: ' + q + '.',
+            rhnNotFound: 'RPP not found in WME at this spot (moved, changed or deleted since the analysis?): run the analysis again.',
+            rhnNamed: 'This RPP has a name: it is not converted (to be checked by hand).',
+            rhnPhoto: 'This RPP has a photo: it is not converted (someone went there; to be checked by hand).',
+            rhnCity: v => 'This RPP belongs to “' + v + '”, not to the commune: it is not converted.',
+            rhnStreet: r => 'This RPP carries the street “' + r + '”, not the BAN name of the street: it is not converted.',
+            rhnNoSeg: 'No segment of the street (BAN name as primary name, commune as city) within 80 m: the RPP is probably out of town, it stays.',
+            rhnLegit: v => 'The RPP access point opens onto “' + v + '”, not onto its own street: the RPP expresses an offset a segment number cannot, it stays.',
+            rhnUnsure: 'Nothing clear-cut (another street just as close, or too far from any street): the RPP stays, to be checked by hand.',
+            rhnFormat: n => 'The number “' + n + '” is not written like a segment number: to be checked by hand.',
+            rhnErr: m => 'Replacement stopped: ' + m,
+            rhnPoseTip: 'Replaced with a number (not saved yet).',
             ajHnSkip: n => n + (un1(n) ? ' address skipped' : ' addresses skipped') + ' (details in the console).',
             ajHnNoSeg: 'No loaded segment has exactly this name as primary name with the commune as city: nothing was placed.',
             ajHnErr: m => 'Adding stopped: ' + m,
@@ -338,7 +355,7 @@
             ajHnSaved: (c, r, q) => 'Save: ' + c + (un1(c) ? ' number counted' : ' numbers counted') + ', ' + r + ' given back to the quota (removed before saving). Quota left: ' + q + '.',
             ajHnSavedTip: 'Placed by WBC and saved.',
             hHnT: 'Adding house numbers (L6)',
-            hHnB: '<p>Reserved for <b>L6</b> editors. In the expanded row of a street, <i>Add the house numbers</i> places its missing addresses in WME — <b>one street at a time</b>, never a whole commune. For a single number: the “+” on its chip (on hover), or a click on its point on the map.</p><p><b>Conditions</b>: the primary name of the segments is exactly the BAN name (only accents, case, apostrophes and spaces are tolerated) and their city is the commune or “Village (Commune)”. Each number goes to the nearest admitted segment (80 m at most); a number already present, even pending, is never placed again; a different or numeric suffix is left to the editor.</p><p><b>Nothing is saved</b>: placed numbers are circled in turquoise on the map (even with the window closed) and marked ✚ in the street; check them, then save or undo in WME.</p><p><b>Quota</b>: 150 numbers per sliding hour. A number is reserved when placed, then counted if it is found on the server after saving; removed or changed before, it is given back. Numbers typed by hand never count. Once saved, they become “found” without running the analysis again; an older saved scan says so (“run again”).</p><p><b>Out of town</b>: on a segment whose primary name has no city and which carries the BAN name with the commune as an alternate, the address becomes a <b>residential place (RPP)</b> — the same conversion as the ⚡ of WME Naming Auditor: place created at the number, its address, the number\u2019s entry point kept, number removed; any failed step is undone. The button then shows both counts, numbers and RPP; RPP count in the quota.</p>',
+            hHnB: '<p>Reserved for <b>L6</b> editors. In the expanded row of a street, <i>Add the house numbers</i> places its missing addresses in WME — <b>one street at a time</b>, never a whole commune. For a single number: the “+” on its chip (on hover), or a click on its point on the map.</p><p><b>Conditions</b>: the primary name of the segments is exactly the BAN name (only accents, case, apostrophes and spaces are tolerated) and their city is the commune or “Village (Commune)”. Each number goes to the nearest admitted segment (80 m at most); a number already present, even pending, is never placed again; a different or numeric suffix is left to the editor.</p><p><b>Nothing is saved</b>: placed numbers are circled in turquoise on the map (even with the window closed) and marked ✚ in the street; check them, then save or undo in WME.</p><p><b>Quota</b>: 150 numbers per sliding hour. A number is reserved when placed, then counted if it is found on the server after saving; removed or changed before, it is given back. Numbers typed by hand never count. Once saved, they become “found” without running the analysis again; an older saved scan says so (“run again”).</p><p><b>Out of town</b>: on a segment whose primary name has no city and which carries the BAN name with the commune as an alternate, the address becomes a <b>residential place (RPP)</b> — the same conversion as the ⚡ of WME Naming Auditor: place created at the number, its address, the number\u2019s entry point kept, number removed; any failed step is undone. The button then shows both counts, numbers and RPP; RPP count in the quota.</p><p><b>RPP → number</b>: in the expanded street, the RPP of the street have their own chips; on hover, “⇄” replaces ONE RPP with a number on the segment, in clear-cut cases only (as in WME Naming Auditor): the same number already on the street within 150 m (the RPP is a duplicate and is simply removed), or an access point — failing that, the position — along its own street with no other street within 10 m. An access point opening onto another street proves the RPP is legitimate: it stays. Refused if the RPP has a name or a photo, another city or another street. Same quota; nothing is saved.</p>',
             ajHnQuotaTip: 'Sliding hour: a number counts for one hour from when it was placed. Only numbers placed by this button and actually saved are counted.',
             ajHnLeft: n => 'Quota: ' + n + ' left this hour',
             ajHnFull: h => 'Quota reached — next adding at ' + h,
@@ -608,6 +625,23 @@
             ajRppCritDbl: n => 'adresse ' + n + ' en DOUBLE (numéro + RPP)',
             ajHnSansAlt: (r, c) => 'Des segments hors agglomération portent «\xa0' + r + '\xa0» sans ville mais n’ont pas l’alternatif «\xa0' + r + ' / ' + c + '\xa0»\xa0: aucun RPP n’y est posé tant qu’il manque.',
             ajHnSansAltRoute: (r, c) => 'Des segments hors agglomération ont un numéro de route pour nom principal, sans ville, mais pas l’alternatif «\xa0' + r + ' / ' + c + '\xa0»\xa0: aucun RPP n’y est posé tant qu’il manque.',
+            rhnT: n => 'RPP de cette voie (' + n + ')',
+            rhnTip: 'Montrer le RPP sur la carte. Au survol, «\xa0⇄\xa0» le remplace par un numéro du segment quand l’écart est franc.',
+            rhnConv: 'Remplacer ce RPP par un numéro',
+            rhnConvTip: 'Réservé aux L6\xa0: en agglomération, remplace ce RPP par un numéro sur le segment — en écart franc seulement (même numéro déjà posé sur la rue, ou point d’accès / position le long de sa propre rue, comme WME Naming Auditor). Refusé si le RPP a un nom ou une photo. Compte au quota\xa0; rien n’est enregistré.',
+            rhnDone: (n, q) => 'RPP n°\xa0' + n + ' remplacé par un numéro sur le segment — vérifiez-le, puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'Le n°\xa0' + n + ' était déjà posé sur la rue\xa0: le RPP en doublon est retiré — vérifiez, puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
+            rhnNotFound: 'RPP introuvable dans WME à cet endroit (déplacé, modifié ou supprimé depuis l’analyse\xa0?)\xa0: relancez l’analyse.',
+            rhnNamed: 'Ce RPP porte un nom\xa0: il n’est pas converti (à voir à la main).',
+            rhnPhoto: 'Ce RPP a une photo\xa0: il n’est pas converti (quelqu’un est venu sur place\xa0; à voir à la main).',
+            rhnCity: v => 'Ce RPP est rattaché à «\xa0' + v + '\xa0», pas à la commune\xa0: il n’est pas converti.',
+            rhnStreet: r => 'Ce RPP porte la rue «\xa0' + r + '\xa0», pas le nom BAN de la voie\xa0: il n’est pas converti.',
+            rhnNoSeg: 'Aucun segment de la voie (nom BAN en principal, commune pour ville) à moins de 80\xa0m\xa0: le RPP est sans doute hors agglomération, il reste.',
+            rhnLegit: v => 'Le point d’accès du RPP donne sur «\xa0' + v + '\xa0», pas sur sa rue\xa0: le RPP dit un décalage qu’un numéro de segment ne saurait exprimer, il reste.',
+            rhnUnsure: 'Rien de net ne permet de trancher (autre voie aussi proche, ou trop loin de toute voie)\xa0: le RPP reste, à voir à la main.',
+            rhnFormat: n => 'Le numéro «\xa0' + n + '\xa0» ne s’écrit pas comme un numéro de segment\xa0: à voir à la main.',
+            rhnErr: m => 'Remplacement interrompu\xa0: ' + m,
+            rhnPoseTip: 'Remplacé par un numéro (pas encore enregistré).',
             ajHnSkip: n => n + (un(n) ? ' adresse écartée' : ' adresses écartées') + ' (détail dans la console).',
             ajHnNoSeg: 'Aucun segment chargé ne porte exactement ce nom en nom principal avec la commune pour ville\xa0: rien n’a été posé.',
             ajHnErr: m => 'Ajout interrompu\xa0: ' + m,
@@ -617,7 +651,7 @@
             ajHnSaved: (c, r, q) => 'Enregistrement\xa0: ' + c + (un(c) ? ' numéro compté' : ' numéros comptés') + ', ' + r + ' rendu(s) au quota (retirés avant l’enregistrement). Reste au quota\xa0: ' + q + '.',
             ajHnSavedTip: 'Posé par WBC et enregistré.',
             hHnT: 'Ajouter les numéros (L6)',
-            hHnB: '<p>Réservé aux éditeurs <b>L6</b>. Dans la ligne dépliée d’une voie, <i>Ajouter les numéros</i> pose dans WME ses adresses manquantes — <b>voie par voie</b>, jamais pour toute la commune. Pour un seul numéro\u00a0: le «\u00a0+\u00a0» de sa pastille (au survol), ou un clic sur son point de la carte.</p><p><b>Conditions</b>\u00a0: le nom principal des segments est exactement celui de la BAN (seuls les accents, la casse, les apostrophes et les espaces sont tolérés) et leur ville est la commune ou «\u00a0Village (Commune)\u00a0». Chaque numéro va au segment admis le plus proche (80\u00a0m au plus)\u00a0; un numéro déjà présent, même en attente, n’est jamais reposé\u00a0; un suffixe différent ou chiffré est laissé à l’éditeur.</p><p><b>Rien n’est enregistré</b>\u00a0: les numéros posés sont entourés en turquoise sur la carte (même fenêtre fermée) et marqués ✚ dans la voie\u00a0; relisez-les, puis enregistrez ou annulez avec WME.</p><p><b>Quota</b>\u00a0: 150 numéros par heure glissante. Un numéro est réservé à l’ajout, puis compté s’il se retrouve sur le serveur après l’enregistrement\u00a0; retiré ou modifié avant, il est rendu. Les numéros saisis à la main ne comptent jamais. Une fois enregistrés, ils passent en «\u00a0trouvés\u00a0» sans relancer l’analyse\u00a0; un balayage gardé plus ancien le signale («\u00a0relancez\u00a0»).</p><p><b>Hors agglomération</b>\u00a0: sur un segment dont le nom principal n’a pas de ville et qui porte le nom BAN avec la commune en alternatif, l’adresse devient un <b>POI résidentiel (RPP)</b> — même conversion que le ⚡ de WME Naming Auditor\u00a0: POI créé à la place du numéro, son adresse, le point d’entrée du numéro repris, numéro retiré\u00a0; une étape qui échoue est défaite. Le bouton donne alors les deux comptes, numéros et RPP\u00a0; les RPP comptent au quota.</p>',
+            hHnB: '<p>Réservé aux éditeurs <b>L6</b>. Dans la ligne dépliée d’une voie, <i>Ajouter les numéros</i> pose dans WME ses adresses manquantes — <b>voie par voie</b>, jamais pour toute la commune. Pour un seul numéro\u00a0: le «\u00a0+\u00a0» de sa pastille (au survol), ou un clic sur son point de la carte.</p><p><b>Conditions</b>\u00a0: le nom principal des segments est exactement celui de la BAN (seuls les accents, la casse, les apostrophes et les espaces sont tolérés) et leur ville est la commune ou «\u00a0Village (Commune)\u00a0». Chaque numéro va au segment admis le plus proche (80\u00a0m au plus)\u00a0; un numéro déjà présent, même en attente, n’est jamais reposé\u00a0; un suffixe différent ou chiffré est laissé à l’éditeur.</p><p><b>Rien n’est enregistré</b>\u00a0: les numéros posés sont entourés en turquoise sur la carte (même fenêtre fermée) et marqués ✚ dans la voie\u00a0; relisez-les, puis enregistrez ou annulez avec WME.</p><p><b>Quota</b>\u00a0: 150 numéros par heure glissante. Un numéro est réservé à l’ajout, puis compté s’il se retrouve sur le serveur après l’enregistrement\u00a0; retiré ou modifié avant, il est rendu. Les numéros saisis à la main ne comptent jamais. Une fois enregistrés, ils passent en «\u00a0trouvés\u00a0» sans relancer l’analyse\u00a0; un balayage gardé plus ancien le signale («\u00a0relancez\u00a0»).</p><p><b>Hors agglomération</b>\u00a0: sur un segment dont le nom principal n’a pas de ville et qui porte le nom BAN avec la commune en alternatif, l’adresse devient un <b>POI résidentiel (RPP)</b> — même conversion que le ⚡ de WME Naming Auditor\u00a0: POI créé à la place du numéro, son adresse, le point d’entrée du numéro repris, numéro retiré\u00a0; une étape qui échoue est défaite. Le bouton donne alors les deux comptes, numéros et RPP\u00a0; les RPP comptent au quota.</p><p><b>RPP → numéro</b>\u00a0: dans la voie dépliée, les RPP de la voie ont leurs pastilles\u00a0; au survol, «\u00a0⇄\u00a0» remplace UN RPP par un numéro sur le segment, en écart franc seulement (comme WME Naming Auditor)\u00a0: même numéro déjà posé sur la rue à moins de 150\u00a0m (le RPP fait doublon et il est simplement retiré), ou point d’accès — à défaut, position — le long de sa propre rue sans autre voie à moins de 10\u00a0m. Un point d’accès qui donne sur une autre voie prouve que le RPP est légitime\u00a0: il reste. Refusé si le RPP a un nom ou une photo, une autre ville ou une autre rue. Même quota\u00a0; rien n’est enregistré.</p>',
             ajHnQuotaTip: 'Heure glissante\u00a0: un numéro compte pendant une heure à partir de son ajout. Seuls les numéros posés par ce bouton et réellement enregistrés sont comptés.',
             ajHnLeft: n => 'Quota\xa0: ' + n + (un(n) ? ' restant' : ' restants') + ' dans l’heure',
             ajHnFull: h => 'Quota atteint — prochain ajout à ' + h,
@@ -887,6 +921,23 @@
             ajRppCritDbl: n => 'Adresse ' + n + ' DOPPELT (Hausnummer + RPP)',
             ajHnSansAlt: (r, c) => 'Einige Segmente außerorts tragen „' + r + '“ ohne Stadt, aber ohne den Alternativnamen „' + r + ' / ' + c + '“: dort wird kein RPP gesetzt, solange er fehlt.',
             ajHnSansAltRoute: (r, c) => 'Einige Segmente außerorts haben eine Straßennummer als Hauptnamen, ohne Stadt, aber nicht den Alternativnamen „' + r + ' / ' + c + '“: dort wird kein RPP gesetzt, solange er fehlt.',
+            rhnT: n => 'RPP dieser Straße (' + n + ')',
+            rhnTip: 'RPP auf der Karte zeigen. Beim Überfahren ersetzt „⇄“ ihn durch eine Segmentnummer, wenn der Fall eindeutig ist.',
+            rhnConv: 'Diesen RPP durch eine Nummer ersetzen',
+            rhnConvTip: 'Nur L6: ersetzt innerorts diesen RPP durch eine Nummer am Segment — nur in eindeutigen Fällen (gleiche Nummer schon an der Straße, oder Zugangspunkt / Lage an der eigenen Straße, wie WME Naming Auditor). Abgelehnt, wenn der RPP einen Namen oder ein Foto hat. Zählt zum Kontingent; nichts wird gespeichert.',
+            rhnDone: (n, q) => 'RPP Nr. ' + n + ' durch eine Nummer am Segment ersetzt — prüfen, dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'Nr. ' + n + ' war schon an der Straße: der doppelte RPP wird entfernt — prüfen, dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
+            rhnNotFound: 'RPP an dieser Stelle in WME nicht gefunden (seit der Analyse verschoben, geändert oder gelöscht?): Analyse neu starten.',
+            rhnNamed: 'Dieser RPP hat einen Namen: er wird nicht umgewandelt (von Hand prüfen).',
+            rhnPhoto: 'Dieser RPP hat ein Foto: er wird nicht umgewandelt (jemand war vor Ort; von Hand prüfen).',
+            rhnCity: v => 'Dieser RPP gehört zu „' + v + '“, nicht zur Gemeinde: er wird nicht umgewandelt.',
+            rhnStreet: r => 'Dieser RPP trägt die Straße „' + r + '“, nicht den BAN-Namen der Straße: er wird nicht umgewandelt.',
+            rhnNoSeg: 'Kein Segment der Straße (BAN-Name als Hauptname, Gemeinde als Stadt) innerhalb von 80 m: der RPP liegt wohl außerorts, er bleibt.',
+            rhnLegit: v => 'Der Zugangspunkt des RPP führt auf „' + v + '“, nicht auf seine Straße: der RPP drückt einen Versatz aus, den eine Segmentnummer nicht kann, er bleibt.',
+            rhnUnsure: 'Nichts Eindeutiges (andere Straße gleich nah, oder zu weit von jeder Straße): der RPP bleibt, von Hand prüfen.',
+            rhnFormat: n => 'Die Nummer „' + n + '“ ist nicht wie eine Segmentnummer geschrieben: von Hand prüfen.',
+            rhnErr: m => 'Ersetzen abgebrochen: ' + m,
+            rhnPoseTip: 'Durch eine Nummer ersetzt (noch nicht gespeichert).',
             ajHnSkip: n => n + (un1(n) ? ' Adresse übersprungen' : ' Adressen übersprungen') + ' (Details in der Konsole).',
             ajHnNoSeg: 'Kein geladenes Segment trägt genau diesen Namen als Hauptnamen mit der Gemeinde als Stadt: nichts wurde gesetzt.',
             ajHnErr: m => 'Hinzufügen abgebrochen: ' + m,
@@ -896,7 +947,7 @@
             ajHnSaved: (c, r, q) => 'Gespeichert: ' + c + (un1(c) ? ' Nummer gezählt' : ' Nummern gezählt') + ', ' + r + ' dem Kontingent zurückgegeben (vor dem Speichern entfernt). Verbleibendes Kontingent: ' + q + '.',
             ajHnSavedTip: 'Von WBC gesetzt und gespeichert.',
             hHnT: 'Hausnummern hinzufügen (L6)',
-            hHnB: '<p>Nur für <b>L6</b>-Editoren. In der aufgeklappten Zeile einer Straße setzt <i>Hausnummern hinzufügen</i> ihre fehlenden Adressen im WME — <b>Straße für Straße</b>, nie für eine ganze Gemeinde. Für eine einzelne Nummer: das „+“ an ihrem Feld (beim Überfahren) oder ein Klick auf ihren Punkt auf der Karte.</p><p><b>Bedingungen</b>: der Hauptname der Segmente ist genau der BAN-Name (nur Akzente, Groß-/Kleinschreibung, Apostrophe und Leerzeichen werden toleriert) und ihre Stadt ist die Gemeinde oder „Ortsteil (Gemeinde)“. Jede Nummer kommt auf das nächste zugelassene Segment (höchstens 80 m); eine schon vorhandene Nummer, auch ungespeichert, wird nie erneut gesetzt; ein abweichender oder numerischer Zusatz bleibt dem Editor überlassen.</p><p><b>Nichts wird gespeichert</b>: gesetzte Nummern sind auf der Karte türkis eingekreist (auch bei geschlossenem Fenster) und in der Straße mit ✚ markiert; prüfen, dann im WME speichern oder rückgängig machen.</p><p><b>Kontingent</b>: 150 Nummern pro gleitender Stunde. Eine Nummer wird beim Setzen reserviert und gezählt, wenn sie nach dem Speichern auf dem Server steht; vorher entfernt oder geändert, wird sie zurückgegeben. Von Hand eingegebene Nummern zählen nie. Gespeichert gelten sie als „gefunden“, ohne neue Analyse; ein älterer gespeicherter Scan weist darauf hin („neu starten“).</p><p><b>Außerorts</b>: Auf einem Segment, dessen Hauptname keine Stadt hat und das den BAN-Namen mit der Gemeinde als Alternativnamen trägt, wird die Adresse zu einem <b>Wohnort-POI (RPP)</b> — gleiche Umwandlung wie das ⚡ von WME Naming Auditor: POI an der Stelle der Nummer, seine Adresse, Einfahrtspunkt der Nummer übernommen, Nummer entfernt; ein fehlgeschlagener Schritt wird rückgängig gemacht. Die Schaltfläche zeigt dann beide Zahlen, Nummern und RPP; RPP zählen zum Kontingent.</p>',
+            hHnB: '<p>Nur für <b>L6</b>-Editoren. In der aufgeklappten Zeile einer Straße setzt <i>Hausnummern hinzufügen</i> ihre fehlenden Adressen im WME — <b>Straße für Straße</b>, nie für eine ganze Gemeinde. Für eine einzelne Nummer: das „+“ an ihrem Feld (beim Überfahren) oder ein Klick auf ihren Punkt auf der Karte.</p><p><b>Bedingungen</b>: der Hauptname der Segmente ist genau der BAN-Name (nur Akzente, Groß-/Kleinschreibung, Apostrophe und Leerzeichen werden toleriert) und ihre Stadt ist die Gemeinde oder „Ortsteil (Gemeinde)“. Jede Nummer kommt auf das nächste zugelassene Segment (höchstens 80 m); eine schon vorhandene Nummer, auch ungespeichert, wird nie erneut gesetzt; ein abweichender oder numerischer Zusatz bleibt dem Editor überlassen.</p><p><b>Nichts wird gespeichert</b>: gesetzte Nummern sind auf der Karte türkis eingekreist (auch bei geschlossenem Fenster) und in der Straße mit ✚ markiert; prüfen, dann im WME speichern oder rückgängig machen.</p><p><b>Kontingent</b>: 150 Nummern pro gleitender Stunde. Eine Nummer wird beim Setzen reserviert und gezählt, wenn sie nach dem Speichern auf dem Server steht; vorher entfernt oder geändert, wird sie zurückgegeben. Von Hand eingegebene Nummern zählen nie. Gespeichert gelten sie als „gefunden“, ohne neue Analyse; ein älterer gespeicherter Scan weist darauf hin („neu starten“).</p><p><b>Außerorts</b>: Auf einem Segment, dessen Hauptname keine Stadt hat und das den BAN-Namen mit der Gemeinde als Alternativnamen trägt, wird die Adresse zu einem <b>Wohnort-POI (RPP)</b> — gleiche Umwandlung wie das ⚡ von WME Naming Auditor: POI an der Stelle der Nummer, seine Adresse, Einfahrtspunkt der Nummer übernommen, Nummer entfernt; ein fehlgeschlagener Schritt wird rückgängig gemacht. Die Schaltfläche zeigt dann beide Zahlen, Nummern und RPP; RPP zählen zum Kontingent.</p><p><b>RPP → Nummer</b>: In der aufgeklappten Straße haben die RPP der Straße eigene Felder; beim Überfahren ersetzt „⇄“ EINEN RPP durch eine Nummer am Segment, nur in eindeutigen Fällen (wie WME Naming Auditor): gleiche Nummer schon an der Straße innerhalb von 150 m (der RPP ist doppelt und wird einfach entfernt), oder Zugangspunkt — sonst Lage — an der eigenen Straße ohne andere Straße innerhalb von 10 m. Ein Zugangspunkt zu einer anderen Straße beweist, dass der RPP berechtigt ist: er bleibt. Abgelehnt bei Name oder Foto, anderer Stadt oder anderer Straße. Gleiches Kontingent; nichts wird gespeichert.</p>',
             ajHnQuotaTip: 'Gleitende Stunde: eine Nummer zählt eine Stunde ab dem Setzen. Gezählt werden nur mit dieser Schaltfläche gesetzte und tatsächlich gespeicherte Nummern.',
             ajHnLeft: n => 'Kontingent: ' + n + ' übrig in dieser Stunde',
             ajHnFull: h => 'Kontingent erreicht — nächstes Hinzufügen um ' + h,
@@ -1166,6 +1217,23 @@
             ajRppCritDbl: n => 'dirección ' + n + ' DUPLICADA (número + RPP)',
             ajHnSansAlt: (r, c) => 'Algunos segmentos fuera de poblado llevan «' + r + '» sin ciudad pero no el alternativo «' + r + ' / ' + c + '»: no se coloca ningún RPP mientras falte.',
             ajHnSansAltRoute: (r, c) => 'Algunos segmentos fuera de poblado tienen un número de carretera como nombre principal, sin ciudad, pero no el alternativo «' + r + ' / ' + c + '»: no se coloca ningún RPP mientras falte.',
+            rhnT: n => 'RPP de esta calle (' + n + ')',
+            rhnTip: 'Mostrar el RPP en el mapa. Al pasar el ratón, «⇄» lo sustituye por un número del segmento cuando el caso es claro.',
+            rhnConv: 'Sustituir este RPP por un número',
+            rhnConvTip: 'Solo L6: en zona urbana, sustituye este RPP por un número en el segmento — solo en casos claros (mismo número ya en la calle, o punto de acceso / posición junto a su propia calle, como WME Naming Auditor). Rechazado si el RPP tiene nombre o foto. Cuenta en la cuota; no se guarda nada.',
+            rhnDone: (n, q) => 'RPP n.º ' + n + ' sustituido por un número en el segmento — compruébelo y luego guarde en WME. Cuota restante: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'El n.º ' + n + ' ya estaba en la calle: se retira el RPP duplicado — compruebe y luego guarde en WME. Cuota restante: ' + q + '.',
+            rhnNotFound: 'RPP no encontrado en WME en este lugar (¿movido, modificado o borrado desde el análisis?): vuelva a analizar.',
+            rhnNamed: 'Este RPP tiene nombre: no se convierte (a revisar a mano).',
+            rhnPhoto: 'Este RPP tiene una foto: no se convierte (alguien estuvo allí; a revisar a mano).',
+            rhnCity: v => 'Este RPP pertenece a «' + v + '», no al municipio: no se convierte.',
+            rhnStreet: r => 'Este RPP lleva la calle «' + r + '», no el nombre BAN de la calle: no se convierte.',
+            rhnNoSeg: 'Ningún segmento de la calle (nombre BAN como principal, municipio como ciudad) a menos de 80 m: el RPP está sin duda fuera de poblado, se queda.',
+            rhnLegit: v => 'El punto de acceso del RPP da a «' + v + '», no a su calle: el RPP expresa un desfase que un número de segmento no puede, se queda.',
+            rhnUnsure: 'Nada claro (otra calle igual de cerca, o demasiado lejos de toda calle): el RPP se queda, a revisar a mano.',
+            rhnFormat: n => 'El número «' + n + '» no se escribe como un número de segmento: a revisar a mano.',
+            rhnErr: m => 'Sustitución interrumpida: ' + m,
+            rhnPoseTip: 'Sustituido por un número (aún sin guardar).',
             ajHnSkip: n => n + (un1(n) ? ' dirección descartada' : ' direcciones descartadas') + ' (detalle en la consola).',
             ajHnNoSeg: 'Ningún segmento cargado lleva exactamente este nombre como nombre principal con el municipio como ciudad: no se ha colocado nada.',
             ajHnErr: m => 'Adición interrumpida: ' + m,
@@ -1175,7 +1243,7 @@
             ajHnSaved: (c, r, q) => 'Guardado: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devueltos a la cuota (retirados antes de guardar). Cuota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado por WBC y guardado.',
             hHnT: 'Añadir los números (L6)',
-            hHnB: '<p>Reservado a los editores <b>L6</b>. En la fila desplegada de una calle, <i>Añadir los números</i> coloca en WME sus direcciones que faltan — <b>calle por calle</b>, nunca para todo el municipio. Para un solo número: el «+» de su etiqueta (al pasar el ratón) o un clic en su punto del mapa.</p><p><b>Condiciones</b>: el nombre principal de los segmentos es exactamente el de la BAN (solo se toleran acentos, mayúsculas, apóstrofos y espacios) y su ciudad es el municipio o «Pueblo (Municipio)». Cada número va al segmento admitido más cercano (80 m como máximo); un número ya presente, incluso pendiente, nunca se vuelve a colocar; un sufijo distinto o numérico se deja al editor.</p><p><b>No se guarda nada</b>: los números colocados aparecen rodeados en turquesa en el mapa (incluso con la ventana cerrada) y marcados con ✚ en la calle; revíselos y luego guarde o deshaga en WME.</p><p><b>Cuota</b>: 150 números por hora móvil. Un número se reserva al colocarlo y se cuenta si aparece en el servidor tras guardar; retirado o modificado antes, se devuelve. Los números escritos a mano nunca cuentan. Una vez guardados, pasan a «encontrados» sin volver a analizar; un análisis guardado más antiguo lo indica («relance»).</p><p><b>Fuera de poblado</b>: en un segmento cuyo nombre principal no tiene ciudad y que lleva el nombre BAN con el municipio como alternativo, la dirección se convierte en un <b>lugar residencial (RPP)</b> — misma conversión que el ⚡ de WME Naming Auditor: lugar creado en el número, su dirección, el punto de entrada del número conservado, número retirado; un paso fallido se deshace. El botón muestra entonces ambos recuentos, números y RPP; los RPP cuentan en la cuota.</p>',
+            hHnB: '<p>Reservado a los editores <b>L6</b>. En la fila desplegada de una calle, <i>Añadir los números</i> coloca en WME sus direcciones que faltan — <b>calle por calle</b>, nunca para todo el municipio. Para un solo número: el «+» de su etiqueta (al pasar el ratón) o un clic en su punto del mapa.</p><p><b>Condiciones</b>: el nombre principal de los segmentos es exactamente el de la BAN (solo se toleran acentos, mayúsculas, apóstrofos y espacios) y su ciudad es el municipio o «Pueblo (Municipio)». Cada número va al segmento admitido más cercano (80 m como máximo); un número ya presente, incluso pendiente, nunca se vuelve a colocar; un sufijo distinto o numérico se deja al editor.</p><p><b>No se guarda nada</b>: los números colocados aparecen rodeados en turquesa en el mapa (incluso con la ventana cerrada) y marcados con ✚ en la calle; revíselos y luego guarde o deshaga en WME.</p><p><b>Cuota</b>: 150 números por hora móvil. Un número se reserva al colocarlo y se cuenta si aparece en el servidor tras guardar; retirado o modificado antes, se devuelve. Los números escritos a mano nunca cuentan. Una vez guardados, pasan a «encontrados» sin volver a analizar; un análisis guardado más antiguo lo indica («relance»).</p><p><b>Fuera de poblado</b>: en un segmento cuyo nombre principal no tiene ciudad y que lleva el nombre BAN con el municipio como alternativo, la dirección se convierte en un <b>lugar residencial (RPP)</b> — misma conversión que el ⚡ de WME Naming Auditor: lugar creado en el número, su dirección, el punto de entrada del número conservado, número retirado; un paso fallido se deshace. El botón muestra entonces ambos recuentos, números y RPP; los RPP cuentan en la cuota.</p><p><b>RPP → número</b>: en la calle desplegada, los RPP de la calle tienen sus etiquetas; al pasar el ratón, «⇄» sustituye UN RPP por un número en el segmento, solo en casos claros (como WME Naming Auditor): mismo número ya en la calle a menos de 150 m (el RPP está duplicado y simplemente se retira), o punto de acceso — si no, posición — junto a su propia calle sin otra calle a menos de 10 m. Un punto de acceso que da a otra calle prueba que el RPP es legítimo: se queda. Rechazado si el RPP tiene nombre o foto, otra ciudad u otra calle. Misma cuota; no se guarda nada.</p>',
             ajHnQuotaTip: 'Hora móvil: un número cuenta durante una hora desde que se coloca. Solo se cuentan los números colocados con este botón y guardados de verdad.',
             ajHnLeft: n => 'Cuota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' en esta hora',
             ajHnFull: h => 'Cuota alcanzada — próxima adición a las ' + h,
@@ -1445,6 +1513,23 @@
             ajRppCritDbl: n => 'indirizzo ' + n + ' DOPPIO (numero + RPP)',
             ajHnSansAlt: (r, c) => 'Alcuni segmenti fuori dal centro abitato portano «' + r + '» senza città ma non l’alternativo «' + r + ' / ' + c + '»: nessun RPP viene inserito finché manca.',
             ajHnSansAltRoute: (r, c) => 'Alcuni segmenti fuori dal centro abitato hanno un numero di strada come nome principale, senza città, ma non l’alternativo «' + r + ' / ' + c + '»: nessun RPP vi viene inserito finché manca.',
+            rhnT: n => 'RPP di questa via (' + n + ')',
+            rhnTip: 'Mostra l’RPP sulla mappa. Al passaggio del mouse, «⇄» lo sostituisce con un numero del segmento quando il caso è netto.',
+            rhnConv: 'Sostituisci questo RPP con un numero',
+            rhnConvTip: 'Solo L6: in centro abitato, sostituisce questo RPP con un numero sul segmento — solo nei casi netti (stesso numero già sulla via, o punto di accesso / posizione lungo la propria via, come WME Naming Auditor). Rifiutato se l’RPP ha un nome o una foto. Conta nella quota; niente viene salvato.',
+            rhnDone: (n, q) => 'RPP n. ' + n + ' sostituito con un numero sul segmento — controllalo, poi salva in WME. Quota residua: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'Il n. ' + n + ' era già sulla via: l’RPP doppio viene rimosso — controlla, poi salva in WME. Quota residua: ' + q + '.',
+            rhnNotFound: 'RPP non trovato in WME in questo punto (spostato, modificato o cancellato dopo l’analisi?): rilancia l’analisi.',
+            rhnNamed: 'Questo RPP ha un nome: non viene convertito (da vedere a mano).',
+            rhnPhoto: 'Questo RPP ha una foto: non viene convertito (qualcuno è venuto sul posto; da vedere a mano).',
+            rhnCity: v => 'Questo RPP appartiene a «' + v + '», non al comune: non viene convertito.',
+            rhnStreet: r => 'Questo RPP porta la via «' + r + '», non il nome BAN della via: non viene convertito.',
+            rhnNoSeg: 'Nessun segmento della via (nome BAN come principale, comune come città) entro 80 m: l’RPP è probabilmente fuori dal centro abitato, resta.',
+            rhnLegit: v => 'Il punto di accesso dell’RPP dà su «' + v + '», non sulla sua via: l’RPP esprime uno scarto che un numero di segmento non può, resta.',
+            rhnUnsure: 'Niente di netto (un’altra via altrettanto vicina, o troppo lontano da ogni via): l’RPP resta, da vedere a mano.',
+            rhnFormat: n => 'Il numero «' + n + '» non si scrive come un numero di segmento: da vedere a mano.',
+            rhnErr: m => 'Sostituzione interrotta: ' + m,
+            rhnPoseTip: 'Sostituito con un numero (non ancora salvato).',
             ajHnSkip: n => n + (un1(n) ? ' indirizzo scartato' : ' indirizzi scartati') + ' (dettagli nella console).',
             ajHnNoSeg: 'Nessun segmento caricato porta esattamente questo nome come nome principale con il comune come città: non è stato inserito nulla.',
             ajHnErr: m => 'Aggiunta interrotta: ' + m,
@@ -1454,7 +1539,7 @@
             ajHnSaved: (c, r, q) => 'Salvataggio: ' + c + (un1(c) ? ' numero contato' : ' numeri contati') + ', ' + r + ' restituiti alla quota (rimossi prima del salvataggio). Quota residua: ' + q + '.',
             ajHnSavedTip: 'Inserito da WBC e salvato.',
             hHnT: 'Aggiungere i numeri (L6)',
-            hHnB: '<p>Riservato agli editor <b>L6</b>. Nella riga aperta di una via, <i>Aggiungi i numeri</i> inserisce in WME i suoi indirizzi mancanti — <b>via per via</b>, mai per un intero comune. Per un solo numero: il «+» della sua etichetta (al passaggio del mouse) o un clic sul suo punto sulla mappa.</p><p><b>Condizioni</b>: il nome principale dei segmenti è esattamente quello della BAN (sono tollerati solo accenti, maiuscole, apostrofi e spazi) e la loro città è il comune o «Frazione (Comune)». Ogni numero va al segmento ammesso più vicino (al massimo 80 m); un numero già presente, anche in attesa, non viene mai reinserito; un suffisso diverso o numerico è lasciato all’editor.</p><p><b>Niente viene salvato</b>: i numeri inseriti sono cerchiati in turchese sulla mappa (anche a finestra chiusa) e segnati con ✚ nella via; controllali, poi salva o annulla in WME.</p><p><b>Quota</b>: 150 numeri per ora mobile. Un numero è riservato quando viene inserito e contato se si trova sul server dopo il salvataggio; rimosso o modificato prima, viene restituito. I numeri inseriti a mano non contano mai. Una volta salvati, risultano «trovati» senza rilanciare l’analisi; un’analisi salvata più vecchia lo segnala («rilancia»).</p><p><b>Fuori dal centro abitato</b>: su un segmento il cui nome principale non ha città e che porta il nome BAN con il comune come alternativo, l’indirizzo diventa un <b>luogo residenziale (RPP)</b> — stessa conversione del ⚡ di WME Naming Auditor: luogo creato al posto del numero, il suo indirizzo, il punto d’ingresso del numero ripreso, numero rimosso; un passaggio fallito viene annullato. Il pulsante mostra allora i due conteggi, numeri e RPP; gli RPP contano nella quota.</p>',
+            hHnB: '<p>Riservato agli editor <b>L6</b>. Nella riga aperta di una via, <i>Aggiungi i numeri</i> inserisce in WME i suoi indirizzi mancanti — <b>via per via</b>, mai per un intero comune. Per un solo numero: il «+» della sua etichetta (al passaggio del mouse) o un clic sul suo punto sulla mappa.</p><p><b>Condizioni</b>: il nome principale dei segmenti è esattamente quello della BAN (sono tollerati solo accenti, maiuscole, apostrofi e spazi) e la loro città è il comune o «Frazione (Comune)». Ogni numero va al segmento ammesso più vicino (al massimo 80 m); un numero già presente, anche in attesa, non viene mai reinserito; un suffisso diverso o numerico è lasciato all’editor.</p><p><b>Niente viene salvato</b>: i numeri inseriti sono cerchiati in turchese sulla mappa (anche a finestra chiusa) e segnati con ✚ nella via; controllali, poi salva o annulla in WME.</p><p><b>Quota</b>: 150 numeri per ora mobile. Un numero è riservato quando viene inserito e contato se si trova sul server dopo il salvataggio; rimosso o modificato prima, viene restituito. I numeri inseriti a mano non contano mai. Una volta salvati, risultano «trovati» senza rilanciare l’analisi; un’analisi salvata più vecchia lo segnala («rilancia»).</p><p><b>Fuori dal centro abitato</b>: su un segmento il cui nome principale non ha città e che porta il nome BAN con il comune come alternativo, l’indirizzo diventa un <b>luogo residenziale (RPP)</b> — stessa conversione del ⚡ di WME Naming Auditor: luogo creato al posto del numero, il suo indirizzo, il punto d’ingresso del numero ripreso, numero rimosso; un passaggio fallito viene annullato. Il pulsante mostra allora i due conteggi, numeri e RPP; gli RPP contano nella quota.</p><p><b>RPP → numero</b>: nella via aperta, gli RPP della via hanno le loro etichette; al passaggio del mouse, «⇄» sostituisce UN RPP con un numero sul segmento, solo nei casi netti (come WME Naming Auditor): stesso numero già sulla via entro 150 m (l’RPP è doppio e viene semplicemente rimosso), o punto di accesso — altrimenti posizione — lungo la propria via senza altre vie entro 10 m. Un punto di accesso su un’altra via prova che l’RPP è legittimo: resta. Rifiutato se l’RPP ha un nome o una foto, un’altra città o un’altra via. Stessa quota; niente viene salvato.</p>',
             ajHnQuotaTip: 'Ora mobile: un numero conta per un’ora da quando è inserito. Sono contati solo i numeri inseriti con questo pulsante e salvati davvero.',
             ajHnLeft: n => 'Quota: ' + n + ' rimanenti in quest’ora',
             ajHnFull: h => 'Quota raggiunta — prossima aggiunta alle ' + h,
@@ -1724,6 +1809,23 @@
             ajRppCritDbl: n => 'endereço ' + n + ' em DUPLICIDADE (número + RPP)',
             ajHnSansAlt: (r, c) => 'Alguns segmentos fora da área urbana têm “' + r + '” sem cidade, mas não o alternativo “' + r + ' / ' + c + '”: nenhum RPP é colocado enquanto ele faltar.',
             ajHnSansAltRoute: (r, c) => 'Alguns segmentos fora da área urbana têm um número de rodovia como nome principal, sem cidade, mas não o alternativo “' + r + ' / ' + c + '”: nenhum RPP é colocado ali enquanto faltar.',
+            rhnT: n => 'RPP desta rua (' + n + ')',
+            rhnTip: 'Mostrar o RPP no mapa. Ao passar o mouse, “⇄” o substitui por um número do segmento quando o caso é claro.',
+            rhnConv: 'Substituir este RPP por um número',
+            rhnConvTip: 'Somente L6: em área urbana, substitui este RPP por um número no segmento — só em casos claros (mesmo número já na rua, ou ponto de acesso / posição ao longo da própria rua, como o WME Naming Auditor). Recusado se o RPP tiver nome ou foto. Conta na cota; nada é salvo.',
+            rhnDone: (n, q) => 'RPP nº ' + n + ' substituído por um número no segmento — confira e depois salve no WME. Cota restante: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'O nº ' + n + ' já estava na rua: o RPP duplicado é removido — confira e depois salve no WME. Cota restante: ' + q + '.',
+            rhnNotFound: 'RPP não encontrado no WME neste local (movido, alterado ou excluído desde a análise?): rode a análise de novo.',
+            rhnNamed: 'Este RPP tem nome: não é convertido (verificar à mão).',
+            rhnPhoto: 'Este RPP tem foto: não é convertido (alguém esteve no local; verificar à mão).',
+            rhnCity: v => 'Este RPP pertence a “' + v + '”, não ao município: não é convertido.',
+            rhnStreet: r => 'Este RPP tem a rua “' + r + '”, não o nome BAN da rua: não é convertido.',
+            rhnNoSeg: 'Nenhum segmento da rua (nome BAN como principal, município como cidade) a menos de 80 m: o RPP está provavelmente fora da área urbana, fica.',
+            rhnLegit: v => 'O ponto de acesso do RPP dá para “' + v + '”, não para a sua rua: o RPP expressa um deslocamento que um número de segmento não consegue, fica.',
+            rhnUnsure: 'Nada claro (outra rua tão perto quanto, ou longe demais de qualquer rua): o RPP fica, verificar à mão.',
+            rhnFormat: n => 'O número “' + n + '” não se escreve como um número de segmento: verificar à mão.',
+            rhnErr: m => 'Substituição interrompida: ' + m,
+            rhnPoseTip: 'Substituído por um número (ainda não salvo).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes no console).',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
             ajHnErr: m => 'Adição interrompida: ' + m,
@@ -1733,7 +1835,7 @@
             ajHnSaved: (c, r, q) => 'Salvamento: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à cota (removidos antes de salvar). Cota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e salvo.',
             hHnT: 'Adicionar os números (L6)',
-            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços que faltam — <b>rua por rua</b>, nunca para o município inteiro. Para um só número: o “+” da sua etiqueta (ao passar o mouse) ou um clique no seu ponto no mapa.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou “Vila (Município)”. Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é salvo</b>: os números colocados aparecem circulados em turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; confira e depois salve ou desfaça no WME.</p><p><b>Cota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor após salvar; retirado ou alterado antes, ele é devolvido. Números digitados à mão nunca contam. Depois de salvos, passam a «encontrados» sem refazer a análise; uma varredura guardada mais antiga avisa («refaça»).</p><p><b>Fora da área urbana</b>: num segmento cujo nome principal não tem cidade e que leva o nome BAN com o município como alternativo, o endereço vira um <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, seu endereço, ponto de entrada do número mantido, número removido; uma etapa que falha é desfeita. O botão mostra então as duas contagens, números e RPP; os RPP contam na cota.</p>',
+            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços que faltam — <b>rua por rua</b>, nunca para o município inteiro. Para um só número: o “+” da sua etiqueta (ao passar o mouse) ou um clique no seu ponto no mapa.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou “Vila (Município)”. Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é salvo</b>: os números colocados aparecem circulados em turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; confira e depois salve ou desfaça no WME.</p><p><b>Cota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor após salvar; retirado ou alterado antes, ele é devolvido. Números digitados à mão nunca contam. Depois de salvos, passam a «encontrados» sem refazer a análise; uma varredura guardada mais antiga avisa («refaça»).</p><p><b>Fora da área urbana</b>: num segmento cujo nome principal não tem cidade e que leva o nome BAN com o município como alternativo, o endereço vira um <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, seu endereço, ponto de entrada do número mantido, número removido; uma etapa que falha é desfeita. O botão mostra então as duas contagens, números e RPP; os RPP contam na cota.</p><p><b>RPP → número</b>: na rua aberta, os RPP da rua têm suas etiquetas; ao passar o mouse, “⇄” substitui UM RPP por um número no segmento, só em casos claros (como o WME Naming Auditor): mesmo número já na rua a menos de 150 m (o RPP é duplicado e simplesmente removido), ou ponto de acesso — senão, posição — ao longo da própria rua sem outra rua a menos de 10 m. Um ponto de acesso para outra rua prova que o RPP é legítimo: ele fica. Recusado se o RPP tiver nome ou foto, outra cidade ou outra rua. Mesma cota; nada é salvo.</p>',
             ajHnQuotaTip: 'Hora móvel: um número conta durante uma hora a partir de quando é colocado. Só contam os números colocados por este botão e realmente salvos.',
             ajHnLeft: n => 'Cota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' nesta hora',
             ajHnFull: h => 'Cota atingida — próxima adição às ' + h,
@@ -2003,6 +2105,23 @@
             ajRppCritDbl: n => 'morada ' + n + ' em DUPLICADO (número + RPP)',
             ajHnSansAlt: (r, c) => 'Alguns segmentos fora da localidade têm «' + r + '» sem cidade, mas não o alternativo «' + r + ' / ' + c + '»: nenhum RPP é colocado enquanto faltar.',
             ajHnSansAltRoute: (r, c) => 'Alguns segmentos fora da localidade têm um número de estrada como nome principal, sem localidade, mas não o alternativo «' + r + ' / ' + c + '»: nenhum RPP é colocado ali enquanto faltar.',
+            rhnT: n => 'RPP desta rua (' + n + ')',
+            rhnTip: 'Mostrar o RPP no mapa. Ao passar o rato, «⇄» substitui-o por um número do segmento quando o caso é claro.',
+            rhnConv: 'Substituir este RPP por um número',
+            rhnConvTip: 'Só L6: em localidade, substitui este RPP por um número no segmento — só em casos claros (mesmo número já na rua, ou ponto de acesso / posição ao longo da própria rua, como o WME Naming Auditor). Recusado se o RPP tiver nome ou fotografia. Conta na quota; nada é guardado.',
+            rhnDone: (n, q) => 'RPP n.º ' + n + ' substituído por um número no segmento — verifique e depois guarde no WME. Quota restante: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'O n.º ' + n + ' já estava na rua: o RPP duplicado é retirado — verifique e depois guarde no WME. Quota restante: ' + q + '.',
+            rhnNotFound: 'RPP não encontrado no WME neste local (movido, alterado ou apagado desde a análise?): volte a analisar.',
+            rhnNamed: 'Este RPP tem nome: não é convertido (verificar à mão).',
+            rhnPhoto: 'Este RPP tem fotografia: não é convertido (alguém esteve no local; verificar à mão).',
+            rhnCity: v => 'Este RPP pertence a «' + v + '», não ao município: não é convertido.',
+            rhnStreet: r => 'Este RPP tem a rua «' + r + '», não o nome BAN da rua: não é convertido.',
+            rhnNoSeg: 'Nenhum segmento da rua (nome BAN como principal, município como localidade) a menos de 80 m: o RPP está provavelmente fora da localidade, fica.',
+            rhnLegit: v => 'O ponto de acesso do RPP dá para «' + v + '», não para a sua rua: o RPP exprime um desvio que um número de segmento não consegue, fica.',
+            rhnUnsure: 'Nada claro (outra rua igualmente perto, ou demasiado longe de qualquer rua): o RPP fica, verificar à mão.',
+            rhnFormat: n => 'O número «' + n + '» não se escreve como um número de segmento: verificar à mão.',
+            rhnErr: m => 'Substituição interrompida: ' + m,
+            rhnPoseTip: 'Substituído por um número (ainda não guardado).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes na consola).',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
             ajHnErr: m => 'Adição interrompida: ' + m,
@@ -2012,7 +2131,7 @@
             ajHnSaved: (c, r, q) => 'Gravação: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à quota (retirados antes de guardar). Quota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e guardado.',
             hHnT: 'Adicionar os números (L6)',
-            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços em falta — <b>rua a rua</b>, nunca para o município inteiro. Para um só número: o «+» da sua etiqueta (ao passar o rato) ou um clique no seu ponto no mapa.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou «Aldeia (Município)». Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é guardado</b>: os números colocados aparecem rodeados a turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; verifique e depois guarde ou anule no WME.</p><p><b>Quota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor depois de guardar; retirado ou alterado antes, é devolvido. Números escritos à mão nunca contam. Depois de guardados, passam a «encontrados» sem voltar a analisar; uma análise guardada mais antiga avisa («volte a correr»).</p><p><b>Fora da localidade</b>: num segmento cujo nome principal não tem cidade e que tem o nome BAN com o município como alternativo, a morada passa a <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, a sua morada, ponto de entrada do número mantido, número retirado; um passo que falhe é desfeito. O botão mostra então as duas contagens, números e RPP; os RPP contam na quota.</p>',
+            hHnB: '<p>Reservado aos editores <b>L6</b>. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços em falta — <b>rua a rua</b>, nunca para o município inteiro. Para um só número: o «+» da sua etiqueta (ao passar o rato) ou um clique no seu ponto no mapa.</p><p><b>Condições</b>: o nome principal dos segmentos é exatamente o da BAN (só acentos, maiúsculas, apóstrofos e espaços são tolerados) e a cidade deles é o município ou «Aldeia (Município)». Cada número vai para o segmento admitido mais próximo (no máximo 80 m); um número já presente, mesmo pendente, nunca é recolocado; um sufixo diferente ou numérico fica para o editor.</p><p><b>Nada é guardado</b>: os números colocados aparecem rodeados a turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; verifique e depois guarde ou anule no WME.</p><p><b>Quota</b>: 150 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor depois de guardar; retirado ou alterado antes, é devolvido. Números escritos à mão nunca contam. Depois de guardados, passam a «encontrados» sem voltar a analisar; uma análise guardada mais antiga avisa («volte a correr»).</p><p><b>Fora da localidade</b>: num segmento cujo nome principal não tem cidade e que tem o nome BAN com o município como alternativo, a morada passa a <b>local residencial (RPP)</b> — mesma conversão do ⚡ do WME Naming Auditor: local criado no lugar do número, a sua morada, ponto de entrada do número mantido, número retirado; um passo que falhe é desfeito. O botão mostra então as duas contagens, números e RPP; os RPP contam na quota.</p><p><b>RPP → número</b>: na rua aberta, os RPP da rua têm as suas etiquetas; ao passar o rato, «⇄» substitui UM RPP por um número no segmento, só em casos claros (como o WME Naming Auditor): mesmo número já na rua a menos de 150 m (o RPP é duplicado e é simplesmente retirado), ou ponto de acesso — na falta dele, posição — ao longo da própria rua sem outra rua a menos de 10 m. Um ponto de acesso para outra rua prova que o RPP é legítimo: fica. Recusado se o RPP tiver nome ou fotografia, outra localidade ou outra rua. Mesma quota; nada é guardado.</p>',
             ajHnQuotaTip: 'Hora móvel: um número conta durante uma hora a partir de quando é colocado. Só contam os números colocados por este botão e realmente guardados.',
             ajHnLeft: n => 'Quota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' nesta hora',
             ajHnFull: h => 'Quota atingida — próxima adição às ' + h,
@@ -2282,6 +2401,23 @@
             ajRppCritDbl: n => 'כתובת ' + n + ' כפולה (מספר + RPP)',
             ajHnSansAlt: (r, c) => 'חלק מהמקטעים מחוץ ליישוב נושאים את «' + r + '» ללא עיר אך ללא השם החלופי «' + r + ' / ' + c + '»: לא יוצב שם RPP כל עוד הוא חסר.',
             ajHnSansAltRoute: (r, c) => 'לחלק מהמקטעים מחוץ לשטח הבנוי יש מספר כביש כשם ראשי, ללא עיר, אך אין להם השם החלופי „' + r + ' / ' + c + '”: לא יוצב שם RPP כל עוד הוא חסר.',
+            rhnT: n => 'RPP ברחוב הזה (' + n + ')',
+            rhnTip: 'הצגת ה־RPP במפה. במעבר העכבר, „⇄” מחליף אותו במספר על המקטע כשהמקרה חד־משמעי.',
+            rhnConv: 'החלפת ה־RPP הזה במספר',
+            rhnConvTip: 'ל־L6 בלבד: בשטח בנוי, מחליף את ה־RPP הזה במספר על המקטע — רק במקרים חד־משמעיים (אותו מספר כבר ברחוב, או נקודת גישה / מיקום לאורך הרחוב שלו, כמו WME Naming Auditor). נדחה אם ל־RPP יש שם או תמונה. נספר במכסה; דבר אינו נשמר.',
+            rhnDone: (n, q) => 'RPP מס׳ ' + n + ' הוחלף במספר על המקטע — יש לבדוק ואז לשמור ב-WME. יתרת המכסה: ' + q + '.',
+            rhnDoneDbl: (n, q) => 'מס׳ ' + n + ' כבר היה ברחוב: ה־RPP הכפול הוסר — יש לבדוק ואז לשמור ב-WME. יתרת המכסה: ' + q + '.',
+            rhnNotFound: 'ה־RPP לא נמצא ב־WME במקום הזה (הוזז, שונה או נמחק מאז הניתוח?): יש להריץ שוב את הניתוח.',
+            rhnNamed: 'ל־RPP הזה יש שם: הוא לא מומר (לבדיקה ידנית).',
+            rhnPhoto: 'ל־RPP הזה יש תמונה: הוא לא מומר (מישהו היה במקום; לבדיקה ידנית).',
+            rhnCity: v => 'ה־RPP הזה שייך ל„' + v + '”, לא לרשות: הוא לא מומר.',
+            rhnStreet: r => 'ה־RPP הזה נושא את הרחוב „' + r + '”, לא את שם ה־BAN של הרחוב: הוא לא מומר.',
+            rhnNoSeg: 'אין מקטע של הרחוב (שם BAN כשם ראשי, הרשות כעיר) בטווח 80 מ׳: ה־RPP כנראה מחוץ לשטח הבנוי, הוא נשאר.',
+            rhnLegit: v => 'נקודת הגישה של ה־RPP פונה אל „' + v + '”, לא אל הרחוב שלו: ה־RPP מבטא היסט שמספר על מקטע לא יכול לבטא, הוא נשאר.',
+            rhnUnsure: 'אין שום דבר חד־משמעי (רחוב אחר קרוב באותה מידה, או רחוק מדי מכל רחוב): ה־RPP נשאר, לבדיקה ידנית.',
+            rhnFormat: n => 'המספר „' + n + '” אינו כתוב כמו מספר על מקטע: לבדיקה ידנית.',
+            rhnErr: m => 'ההחלפה הופסקה: ' + m,
+            rhnPoseTip: 'הוחלף במספר (עדיין לא נשמר).',
             ajHnSkip: n => (un1(n) ? 'כתובת אחת דולגה' : n + ' כתובות דולגו') + ' (פרטים במסוף).',
             ajHnNoSeg: 'אף מקטע טעון אינו נושא בדיוק שם זה כשם ראשי עם הרשות כעיר: דבר לא הוצב.',
             ajHnErr: m => 'ההוספה הופסקה: ' + m,
@@ -2291,7 +2427,7 @@
             ajHnSaved: (c, r, q) => 'שמירה: ' + (un1(c) ? 'מספר אחד נספר' : c + ' מספרים נספרו') + ', ' + r + ' הוחזרו למכסה (הוסרו לפני השמירה). יתרת המכסה: ' + q + '.',
             ajHnSavedTip: 'הוצב על ידי WBC ונשמר.',
             hHnT: 'הוספת המספרים (L6)',
-            hHnB: '<p>שמור לעורכי <b>L6</b>. בשורה הפתוחה של רחוב, <i>הוספת המספרים</i> מציבה ב-WME את הכתובות החסרות שלו — <b>רחוב אחר רחוב</b>, לעולם לא לרשות שלמה. למספר בודד: ה־„+” שעל התווית שלו (במעבר העכבר), או לחיצה על הנקודה שלו במפה.</p><p><b>תנאים</b>: השם הראשי של המקטעים זהה בדיוק לשם ב-BAN (רק סימנים דיאקריטיים, אותיות רישיות, גרשים ורווחים נסבלים) והעיר שלהם היא הרשות או «כפר (רשות)». כל מספר מוצב על המקטע המותר הקרוב ביותר (80 מ׳ לכל היותר); מספר שכבר קיים, גם אם טרם נשמר, לעולם אינו מוצב שוב; סיומת שונה או מספרית נשארת לעורך.</p><p><b>דבר אינו נשמר</b>: המספרים שהוצבו מוקפים בטורקיז על המפה (גם כשהחלון סגור) ומסומנים ✚ ברחוב; יש לבדוק אותם ואז לשמור או לבטל ב-WME.</p><p><b>מכסה</b>: 150 מספרים בשעה נעה. מספר נשמר במכסה בעת ההצבה, ונספר אם הוא נמצא בשרת אחרי השמירה; אם הוסר או שונה לפני כן, הוא מוחזר. מספרים שהוקלדו ידנית לעולם אינם נספרים. לאחר השמירה הם עוברים ל«נמצאו» בלי להריץ שוב את הניתוח; סריקה שמורה ישנה יותר מציינת זאת («הרצה מחדש»).</p><p><b>מחוץ ליישוב</b>: על מקטע שלשמו הראשי אין עיר ושנושא את שם ה-BAN עם הרשות כשם חלופי, הכתובת הופכת ל<b>מקום מגורים (RPP)</b> — אותה המרה כמו ⚡ של WME Naming Auditor: מקום שנוצר במקום המספר, הכתובת שלו, נקודת הכניסה של המספר נשמרת, המספר מוסר; שלב שנכשל מבוטל. הכפתור מציג אז את שני המניינים, מספרים ו-RPP; ה-RPP נספרים במכסה.</p>',
+            hHnB: '<p>שמור לעורכי <b>L6</b>. בשורה הפתוחה של רחוב, <i>הוספת המספרים</i> מציבה ב-WME את הכתובות החסרות שלו — <b>רחוב אחר רחוב</b>, לעולם לא לרשות שלמה. למספר בודד: ה־„+” שעל התווית שלו (במעבר העכבר), או לחיצה על הנקודה שלו במפה.</p><p><b>תנאים</b>: השם הראשי של המקטעים זהה בדיוק לשם ב-BAN (רק סימנים דיאקריטיים, אותיות רישיות, גרשים ורווחים נסבלים) והעיר שלהם היא הרשות או «כפר (רשות)». כל מספר מוצב על המקטע המותר הקרוב ביותר (80 מ׳ לכל היותר); מספר שכבר קיים, גם אם טרם נשמר, לעולם אינו מוצב שוב; סיומת שונה או מספרית נשארת לעורך.</p><p><b>דבר אינו נשמר</b>: המספרים שהוצבו מוקפים בטורקיז על המפה (גם כשהחלון סגור) ומסומנים ✚ ברחוב; יש לבדוק אותם ואז לשמור או לבטל ב-WME.</p><p><b>מכסה</b>: 150 מספרים בשעה נעה. מספר נשמר במכסה בעת ההצבה, ונספר אם הוא נמצא בשרת אחרי השמירה; אם הוסר או שונה לפני כן, הוא מוחזר. מספרים שהוקלדו ידנית לעולם אינם נספרים. לאחר השמירה הם עוברים ל«נמצאו» בלי להריץ שוב את הניתוח; סריקה שמורה ישנה יותר מציינת זאת («הרצה מחדש»).</p><p><b>מחוץ ליישוב</b>: על מקטע שלשמו הראשי אין עיר ושנושא את שם ה-BAN עם הרשות כשם חלופי, הכתובת הופכת ל<b>מקום מגורים (RPP)</b> — אותה המרה כמו ⚡ של WME Naming Auditor: מקום שנוצר במקום המספר, הכתובת שלו, נקודת הכניסה של המספר נשמרת, המספר מוסר; שלב שנכשל מבוטל. הכפתור מציג אז את שני המניינים, מספרים ו-RPP; ה-RPP נספרים במכסה.</p><p><b>RPP ← מספר</b>: ברחוב הפתוח, ל־RPP של הרחוב יש תוויות משלהם; במעבר העכבר, „⇄” מחליף RPP אחד במספר על המקטע, רק במקרים חד־משמעיים (כמו WME Naming Auditor): אותו מספר כבר ברחוב בטווח 150 מ׳ (ה־RPP כפול ופשוט מוסר), או נקודת גישה — ואם אין, המיקום — לאורך הרחוב שלו בלי רחוב אחר בטווח 10 מ׳. נקודת גישה הפונה לרחוב אחר מוכיחה שה־RPP לגיטימי: הוא נשאר. נדחה אם ל־RPP יש שם או תמונה, עיר אחרת או רחוב אחר. אותה מכסה; דבר אינו נשמר.</p>',
             ajHnQuotaTip: 'שעה נעה: מספר נספר במשך שעה מרגע הצבתו. נספרים רק מספרים שהוצבו בכפתור זה ונשמרו בפועל.',
             ajHnLeft: n => 'מכסה: נותרו ' + n + ' בשעה זו',
             ajHnFull: h => 'המכסה נוצלה — ההוספה הבאה בשעה ' + h,
@@ -2379,7 +2515,7 @@
         // Les globales des boucles chaudes, liées UNE fois : dans le bac à sable du gestionnaire de
         // scripts, chaque `Math.…` ou `Infinity` d'une boucle traverse sa couche d'interception de
         // la portée globale (Nîmes : calcul ~10 fois plus lent que le même code sous Node, 26/09).
-        const { Math, Map, Set, Number, String, Date, parseFloat, Infinity, Object, Error } = globalThis;
+        const { Math, Map, Set, Number, String, Date, parseFloat, Infinity, Object, Error, isFinite } = globalThis;
 
         // ---- Numéros -------------------------------------------------------------------
         // La BAN écrit le numéro et le suffixe à part (« 12 », « bis ») et abrège quater et
@@ -3115,6 +3251,62 @@
             return { poses, ecartes, admis: admis.length, hors: horsA.length, refus };
         }
 
+        // ---- RPP en agglomération → numéro (0.16.00) ----------------------------------------------------------
+        // Doctrine reprise À L'IDENTIQUE de WNA (verdictRppAgglo) : en agglomération le numéro va sur le SEGMENT, mais
+        // un RPP y reste souvent LÉGITIME — l'entrée donne sur une AUTRE voie que l'adresse postale, ce qu'un numéro de
+        // segment ne sait pas dire. On ne convertit que l'ÉCART FRANC :
+        //   1. le même numéro est déjà posé sur la même rue à moins de RPP_DOUBLON_M : le RPP fait doublon ;
+        //   2. le POINT D'ACCÈS du RPP donne sur la voie même de son adresse, sans autre voie à moins de RPP_MARGE_VOIE_M ;
+        //   3. faute de point d'accès, la POSITION : la voie la plus proche est la sienne, avec la même marge.
+        // Un accès qui donne sur une autre voie PROUVE le décalage (« conforme ») ; tout le reste est « à trancher ».
+        // Constantes MESURÉES par WNA à Coursan (26/07) : marge 10 m (17 des 22 RPP tranchés), portée 120 m, doublon
+        // jusqu'à 150 m (le seul trouvé était à 95 m : le RPP à l'entrée de la propriété, le numéro au bord de la voie).
+        const RPP_MARGE_VOIE_M = 10, RPP_PORTEE_VOIE_M = 120, RPP_DOUBLON_M = 150;
+        // La distance d'un point à un tracé, en mètres.
+        function distTrace(lon, lat, coords) {
+            const m = versMetres(lat), [px, py] = m(lon, lat);
+            let d = Infinity;
+            for (let k = 1; k < coords.length; k++) {
+                const [ax, ay] = m(coords[k - 1][0], coords[k - 1][1]), [bx, by] = m(coords[k][0], coords[k][1]);
+                d = Math.min(d, distSeg(px, py, ax, ay, bx, by));
+            }
+            return d;
+        }
+        // La voie la plus proche d'un point parmi `segs` ([{ coords, noms }], noms = principal + alternatifs, SANS NOM
+        // compris : une allée anonyme explique très bien qu'un RPP soit loin de sa rue). Rend { noms, dist, distAutreVoie } :
+        // distAutreVoie = la plus proche voie d'un AUTRE nom, qui dit si le constat est net.
+        function voieLaPlusProche(lon, lat, segs) {
+            const cand = [];
+            for (const sg of segs || []) {
+                if (!sg || !sg.coords || sg.coords.length < 2) continue;
+                const d = distTrace(lon, lat, sg.coords);
+                if (d <= RPP_PORTEE_VOIE_M) cand.push({ d, noms: (sg.noms || []).map(nomSouple).filter(Boolean), libelle: (sg.noms || []).filter(Boolean)[0] || '' });
+            }
+            if (!cand.length) return { noms: [], libelle: '', dist: Infinity, distAutreVoie: Infinity };
+            cand.sort((a, b) => a.d - b.d);
+            const best = cand[0], meme = c => c.noms.some(n => best.noms.includes(n)) || (!c.noms.length && !best.noms.length);
+            const autre = cand.find(c => !meme(c));
+            return { noms: best.noms, libelle: best.libelle, dist: best.d, distAutreVoie: autre ? autre.d : Infinity };
+        }
+        // Le verdict (fonction PURE) : `rue` = rue de l'adresse du RPP ; `acces` / `pos` = voieLaPlusProche autour du point
+        // d'accès (ou null) et de la position ; `doublon` = { dist } d'un numéro identique sur la rue, ou null.
+        // Rend { verdict: 'ecart' | 'conforme' | 'trancher', motif, voie? }.
+        function verdictRppHn({ rue, acces, pos, doublon }) {
+            if (doublon) return { verdict: 'ecart', motif: 'doublon' };
+            const r = nomSouple(rue);
+            if (!r) return { verdict: 'trancher', motif: 'sansRue' };
+            const base = acces || pos, motif = acces ? 'acces' : 'position';
+            if (!base || !isFinite(base.dist) || base.dist > RPP_PORTEE_VOIE_M) return { verdict: 'trancher', motif: 'loin' };
+            if (base.noms.includes(r)) {
+                if (isFinite(base.distAutreVoie) && base.distAutreVoie - base.dist < RPP_MARGE_VOIE_M) return { verdict: 'trancher', motif: 'equidistant' };
+                return { verdict: 'ecart', motif };
+            }
+            // L'accès sur une AUTRE voie prouve le décalage ; la position seule ne dit pas où est l'entrée.
+            if (acces && base.noms.length && (!isFinite(base.distAutreVoie) || base.distAutreVoie - base.dist >= RPP_MARGE_VOIE_M))
+                return { verdict: 'conforme', motif: 'acces', voie: base.libelle || base.noms[0] };
+            return { verdict: 'trancher', motif };
+        }
+
         // Les zones d'une voie LONGUE (0.13.03) : au zoom 16, WME ne charge que ce qui est à l'écran, et une voie de
         // 1,5 km n'y tient pas (essai du 02/10, chemin des Baylés : 6 RPP posés, 16 adresses hors de la vue). Les
         // adresses restantes sont regroupées, de proche en proche, en zones d'au plus `demiX` × `demiY` mètres de
@@ -3134,7 +3326,7 @@
             return zones;
         }
 
-        return { normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, nomSouple, villeHnOk, villeRpp, numeroHn, quotaHn, rapprocherHn, planHn, zonesHn };
+        return { normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, zonesHn };
     })();
     // ==/WBC-CORE==
 
@@ -3609,7 +3801,7 @@
     // fenêtre fermée — on la ferme justement pour dégager la carte avant d'enregistrer (29/09) ; eux seuls.
     let calqueVisible = true;
     const fenetreOuverte = () => !!(ovEl && ovEl.classList.contains('open'));
-    const aDesPoses = () => !!resultat && resultat.voies.some(v => v.adresses.some(a => a.hnPose && !a.trouve));
+    const aDesPoses = () => !!resultat && resultat.voies.some(v => v.adresses.some(a => a.hnPose && (!a.trouve || a.rppHn)));
     const calqueAffiche = () => calqueVisible && fenetreOuverte();
     function appliquerVisibilite() {
         const vis = calqueAffiche(), visAdr = calqueVisible && (fenetreOuverte() || aDesPoses());
@@ -4165,6 +4357,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
    erreurs étaient cachés). */
 #wbc-ov.wbc-sous { z-index: 8 !important; }
 .wbc-num.enregistre { border-color: #a5d6a7; background: #e8f5e9; color: #1b5e20; }
+/* RPP de la voie (0.16.00) : indigo, distinct du rouge des manquants, du violet des suffixes et du turquoise des posés. */
+.wbc-num.rpp { border-color: #9fa8da; background: #e8eaf6; color: #283593; }
+.wbc-num.rpp:hover { background: #c5cae9; }
 .wbc-legende { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: -2px 0 6px; font-size: 11px; color: var(--wbc-text2); }
 .wbc-pt { display: inline-block; width: 10px; height: 10px; margin-inline-end: 4px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #9aa5b1; vertical-align: -1px; }
 .wbc-pt.manquant { background: #e53935; }
@@ -4645,7 +4840,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // Le corps de la fenêtre se reconstruit en entier ; l'élément qui avait le focus (filtre, tri,
     // ligne, numéro…) et la position de défilement sont RENDUS après coup — sans cela, chaque clic de
     // filtre ou de tri renvoyait le clavier au début de la page (audit du 26/09, M19).
-    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-hn1', 'data-act', 'data-trop', 'data-doublon'];
+    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-hn1', 'data-rpphn', 'data-rppgo', 'data-act', 'data-trop', 'data-doublon'];
     function rendre() {
         if (!ovEl) return;
         const corps = $('#wbc-corps');
@@ -4790,6 +4985,19 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // L'en-tête triable porte un BOUTON : atteignable au clavier, annoncé comme commande (M23).
     const th = (cle, lbl, num) => '<th scope="col"' + (num ? ' class="num"' : '') + (vue.tri === cle ? ' aria-sort="' + (vue.sens > 0 ? 'ascending' : 'descending') + '"' : '') + '><button type="button" class="wbc-th" data-tri="' + cle + '" title="' + esc(t('tipSort')) + '">' + esc(lbl) + '</button></th>';
 
+    // Les RPP de la voie ouverte (0.16.00, L6) : une pastille par adresse trouvée en RPP ; le clic centre la carte dessus,
+    // le « ⇄ » (survol, focus, pastille courante) le remplace par un numéro du segment, UN par clic — le verdict d'écart
+    // franc se décide au clic, sur ce que WME montre à ce moment (voir convertirRppVoie). Voie au nom BAN exact seulement.
+    function htmlRpps(v, i) {
+        const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => x.a.trouve === 'RPP' && x.a.wlon != null);
+        if (!liste.length) return '';
+        const conv = v.statutNom === 'identique' && !hnEnCours && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
+        return '<h4>' + esc(t('rhnT', nb(liste.length))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) => {
+            const courant = vue.curseurRpp === i + ':' + k ? ' courant' : '';
+            const num = '<button type="button" class="wbc-num rpp' + (a.rppHn ? ' pose' : '') + courant + '" data-rppgo="' + i + ':' + k + '" title="' + esc(a.rppHn ? t('rhnPoseTip') : t('rhnTip')) + '">' + (a.rppHn ? '&#x271A; ' : '') + esc(a.brut) + '</button>';
+            return conv && !a.rppHn ? '<span class="wbc-num-g' + courant + '">' + num + '<button type="button" class="wbc-num-plus rpp" data-rpphn="' + i + ':' + k + '" title="' + esc(t('rhnConv') + ' — ' + t('rhnConvTip')) + '" aria-label="' + esc(t('rhnConv') + ' ' + a.brut) + '">&#x21C4;</button></span>' : num;
+        }).join('') + '</div>';
+    }
     // Les pastilles des numéros manquants d'une voie ouverte. Le « + » (0.15.00, L6) ajoute l'adresse SEULE : visible
     // au survol, au focus et sur la pastille courante, seulement si l'ajout peut la poser (pré-contrôle du bouton).
     function htmlNums(v, i) {
@@ -4847,7 +5055,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     (droitHn && vue.hnMsg && vue.hnMsg.i === i ? '<p class="wbc-hn-msg' + (vue.hnMsg.err ? ' erreur' : '') + '" role="status">' + esc(vue.hnMsg.txt) + '</p>' : '') + '<h4>' + esc(t('missingT')) +
                     (v.manquants.length ? ' <button type="button" class="wbc-btn wbc-btn-neutral wbc-suivant" data-act="suivant" title="' + esc(t('tipNext')) + '">' + esc(t('nextMissing')) + ' <span class="wbc-fl">&#x25B6;</span></button>' : '') + '</h4>' +
                     (v.manquants.length ? htmlNums(v, i)
-                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') + '</td></tr>';
+                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') + (droitHn ? htmlRpps(v, i) : '') + '</td></tr>';
             }
             h += '</tbody></table>';
         }
@@ -5021,7 +5229,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             }
             if (tropMontre) pts.push({ lon: tropMontre.lon, lat: tropMontre.lat, etat: 'trop', lbl: tropMontre.brut, trop: tropMontre });
             // Les numéros posés et pas encore relus : toujours dessinés, au-dessus du reste (au plus 150 par heure).
-            voies.forEach(w => w.adresses.forEach(a => { if (a.hnPose && !a.trouve) pts.push({ lon: a.lon, lat: a.lat, etat: 'pose', lbl: a.brut, ad: a, voie: w }); }));
+            voies.forEach(w => w.adresses.forEach(a => { if (a.hnPose && (!a.trouve || a.rppHn)) pts.push({ lon: a.lon, lat: a.lat, etat: 'pose', lbl: a.brut, ad: a, voie: w }); }));
         }
         if (generation !== generationCalque) return;
         const n = ovEl && ovEl.querySelector('#wbc-calque-note');
@@ -5633,6 +5841,20 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (tr) { const k = tr.dataset.tri; vue.sens = vue.tri === k ? -vue.sens : (k === 'nom' || k === 'wme' ? 1 : -1); vue.tri = k; rendre(); return; }
         const trd = ev.target.closest('[data-tridep]');
         if (trd) { const k = trd.dataset.tridep; vue.sensDep = (vue.triDep || 'ecart') === k ? -(vue.sensDep || -1) : (k === 'nom' ? 1 : -1); vue.triDep = k; rendre(); return; }
+        const rh = ev.target.closest('[data-rpphn]');
+        if (rh && resultat) {
+            const [i, k] = rh.dataset.rpphn.split(':').map(Number);
+            if (droitHn && !hnEnCours) { vue.curseurRpp = i + ':' + k; convertirRppVoie(i, k); }
+            return;
+        }
+        const rg = ev.target.closest('[data-rppgo]');
+        if (rg && resultat) {
+            const [i, k] = rg.dataset.rppgo.split(':').map(Number), a = resultat.voies[i].adresses[k];
+            vue.curseurRpp = i + ':' + k;
+            rendre();
+            centrerLibre(a.wlon, a.wlat, 19);
+            return;
+        }
         const h1 = ev.target.closest('[data-hn1]');
         if (h1 && resultat) {
             const [i, k] = h1.dataset.hn1.split(':').map(Number);
@@ -5964,7 +6186,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 modifs++;
                 // Enregistré et relu sur le serveur : l'adresse est désormais DANS WME, sans relancer
                 // l'analyse (29/09) — la voie et les totaux de la commune suivent.
-                if (!a.trouve) {
+                // 0.16.00 : un RPP remplacé par un numéro, enregistré — l'adresse passe de RPP à HN.
+                if (a.rppHn) {
+                    a.rppHn = false;
+                    Object.assign(a, { trouve: 'HN', wlon: a.lon, wlat: a.lat, dm: 0 });
+                    v.rpp--; v.hn++;
+                    resultat.totaux.rpp--; resultat.totaux.hn++;
+                }
+                else if (!a.trouve) {
                     const type = a.hnRpp ? 'RPP' : 'HN', champ = a.hnRpp ? 'rpp' : 'hn';
                     Object.assign(a, { trouve: type, wlon: a.lon, wlat: a.lat, dm: 0, seg: null, plon: null, plat: null, pd: null });
                     v[champ]++;
@@ -5978,7 +6207,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     if (v.presents === v.ban) T.voiesCompletes++;
                 }
             }
-            else if (rendu.has(c)) { a.hnPose = false; modifs++; }
+            else if (rendu.has(c)) { a.hnPose = false; a.rppHn = false; modifs++; }
         }
         log('quota : ' + res.comptes.length + ' numéro(s) enregistré(s) compté(s), ' + res.rendus.length + ' rendu(s)');
         if (modifs && !apresEnregistrement) { rendre(); appliquerVisibilite(); }
@@ -6227,11 +6456,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             let plan;
             if (seule) {
                 // Une adresse : on ne cadre pas la voie entière, on lit les segments chargés autour d'elle. La carte
-                // ne bouge que si l'adresse est hors de la vue ou sous le zoom 16 (WME n'y charge pas les rues).
+                // ne bouge que si l'adresse est hors de la vue ou sous le zoom 17 : WME n'y charge pas les rues sous 16, ni les RPP sous 17 (mesuré le 14/10 : 0 RPP au zoom 16, 6 au zoom 17) — et les RPP servent au contrôle des doublons.
                 let ext = null, zoom = 0;
                 try { ext = await sdk.Map.getMapExtent(); zoom = await sdk.Map.getZoomLevel(); } catch (e) { }
                 const dedans = ext && seule.lon >= ext[0] && seule.lon <= ext[2] && seule.lat >= ext[1] && seule.lat <= ext[3];
-                if (!dedans || zoom < 16) {
+                if (!dedans || zoom < 17) {
                     await sdk.Map.setMapCenter({ lonLat: { lon: seule.lon, lat: seule.lat }, zoomLevel: Math.max(17, zoom) });
                     await new Promise(r => setTimeout(r, 2500));
                 }
@@ -6275,6 +6504,145 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             majArrierePlan();
             v.apercuHn = null;
             apercuHn(i);
+            if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
+            rendre();
+            appliquerVisibilite();
+            if (msg) statut(msg[0], msg[1]);
+        }
+    }
+
+    // ---- RPP en agglo → numéro (0.16.00, demande de l'auteur du 12/10) -----------------------------------------
+    // Le RPP de l'adresse k, retrouvé DANS WME (l'analyse ne garde que sa position) : POI résidentiel à moins de 10 m de
+    // la position relevée, même numéro. Rend { id, nom, photos, num, rue, ville, pos, acces } ou null.
+    // Un objet supprimé et pas encore enregistré reste dans le modèle, marqué « DELETE » ; le SDK le rend encore.
+    const supprime = (depot, id) => { try { const o = pw.W.model[depot].getObjectById(id); return !!o && o.state === 'DELETE'; } catch (e) { return false; } };
+    async function trouverRpp(a) {
+        let liste = [];
+        try { liste = (await sdk.DataModel.Venues.getAll()) || []; } catch (e) { return null; }
+        const m = Core.normNum(a.brut), k = Math.cos(a.wlat * Math.PI / 180) * 111320;
+        for (const p of liste) {
+            if (!p || !p.isResidential || !p.geometry || supprime('venues', p.id)) continue;
+            let pos = p.geometry.coordinates;
+            if (p.geometry.type === 'Polygon') { const r = pos[0]; pos = [r.reduce((x, q) => x + q[0], 0) / r.length, r.reduce((x, q) => x + q[1], 0) / r.length]; }
+            if (Math.hypot((pos[0] - a.wlon) * k, (pos[1] - a.wlat) * 110540) > 10) continue;
+            let ad = null;
+            try { ad = await sdk.DataModel.Venues.getAddress({ venueId: String(p.id) }); } catch (e) { continue; }
+            if (!ad || Core.normNum(ad.houseNumber) !== m) continue;
+            const nav = (p.navigationPoints || []).find(x => x && x.isEntry !== false && x.point) || (p.navigationPoints || [])[0];
+            return { id: String(p.id), nom: (p.name || '').trim(), photos: (p.images || []).length, num: ad.houseNumber,
+                rue: (ad.street && ad.street.name) || '', ville: (ad.city && ad.city.name) || '', pos,
+                acces: nav && nav.point && nav.point.coordinates ? nav.point.coordinates : null };
+        }
+        return null;
+    }
+    // Les segments chargés autour d'un point, avec TOUS leurs noms (principal + alternatifs ; sans nom compris) : de quoi
+    // dire quelle voie est la plus proche du RPP et de son point d'accès.
+    async function segmentsAutour(lon, lat) {
+        const dLat = 400 / 110540, dLon = 400 / (111320 * Math.cos(lat * Math.PI / 180)), out = [];
+        let liste = [];
+        try { liste = (await sdk.DataModel.Segments.getAll()) || []; } catch (e) { return out; }
+        for (const sg of liste) {
+            const c = sg && sg.geometry && sg.geometry.coordinates;
+            if (!c || c.length < 2 || supprime('segments', sg.id) || !c.some(([x, y]) => Math.abs(x - lon) <= dLon && Math.abs(y - lat) <= dLat)) continue;
+            let noms = [];
+            try {
+                const ad = (await sdk.DataModel.Segments.getAddress({ segmentId: sg.id })) || {};
+                noms = [ad.street && ad.street.name].concat((ad.altStreets || []).map(x => x.street && x.street.name)).filter(Boolean);
+            } catch (e) { }
+            out.push({ id: sg.id, coords: c, noms });
+        }
+        return out;
+    }
+    // UN RPP de la voie i (adresse k) remplacé par un numéro du segment, en écart franc seulement (Core.verdictRppHn,
+    // repris de WNA). Mêmes droits, même quota que l'ajout ; rien n'est enregistré. Étapes : retrouver le RPP ; refuser
+    // nom, photo, autre ville, autre rue ; segment de la voie (nom BAN principal, commune) à moins de 80 m ; doublon
+    // (même numéro sur la rue à moins de 150 m, enregistré ou en attente) ; verdict ; puis numéro posé ET RPP retiré —
+    // ou, en doublon, RPP retiré seul. Un RPP non retiré fait retirer le numéro posé : jamais d'adresse en double.
+    async function convertirRppVoie(i, k) {
+        if (hnEnCours) return;
+        const v = resultat.voies[i], a = v && v.adresses[k], commune = resultat.commune.nom;
+        if (!a || a.trouve !== 'RPP' || a.rppHn || a.wlon == null) return;
+        if (!(await lireDroitHn())) { droitHn = false; rendre(); statut(t('ajHnRights'), true); return; }
+        const q = Core.quotaHn(lireHorodatages(), Date.now());
+        if (!q.reste) { statut(t('ajHnQuota', heureCourte(q.libre)), true); return; }
+        hnEnCours = true;
+        majArrierePlan(true);
+        statut(t('ajHnRunning'));
+        let msg = null;
+        try {
+            // La carte ne bouge que si le RPP est hors de la vue ou sous le zoom 17 : les RPP ne se chargent qu'à partir du zoom 17 (mesuré le 14/10 à Brest : 0 au zoom 16, 6 au zoom 17).
+            let ext = null, zoom = 0;
+            try { ext = await sdk.Map.getMapExtent(); zoom = await sdk.Map.getZoomLevel(); } catch (e) { }
+            const dedans = ext && a.wlon >= ext[0] && a.wlon <= ext[2] && a.wlat >= ext[1] && a.wlat <= ext[3];
+            if (!dedans || zoom < 17) {
+                await sdk.Map.setMapCenter({ lonLat: { lon: a.wlon, lat: a.wlat }, zoomLevel: Math.max(17, zoom) });
+                await new Promise(r => setTimeout(r, 2500));
+            }
+            const rpp = await trouverRpp(a);
+            if (!rpp) { msg = [t('rhnNotFound'), true]; return; }
+            if (rpp.nom) { msg = [t('rhnNamed'), true]; return; }
+            if (rpp.photos) { msg = [t('rhnPhoto'), true]; return; }
+            if (!Core.villeHnOk(rpp.ville, commune)) { msg = [t('rhnCity', rpp.ville || '—'), true]; return; }
+            if (Core.nomSouple(rpp.rue) !== Core.nomSouple(v.nom)) { msg = [t('rhnStreet', rpp.rue || '—'), true]; return; }
+            const number = Core.numeroHn(rpp.num);
+            if (!number) { msg = [t('rhnFormat', rpp.num), true]; return; }
+            const [lon, lat] = rpp.pos;
+            const { segs } = await lireVoieHn(v, false, { lon, lat, adresses: [{ lon, lat }] });
+            const nomBan = Core.nomSouple(v.nom);
+            const admis = segs.filter(sg => Core.nomSouple(sg.nom) === nomBan && Core.villeHnOk(sg.ville, commune) && sg.coords && sg.coords.length > 1);
+            let cible = null, dc = 80;
+            for (const sg of admis) { const d = Core.distTrace(lon, lat, sg.coords); if (d <= dc) { dc = d; cible = sg; } }
+            if (!cible) { msg = [t('rhnNoSeg'), true]; return; }
+            // Doublon : le même numéro sur la rue, enregistré (serveur) ou en attente (modèle), à moins de RPP_DOUBLON_M.
+            let doublon = null;
+            const kx = Math.cos(lat * Math.PI / 180) * 111320, dist = c => Math.hypot((c[0] - lon) * kx, (c[1] - lat) * 110540);
+            const noter = (seg, c) => { const d = dist(c); if (d <= Core.RPP_DOUBLON_M && (!doublon || d < doublon.dist)) doublon = { dist: d, seg }; };
+            const ids = admis.map(sg => sg.id);
+            for (let n = 0; n < ids.length; n += 250) {
+                const lot = await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: ids.slice(n, n + 250) });
+                for (const h of lot || []) if (Core.normNum(h.number) === Core.normNum(number) && h.geometry) noter(h.segmentId, h.geometry.coordinates);
+            }
+            for (const id of ids) for (const h of hnsDuSegment(id)) {
+                if (Core.normNum(h.getAttribute('number')) !== Core.normNum(number)) continue;
+                try { noter(id, h.getGeometry().coordinates); } catch (e) { }
+            }
+            const autour = await segmentsAutour(lon, lat);
+            const acces = rpp.acces ? Core.voieLaPlusProche(rpp.acces[0], rpp.acces[1], autour) : null;
+            const pos = Core.voieLaPlusProche(lon, lat, autour);
+            const vd = Core.verdictRppHn({ rue: rpp.rue, acces, pos, doublon });
+            log('RPP ' + number + ' ' + v.nom + ' : ' + vd.verdict + ' (' + vd.motif + ')' + (doublon ? ', doublon à ' + Math.round(doublon.dist) + ' m' : '') +
+                ', segment ' + cible.id + ' à ' + Math.round(dc) + ' m' + [['accès', acces], ['position', pos]].filter(x => x[1]).map(([lib, x]) =>
+                    ' ; ' + lib + ' : « ' + (x.noms.join(' | ') || 'sans nom') + ' » à ' + Math.round(x.dist) + ' m, autre voie à ' + (Number.isFinite(x.distAutreVoie) ? Math.round(x.distAutreVoie) + ' m' : '—')).join(''));
+            if (vd.verdict === 'conforme') { msg = [t('rhnLegit', vd.voie), true]; return; }
+            if (vd.verdict !== 'ecart') { msg = [t('rhnUnsure'), true]; return; }
+            const DM = sdk.DataModel;
+            let seg = cible.id;
+            if (doublon) {
+                seg = doublon.seg;
+                await DM.Venues.deleteVenue({ venueId: rpp.id });
+            } else {
+                const avant = new Set(hnsDuSegment(cible.id).map(h => h.getID()));
+                await DM.HouseNumbers.addHouseNumber({ number, point: { type: 'Point', coordinates: [lon, lat] }, segmentId: cible.id });
+                const h = hnsDuSegment(cible.id).find(x => !avant.has(x.getID()) && Core.normNum(x.getAttribute('number')) === Core.normNum(number));
+                if (!h) throw new Error('numéro posé introuvable dans le modèle');
+                try { await DM.Venues.deleteVenue({ venueId: rpp.id }); }
+                catch (e) {
+                    // Le RPP reste : le numéro posé est retiré, sinon l'adresse serait en double.
+                    let retire = true;
+                    try { await DM.HouseNumbers.deleteHouseNumber({ houseNumberId: String(h.getID()) }); } catch (e2) { retire = false; }
+                    throw new Error('RPP non retiré (' + e.message + ')' + (retire ? ', numéro retiré' : ' — ' + t('ajRppCritDbl', number)));
+                }
+            }
+            const horo = q.garder.slice();
+            horo.push({ t: Date.now(), s: seg, n: number, e: 0, c: resultat.commune.code });
+            ecrireHorodatages(horo);
+            Object.assign(a, { rppHn: true, hnPose: true, hnSeg: seg, hnNum: number });
+            const reste = nb(Core.quotaHn(horo, Date.now()).reste);
+            msg = [(doublon ? t('rhnDoneDbl', number, reste) : t('rhnDone', number, reste)) + ' ' + t('ajHnSee', 1), false];
+        } catch (e) { log('RPP → numéro : ' + e.message); msg = [t('rhnErr', e.message), true]; }
+        finally {
+            hnEnCours = false;
+            majArrierePlan();
             if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
             rendre();
             appliquerVisibilite();
