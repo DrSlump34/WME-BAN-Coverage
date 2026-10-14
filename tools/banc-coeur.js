@@ -355,6 +355,11 @@ function cas(Core) {
         const voieR = { nom: 'Rue Haute', adresses: [ad('2', 20, 10, { seg: 10 }), ad('4', 20, 1210, { seg: 12 })] };
         const plR = Core.planHn(voieR, 'Brie', segsR, [], 100);
         ok('hors agglo : D633 sans alternatif, probable d’une adresse ⇒ signalé ; D12 voisine ⇒ non ; D633 nommée ⇒ admise', plR.refus.sansAltRoute === 1 && plR.admis === 1, JSON.stringify([plR.refus, plR.admis]));
+        // 0.15.04 : alternatif « Village (Commune) » ⇒ le RPP porte la commune (cas de Chapifeu, 12/10).
+        const segsV = [sgH(13, 'Chapifeu', '', [{ nom: 'Chapifeu', ville: 'La Chapelle-Janson (La Chapelle-Fleurigné)' }], 0)];
+        const plV = Core.planHn({ nom: 'Chapifeu', adresses: [ad('1', 20, 10)] }, 'La Chapelle-Fleurigné', segsV, [], 100);
+        ok('RPP : « Village (Commune) » en alternatif ⇒ ville du RPP = la commune', plV.poses.length === 1 && plV.poses[0].rpp && plV.poses[0].rpp.ville === 'La Chapelle-Fleurigné', JSON.stringify(plV.poses.map(p => p.rpp)));
+        ok('RPP : ville sans parenthèse gardée telle quelle', Core.villeRpp('Brie') === 'Brie' && Core.villeRpp('') === '' && Core.villeRpp('Saint-Malo ( Paramé )') === 'Paramé');
         const plH2 = Core.planHn(voieH, 'Brie', segsH, ['23'], 100);
         ok('hors agglo : un RPP déjà présent (même en attente) n’est pas reposé', !plH2.poses.some(x => x.number === '23') && plH2.ecartes.existe === 1, JSON.stringify(plH2.ecartes));
         // Rapprochement d'un RPP : enregistré compté, disparu rendu, indécidable gardé réservé.
@@ -451,7 +456,8 @@ const TEMOINS = [
     ['0.13.00 : hors agglo jamais admis', 'const horsA = segs.filter(s => horsAgglo(s) && traceOk(s));', 'const horsA = [];'],
     ['0.13.00 : principal avec ville pris pour hors agglo', 'const horsAgglo = s => !nomSouple(s.ville) && !!altBan(s);', 'const horsAgglo = s => !!altBan(s);'],
     ['0.13.00 : alternatif d’une autre commune admis', 'nomSouple(a.nom) === nomBan && villeHnOk(a.ville, commune)) || null;', 'nomSouple(a.nom) === nomBan) || null;'],
-    ['0.13.00 : RPP posé comme numéro', 'rpp: alt ? { rue: alt.nom, ville: alt.ville } : null', 'rpp: null'],
+    ['0.13.00 : RPP posé comme numéro', 'rpp: alt ? { rue: alt.nom, ville: villeRpp(alt.ville) } : null', 'rpp: null'],
+    ['0.15.04 : ville « Village (Commune) » recopiée telle quelle', 'rpp: alt ? { rue: alt.nom, ville: villeRpp(alt.ville) } : null', 'rpp: alt ? { rue: alt.nom, ville: alt.ville } : null'],
     ['0.13.00 : RPP disparu jamais rendu', "else if (st === 'absent') rendus.push(x);", "else if (st === 'absent') garder.push(x);"],
     ['0.13.00 : RPP indécidable rendu', 'const st = etatRpp ? etatRpp(x) : null;', "const st = etatRpp ? (etatRpp(x) || 'absent') : 'absent';"],
     ['0.13.00 : RPP tranché par les numéros du segment', 'if (x && typeof x === \'object\' && x.r === 1 && x.e !== 1) {', 'if (false) {'],

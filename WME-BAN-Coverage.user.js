@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.15.03
+// @version      0.15.05
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; kein Ergebnis wird gespeichert.
@@ -3004,6 +3004,14 @@
             const m = /^(.+?)\s*\(([^()]+)\)$/.exec(v);
             return !!m && m[2].trim() === c;
         }
+        // La ville d'un RPP (0.15.04) : « Village (Commune) » devient « Commune » — l'adresse d'un lieu résidentiel porte la
+        // commune, pas la commune déléguée (signalé le 12/10 : « 1 Chapifeu, La Chapelle-Janson (La Chapelle-Fleurigné) »
+        // au lieu de « La Chapelle-Fleurigné »). Même règle que getRppStreetId du script Ajout Num/RPP. Écrite telle que
+        // dans WME (accents, casse) : seule la parenthèse est retirée.
+        function villeRpp(ville) {
+            const m = /^.*?\(\s*([^()]+?)\s*\)\s*$/.exec(String(ville || ''));
+            return m ? m[1] : String(ville || '');
+        }
         // Le numéro écrit dans WME : « 12 », « 12bis », « 7quater », « 12b ». Un suffixe chiffré (« 5 3 »)
         // ou une forme inconnue n'est pas posé : il demande un humain.
         const SUFFIXES_HN = { qua: 'quater', qui: 'quinquies' };
@@ -3102,7 +3110,7 @@
                 if (poses.length >= reste) { ecartes.quota++; continue; }
                 vus.add(cle);
                 const alt = enAgglo.indexOf(best) < 0 ? altBan(best) : null;
-                poses.push({ number, lon: a.lon, lat: a.lat, segmentId: best.id, adresse: a, rpp: alt ? { rue: alt.nom, ville: alt.ville } : null });
+                poses.push({ number, lon: a.lon, lat: a.lat, segmentId: best.id, adresse: a, rpp: alt ? { rue: alt.nom, ville: villeRpp(alt.ville) } : null });
             }
             return { poses, ecartes, admis: admis.length, hors: horsA.length, refus };
         }
@@ -3126,7 +3134,7 @@
             return zones;
         }
 
-        return { normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, nomSouple, villeHnOk, numeroHn, quotaHn, rapprocherHn, planHn, zonesHn };
+        return { normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, nomSouple, villeHnOk, villeRpp, numeroHn, quotaHn, rapprocherHn, planHn, zonesHn };
     })();
     // ==/WBC-CORE==
 
@@ -5891,17 +5899,29 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // (chaîne, pas un nombre : `Number()` rend NaN) ; seul le POI en attente a un identifiant négatif. Et juste après
     // l'enregistrement, WME recharge ses POI : un POI introuvable à ce moment n'est PAS disparu ⇒ jamais rendu après un
     // enregistrement (les 5 RPP de l'essai avaient été « rendus » au quota alors qu'ils étaient sur le serveur).
-    function etatRppModele(x, apresEnregistrement) {
+    // Les POI résidentiels à moins de 15 m d'une entrée de RPP en attente, avec leur numéro : lus d'avance (le SDK est
+    // asynchrone, le rappel de Core.rapprocherHn ne l'est pas). null : modèle illisible ⇒ rien n'est tranché.
+    async function lireRppModele(entrees) {
         let liste;
-        try { liste = sdk.DataModel.Venues.getAll(); } catch (e) { return null; }
+        try { liste = await sdk.DataModel.Venues.getAll(); } catch (e) { return null; }
+        const pres = (v, x) => { const k = Math.cos(x.lat * Math.PI / 180) * 111320, [lon, lat] = v.geometry.coordinates; return Math.hypot((lon - x.lon) * k, (lat - x.lat) * 111320) <= 15; };
+        const out = [];
+        for (const v of liste || []) {
+            if (!v || !v.isResidential || !v.geometry || v.geometry.type !== 'Point' || !entrees.some(x => pres(v, x))) continue;
+            let num = null;
+            try { num = ((await sdk.DataModel.Venues.getAddress({ venueId: String(v.id) })) || {}).houseNumber; } catch (e) { }
+            out.push({ id: v.id, geometry: v.geometry, num });
+        }
+        return out;
+    }
+    function etatRppModele(x, apresEnregistrement, liste) {
+        if (!liste) return null;
         const m = Core.normNum(x.n), k = Math.cos(x.lat * Math.PI / 180) * 111320;
         let enAttente = false;
-        for (const v of liste || []) {
-            if (!v || !v.isResidential || !v.geometry || v.geometry.type !== 'Point') continue;
+        for (const v of liste) {
             const [lon, lat] = v.geometry.coordinates;
             if (Math.hypot((lon - x.lon) * k, (lat - x.lat) * 111320) > 15) continue;
-            let num = null;
-            try { num = (sdk.DataModel.Venues.getAddress({ venueId: String(v.id) }) || {}).houseNumber; } catch (e) { }
+            const num = v.num;
             if (Core.normNum(num) !== m) continue;
             // Un POI pas encore enregistré a un identifiant NÉGATIF (mesuré le 02/10 : -1585101565).
             if (!String(v.id).trim().startsWith('-')) return 'ok';
@@ -5927,7 +5947,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         // Relu APRÈS la lecture réseau : un ajout fait entre-temps n'est pas perdu.
         // Les RPP après un enregistrement : laisser WME recharger ses POI avant de les chercher.
         if (apresEnregistrement && lireHorodatages().some(x => x && x.r === 1 && x.e === 0)) await new Promise(r => setTimeout(r, 3000));
-        const res = Core.rapprocherHn(lireHorodatages(), lus, x => etatRppModele(x, apresEnregistrement));
+        const rppAttente = lireHorodatages().filter(x => x && typeof x === 'object' && x.r === 1 && x.e === 0);
+        const modele = rppAttente.length ? await lireRppModele(rppAttente) : [];
+        const res = Core.rapprocherHn(lireHorodatages(), lus, x => etatRppModele(x, apresEnregistrement, modele));
         ecrireHorodatages(res.entrees);
         noterEnregistresHn(res.comptes);
         const cle = x => (x.r === 1 ? 'r' : '') + x.s + '|' + Core.normNum(x.n);
@@ -6008,7 +6030,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             const lo0 = Math.min(...zone.adresses.map(a => a.lon)) - dLon, lo1 = Math.max(...zone.adresses.map(a => a.lon)) + dLon;
             const la0 = Math.min(...zone.adresses.map(a => a.lat)) - dLat, la1 = Math.max(...zone.adresses.map(a => a.lat)) + dLat;
             try {
-                for (const sg of sdk.DataModel.Segments.getAll() || []) {
+                for (const sg of (await sdk.DataModel.Segments.getAll()) || []) {
                     const c = sg && sg.geometry && sg.geometry.coordinates;
                     if (c && c.some(([x, y]) => x >= lo0 && x <= lo1 && y >= la0 && y <= la1)) ids.push(sg.id);
                 }
@@ -6049,7 +6071,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             // servent à l'adresse du POI (updateAddress refuse une adresse sans stateId).
             let alts = [], stateId = null, countryId = null;
             try {
-                const ad = sdk.DataModel.Segments.getAddress({ segmentId: s.id }) || {};
+                const ad = (await sdk.DataModel.Segments.getAddress({ segmentId: s.id })) || {};
                 alts = (ad.altStreets || []).map(x => ({ nom: (x.street && x.street.name) || '', ville: (x.city && x.city.name) || '' }));
                 stateId = ad.state ? ad.state.id : null;
                 countryId = ad.country ? ad.country.id : null;
@@ -6084,9 +6106,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         // à la main ou par WNA) n'est pas dans l'analyse, et le reposer ferait un doublon.
         try {
             const nomBan = Core.nomSouple(v.nom);
-            for (const p of sdk.DataModel.Venues.getAll() || []) {
+            for (const p of (await sdk.DataModel.Venues.getAll()) || []) {
                 if (!p || !p.isResidential) continue;
-                const ad = sdk.DataModel.Venues.getAddress({ venueId: String(p.id) }) || {};
+                const ad = (await sdk.DataModel.Venues.getAddress({ venueId: String(p.id) })) || {};
                 if (ad.houseNumber && ad.street && Core.nomSouple(ad.street.name) === nomBan) existants.push(ad.houseNumber);
             }
         } catch (e) { log('RPP chargés : ' + e.message); }
@@ -6106,36 +6128,38 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // WME le 02/10 (Saint-Lizier, impasse de la Plaine n° 2) : un numéro tout juste posé a déjà son point
     // d'entrée calculé, et les 5 actions (numéro, POI, adresse, entrée, retrait) s'annulent proprement.
     // Rend { ok, erreur?, critique? } ; `critique` = la carte est restée dans un état à reprendre à la main.
-    function convertirEnRpp(p, avant, seg) {
+    async function convertirEnRpp(p, avant, seg) {
         const DM = sdk.DataModel;
         const h = hnsDuSegment(p.segmentId).find(x => !avant.has(x.getID()) && Core.normNum(x.getAttribute('number')) === Core.normNum(p.number));
         if (!h) return { ok: false, erreur: 'numéro posé introuvable dans le modèle', critique: t('ajRppCritHn', p.number) };
         const hid = String(h.getID());
-        const retirerHn = () => { try { DM.HouseNumbers.deleteHouseNumber({ houseNumberId: hid }); return true; } catch (e) { return false; } };
-        const retirerPoi = id => { try { DM.Venues.deleteVenue({ venueId: id }); return true; } catch (e) { return false; } };
+        // 0.15.05 : chaque appel ATTENDU — en mode async il rend une promesse (mesuré le 14/10, WME v2.374) ; sans await,
+        // l'identifiant du POI valait « [object Promise] » et une adresse refusée passait pour acceptée.
+        const retirerHn = async () => { try { await DM.HouseNumbers.deleteHouseNumber({ houseNumberId: hid }); return true; } catch (e) { return false; } };
+        const retirerPoi = async id => { try { await DM.Venues.deleteVenue({ venueId: id }); return true; } catch (e) { return false; } };
         let geom = null, fp = null;
         try { geom = h.getGeometry().coordinates; fp = h.getFractionPoint() && h.getFractionPoint().coordinates; } catch (e) { }
         if (!geom) geom = [p.lon, p.lat];
         // 1. Le POI, à la position du numéro.
         let vid;
-        try { vid = String(DM.Venues.addVenue({ category: 'RESIDENTIAL', geometry: { type: 'Point', coordinates: geom } })); }
-        catch (e) { return retirerHn() ? { ok: false, erreur: 'POI non créé (' + e.message + '), numéro retiré' } : { ok: false, erreur: 'POI non créé', critique: t('ajRppCritHn', p.number) }; }
+        try { vid = String(await DM.Venues.addVenue({ category: 'RESIDENTIAL', geometry: { type: 'Point', coordinates: geom } })); }
+        catch (e) { return (await retirerHn()) ? { ok: false, erreur: 'POI non créé (' + e.message + '), numéro retiré' } : { ok: false, erreur: 'POI non créé', critique: t('ajRppCritHn', p.number) }; }
         // 2. Son adresse — étape à part : un échec ici laisserait un POI SANS ADRESSE (défaut v2.09 de WNA).
         try {
-            DM.Venues.updateAddress({ venueId: vid, addressData: { houseNumber: String(p.number), streetName: p.rpp.rue, cityName: p.rpp.ville,
+            await DM.Venues.updateAddress({ venueId: vid, addressData: { houseNumber: String(p.number), streetName: p.rpp.rue, cityName: p.rpp.ville,
                 stateId: seg && seg.stateId, countryId: seg && seg.countryId } });
         } catch (e) {
-            const okPoi = retirerPoi(vid), okHn = retirerHn();
+            const okPoi = await retirerPoi(vid), okHn = await retirerHn();
             return { ok: false, erreur: 'adresse du POI refusée (' + e.message + ')', critique: okPoi && okHn ? null : t('ajRppCritPoi', p.number) };
         }
         // 3. Le point d'entrée du numéro : non bloquant (le POI vaut sans), mais dit.
         if (fp) {
-            try { DM.Venues.replaceNavigationPoints({ venueId: vid, navigationPoints: [{ point: { type: 'Point', coordinates: fp }, entry: true, exit: true }] }); }
+            try { await DM.Venues.replaceNavigationPoints({ venueId: vid, navigationPoints: [{ point: { type: 'Point', coordinates: fp }, entry: true, exit: true }] }); }
             catch (e) { log('RPP ' + p.number + ' : point d\'entrée non repris — ' + e.message); }
         }
         // 4. Le numéro retiré — sinon l'adresse serait en double : on retire alors le POI.
-        if (!retirerHn()) {
-            const okPoi = retirerPoi(vid);
+        if (!(await retirerHn())) {
+            const okPoi = await retirerPoi(vid);
             return { ok: false, erreur: 'numéro non retiré', critique: okPoi ? t('ajRppCritHn', p.number) : t('ajRppCritDbl', p.number) };
         }
         return { ok: true };
@@ -6185,7 +6209,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                         continue;
                     }
                     if (p.rpp) {
-                        const r = convertirEnRpp(p, avant, parSeg.get(p.segmentId));
+                        const r = await convertirEnRpp(p, avant, parSeg.get(p.segmentId));
                         if (r.critique) critiques.push(r.critique);
                         if (!r.ok) { err = new Error(r.erreur); log('RPP ' + p.number + ' : ' + r.erreur); continue; }
                         nRpp++;

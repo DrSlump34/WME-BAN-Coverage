@@ -230,6 +230,16 @@ restaient sans solution.
 - **0.15.01** : même message quand le nom principal est un **numéro de route** sans ville (« D633 » sans
   l'alternatif « Route de … / Commune », `refus.sansAltRoute`) — compté seulement sur le segment probable d'une
   adresse manquante, pour qu'une départementale voisine ne déclenche rien.
+- **0.15.04 — ville du RPP** : un alternatif « Chapifeu / La Chapelle-Janson (La Chapelle-Fleurigné) » donnait un RPP
+  à « La Chapelle-Janson (La Chapelle-Fleurigné) » (signalé le 12/10). Le RPP porte désormais la **commune**, la ville
+  entre parenthèses (`Core.villeRpp`, même règle que le script Ajout Num/RPP). Mesuré dans WME le 14/10 : le SDK
+  rattache l'adresse à la ville existante (même identifiant que le segment), sans en créer.
+- **0.15.05 — SDK async** : mesuré le 14/10 (WME v2.374), en mode async **tous** les appels du modèle de données
+  rendent une promesse, `addVenue`, `updateAddress` et `getAddress` compris (le 02/10, ils répondaient encore
+  directement). WBC en appelait onze sans `await` : alternatifs jamais lus (aucun segment hors agglo reconnu, donc
+  aucun RPP), RPP existants et segments voisins non lus, rapprochement du quota cassé dès qu'un RPP attendait, et
+  une conversion qui aurait laissé un POI sans adresse. Tout est attendu ; `tools/check-await.js` le garde. Essai du
+  14/10 : « 1 Minette, La Chapelle-Fleurigné » posé (5 actions, point d'entrée repris), puis annulé.
 
 ## Mesures qui ont fixé la conception (26/09/2026)
 
@@ -254,6 +264,7 @@ node --check WME-BAN-Coverage.user.js
 node tools/check-idents.js                      # tout nom utilisé est déclaré à portée
 node tools/temoins-idents.js                    # … et le contrôle voit bien une fonction disparue, à la bonne ligne
 node tools/check-i18n.js                        # 8 langues, mêmes clés, typographie française
+node tools/check-await.js                       # chaque appel du modèle de données (SDK async) est attendu
 node tools/banc-coeur.js                        # 58 cas sur le cœur extrait du fichier livré + 28 témoins
 node tools/banc-cadrage.js                      # 6 cadrages dans la zone visible (Mercator) + 5 témoins
 node tools/banc-perf.js                         # 4 communes-types de la taille de Nîmes, chacune en moins de 700 ms
