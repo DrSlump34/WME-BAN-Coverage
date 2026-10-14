@@ -3,7 +3,8 @@
   "empreintes": {
     "0.14.03": "d343c61dade44260db0a9233a9691c5920ad807abdb64355e1ccbcbc4db52808",
     "0.15.00": "0a1a9764afd77d928153f9d0ae738f58aaba7265fcb42db24f60f2916858f92e",
-    "0.15.03": "438625c8ff851ca17815f0124dc0653bd1cef47086b1b8d0b822bf937030a10f"
+    "0.15.03": "438625c8ff851ca17815f0124dc0653bd1cef47086b1b8d0b822bf937030a10f",
+    "0.15.05": "633b65003762a7ff307ac3bab18c9a6d8e4228b2b8e075f9131e8a29f5b4d8c4"
   },
   "_lisezmoi": "Version minimale autorisée et empreinte SHA-256 du code de chaque version publiée (texte de l’enveloppe _wmeIntegre, fins de ligne LF). Une version plus ancienne, une copie modifiée ou une version absente ne démarre pas."
 }
