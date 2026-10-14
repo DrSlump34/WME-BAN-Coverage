@@ -89,7 +89,10 @@ Une voie dépliée : ses numéros manquants, « Sélectionner les segments », �
 - **Copier (0.10, L6 / Local Champs / Global Champs)** : dans un département, le taux de couverture
   en trois lignes prêtes pour Discord. Le rang vient de WME ; le statut de Champ, des groupes du forum
   Discuss (même site, session de l'éditeur ; Emeritus exclus). Un mode « Pays » a été écrit puis
-  abandonné le 28/09 (charge : ~77 fois un Gard).
+  abandonné le 28/09 (charge : ~77 fois un Gard). Libellé (0.15.01) : l'icône de copie suivie de « Discord ».
+- **Onglet en arrière-plan (0.15.01)** : Chrome freine un onglet caché (mesuré le 29/09 : un département en 41 min
+  en arrière-plan contre 13 au premier plan). Un passage ou un ajout qui a connu l'arrière-plan le dit dans la
+  fenêtre jusqu'au retour sur l'onglet (puis 15 s), même s'il a fini entre-temps ; le titre de l'onglet porte l'avancement (« 35 % · WBC »), rendu à la fin.
 
 ## Ce qui le distingue de l'existant
 
@@ -224,6 +227,9 @@ restaient sans solution.
   nom BAN. Et le message dit enfin pourquoi des adresses restent écartées quand un segment hors agglo porte le
   nom sans ville mais **sans l'alternatif « Nom / Commune »** (`refus.sansAlt`) — c'était la vraie cause des 16
   adresses du chemin des Baylés (segment #77795167).
+- **0.15.01** : même message quand le nom principal est un **numéro de route** sans ville (« D633 » sans
+  l'alternatif « Route de … / Commune », `refus.sansAltRoute`) — compté seulement sur le segment probable d'une
+  adresse manquante, pour qu'une départementale voisine ne déclenche rien.
 
 ## Mesures qui ont fixé la conception (26/09/2026)
 

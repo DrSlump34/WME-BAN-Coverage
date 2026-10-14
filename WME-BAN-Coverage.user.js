@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.15.00
+// @version      0.15.03
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; kein Ergebnis wird gespeichert.
@@ -317,19 +317,23 @@
             ajHnNone: 'No number can be added automatically on this street.',
             ajHnQuota: h => 'Limit reached (150 numbers per hour): next adding possible at ' + h + '.',
             ajHnRunning: 'Adding the house numbers…',
-            ajHnDone: (n, r) => n + (un1(n) ? ' number placed' : ' numbers placed') + ' — check them, then save in WME. Left in the quota: ' + r + '.',
+            bgTab: 'Tab in the background: Chrome slows the work in progress down (up to 3 times longer). Keep this tab in front.',
+            bgTabTip: 'Chrome throttles the timers of a hidden tab (one per second, then one per minute after 5 minutes) and lowers its priority. Measured on 29/09/2026: a department took 41 min in the background against 13 min in front.',
+            ajHnDone: (n, r) => n + (un1(n) ? ' number placed — check it' : ' numbers placed — check them') + ', then save in WME. Left in the quota: ' + r + '.',
             ajHnAddMix: (n, r) => 'Add (' + n + ' numbers · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + (un1(n) ? ' number' : ' numbers') + ' and ' + r + ' RPP placed — check them, then save in WME. Left in the quota: ' + q + '.',
+            ajHnDoneRpp: (r, q) => r + ' RPP placed — ' + (un1(r) ? 'check it' : 'check them') + ', then save in WME. Left in the quota: ' + q + '.',
             ajRppCrit: l => '⚠️ To fix by hand: ' + l + '.',
             ajRppCritHn: n => 'number ' + n + ' left as a house number on an out-of-town segment',
             ajRppCritPoi: n => 'RPP ' + n + ' left without an address',
             ajRppCritDbl: n => 'address ' + n + ' in DOUBLE (house number + RPP)',
             ajHnSansAlt: (r, c) => 'Some out-of-town segments carry “' + r + '” without a city but lack the alternate “' + r + ' / ' + c + '”: no RPP can be placed there until it is added.',
+            ajHnSansAltRoute: (r, c) => 'Some out-of-town segments have a road number as primary name, without a city, but lack the alternate “' + r + ' / ' + c + '”: no RPP can be placed there until it is added.',
             ajHnSkip: n => n + (un1(n) ? ' address skipped' : ' addresses skipped') + ' (details in the console).',
             ajHnNoSeg: 'No loaded segment has exactly this name as primary name with the commune as city: nothing was placed.',
             ajHnErr: m => 'Adding stopped: ' + m,
             ajHnRights: 'Reserved for L6 editors.',
-            ajHnSee: 'They are circled in turquoise on the map.',
+            ajHnSee: n => (un1(n) ? 'It is' : 'They are') + ' circled in turquoise on the map.',
             ajHnPoseTip: 'Placed by WBC, not saved yet: click to centre the map on it.',
             ajHnSaved: (c, r, q) => 'Save: ' + c + (un1(c) ? ' number counted' : ' numbers counted') + ', ' + r + ' given back to the quota (removed before saving). Quota left: ' + q + '.',
             ajHnSavedTip: 'Placed by WBC and saved.',
@@ -592,19 +596,23 @@
             ajHnNone: 'Aucun numéro à ajouter automatiquement sur cette voie.',
             ajHnQuota: h => 'Quota atteint (150 numéros par heure)\xa0: prochain ajout possible à ' + h + '.',
             ajHnRunning: 'Ajout des numéros…',
-            ajHnDone: (n, r) => n + (un(n) ? ' numéro posé' : ' numéros posés') + ' — vérifiez-les, puis enregistrez dans WME. Reste au quota\xa0: ' + r + '.',
+            bgTab: 'Onglet passé en arrière-plan\xa0: Chrome ralentit le travail en cours (jusqu’à 3 fois plus long). Gardez cet onglet au premier plan.',
+            bgTabTip: 'Chrome bride les minuteries d’un onglet caché (une par seconde, puis une par minute après 5 minutes) et baisse sa priorité. Mesuré le 29/09/2026\xa0: un département en 41\xa0min en arrière-plan, contre 13\xa0min au premier plan.',
+            ajHnDone: (n, r) => n + (un(n) ? ' numéro posé — vérifiez-le' : ' numéros posés — vérifiez-les') + ', puis enregistrez dans WME. Reste au quota\xa0: ' + r + '.',
             ajHnAddMix: (n, r) => 'Ajouter (' + n + ' numéros · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + (un(n) ? ' numéro' : ' numéros') + ' et ' + r + ' RPP posés — vérifiez-les, puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
+            ajHnDoneRpp: (r, q) => r + (un(r) ? ' RPP posé — vérifiez-le' : ' RPP posés — vérifiez-les') + ', puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
             ajRppCrit: l => '⚠️ À reprendre à la main\xa0: ' + l + '.',
             ajRppCritHn: n => 'numéro ' + n + ' resté en numéro de rue sur un segment hors agglomération',
             ajRppCritPoi: n => 'RPP ' + n + ' resté sans adresse',
             ajRppCritDbl: n => 'adresse ' + n + ' en DOUBLE (numéro + RPP)',
             ajHnSansAlt: (r, c) => 'Des segments hors agglomération portent «\xa0' + r + '\xa0» sans ville mais n’ont pas l’alternatif «\xa0' + r + ' / ' + c + '\xa0»\xa0: aucun RPP n’y est posé tant qu’il manque.',
+            ajHnSansAltRoute: (r, c) => 'Des segments hors agglomération ont un numéro de route pour nom principal, sans ville, mais pas l’alternatif «\xa0' + r + ' / ' + c + '\xa0»\xa0: aucun RPP n’y est posé tant qu’il manque.',
             ajHnSkip: n => n + (un(n) ? ' adresse écartée' : ' adresses écartées') + ' (détail dans la console).',
             ajHnNoSeg: 'Aucun segment chargé ne porte exactement ce nom en nom principal avec la commune pour ville\xa0: rien n’a été posé.',
             ajHnErr: m => 'Ajout interrompu\xa0: ' + m,
             ajHnRights: 'Réservé aux éditeurs L6.',
-            ajHnSee: 'Ils sont entourés en turquoise sur la carte.',
+            ajHnSee: n => un(n) ? 'Il est entouré en turquoise sur la carte.' : 'Ils sont entourés en turquoise sur la carte.',
             ajHnPoseTip: 'Posé par WBC, pas encore enregistré\xa0: cliquez pour centrer la carte dessus.',
             ajHnSaved: (c, r, q) => 'Enregistrement\xa0: ' + c + (un(c) ? ' numéro compté' : ' numéros comptés') + ', ' + r + ' rendu(s) au quota (retirés avant l’enregistrement). Reste au quota\xa0: ' + q + '.',
             ajHnSavedTip: 'Posé par WBC et enregistré.',
@@ -867,19 +875,23 @@
             ajHnNone: 'Auf dieser Straße kann keine Nummer automatisch hinzugefügt werden.',
             ajHnQuota: h => 'Kontingent erreicht (150 Nummern pro Stunde): nächstes Hinzufügen um ' + h + ' möglich.',
             ajHnRunning: 'Hausnummern werden hinzugefügt…',
+            bgTab: 'Tab im Hintergrund: Chrome verlangsamt die laufende Arbeit (bis zu 3-mal länger). Diesen Tab im Vordergrund lassen.',
+            bgTabTip: 'Chrome drosselt die Timer eines verborgenen Tabs (einer pro Sekunde, nach 5 Minuten einer pro Minute) und senkt seine Priorität. Gemessen am 29.09.2026: ein Département 41 Min. im Hintergrund gegen 13 Min. im Vordergrund.',
             ajHnDone: (n, r) => n + (un1(n) ? ' Nummer gesetzt' : ' Nummern gesetzt') + ' — prüfen, dann in WME speichern. Verbleibendes Kontingent: ' + r + '.',
             ajHnAddMix: (n, r) => 'Hinzufügen (' + n + ' Nummern · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + (un1(n) ? ' Nummer' : ' Nummern') + ' und ' + r + ' RPP gesetzt — prüfen, dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
+            ajHnDoneRpp: (r, q) => r + ' RPP gesetzt — prüfen, dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
             ajRppCrit: l => '⚠️ Von Hand zu korrigieren: ' + l + '.',
             ajRppCritHn: n => 'Nummer ' + n + ' als Hausnummer auf einem Segment außerorts geblieben',
             ajRppCritPoi: n => 'RPP ' + n + ' ohne Adresse geblieben',
             ajRppCritDbl: n => 'Adresse ' + n + ' DOPPELT (Hausnummer + RPP)',
             ajHnSansAlt: (r, c) => 'Einige Segmente außerorts tragen „' + r + '“ ohne Stadt, aber ohne den Alternativnamen „' + r + ' / ' + c + '“: dort wird kein RPP gesetzt, solange er fehlt.',
+            ajHnSansAltRoute: (r, c) => 'Einige Segmente außerorts haben eine Straßennummer als Hauptnamen, ohne Stadt, aber nicht den Alternativnamen „' + r + ' / ' + c + '“: dort wird kein RPP gesetzt, solange er fehlt.',
             ajHnSkip: n => n + (un1(n) ? ' Adresse übersprungen' : ' Adressen übersprungen') + ' (Details in der Konsole).',
             ajHnNoSeg: 'Kein geladenes Segment trägt genau diesen Namen als Hauptnamen mit der Gemeinde als Stadt: nichts wurde gesetzt.',
             ajHnErr: m => 'Hinzufügen abgebrochen: ' + m,
             ajHnRights: 'Nur für L6-Editoren.',
-            ajHnSee: 'Sie sind auf der Karte türkis eingekreist.',
+            ajHnSee: n => (un1(n) ? 'Sie ist' : 'Sie sind') + ' auf der Karte türkis eingekreist.',
             ajHnPoseTip: 'Von WBC gesetzt, noch nicht gespeichert: klicken, um die Karte darauf zu zentrieren.',
             ajHnSaved: (c, r, q) => 'Gespeichert: ' + c + (un1(c) ? ' Nummer gezählt' : ' Nummern gezählt') + ', ' + r + ' dem Kontingent zurückgegeben (vor dem Speichern entfernt). Verbleibendes Kontingent: ' + q + '.',
             ajHnSavedTip: 'Von WBC gesetzt und gespeichert.',
@@ -1142,19 +1154,23 @@
             ajHnNone: 'Ningún número se puede añadir automáticamente en esta calle.',
             ajHnQuota: h => 'Cuota alcanzada (150 números por hora): próxima adición posible a las ' + h + '.',
             ajHnRunning: 'Añadiendo los números…',
-            ajHnDone: (n, r) => n + (un1(n) ? ' número colocado' : ' números colocados') + ' — compruébelos y luego guarde en WME. Cuota restante: ' + r + '.',
+            bgTab: 'Pestaña en segundo plano: Chrome ralentiza el trabajo en curso (hasta 3 veces más largo). Mantenga esta pestaña en primer plano.',
+            bgTabTip: 'Chrome frena los temporizadores de una pestaña oculta (uno por segundo y, tras 5 minutos, uno por minuto) y baja su prioridad. Medido el 29/09/2026: un departamento en 41 min en segundo plano frente a 13 min en primer plano.',
+            ajHnDone: (n, r) => n + (un1(n) ? ' número colocado — compruébelo' : ' números colocados — compruébelos') + ' y luego guarde en WME. Cuota restante: ' + r + '.',
             ajHnAddMix: (n, r) => 'Añadir (' + n + ' números · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + (un1(n) ? ' número' : ' números') + ' y ' + r + ' RPP colocados — compruébelos y luego guarde en WME. Cuota restante: ' + q + '.',
+            ajHnDoneRpp: (r, q) => r + (un1(r) ? ' RPP colocado — compruébelo' : ' RPP colocados — compruébelos') + ' y luego guarde en WME. Cuota restante: ' + q + '.',
             ajRppCrit: l => '⚠️ A corregir a mano: ' + l + '.',
             ajRppCritHn: n => 'número ' + n + ' quedado como número de portal en un segmento fuera de poblado',
             ajRppCritPoi: n => 'RPP ' + n + ' quedado sin dirección',
             ajRppCritDbl: n => 'dirección ' + n + ' DUPLICADA (número + RPP)',
             ajHnSansAlt: (r, c) => 'Algunos segmentos fuera de poblado llevan «' + r + '» sin ciudad pero no el alternativo «' + r + ' / ' + c + '»: no se coloca ningún RPP mientras falte.',
+            ajHnSansAltRoute: (r, c) => 'Algunos segmentos fuera de poblado tienen un número de carretera como nombre principal, sin ciudad, pero no el alternativo «' + r + ' / ' + c + '»: no se coloca ningún RPP mientras falte.',
             ajHnSkip: n => n + (un1(n) ? ' dirección descartada' : ' direcciones descartadas') + ' (detalle en la consola).',
             ajHnNoSeg: 'Ningún segmento cargado lleva exactamente este nombre como nombre principal con el municipio como ciudad: no se ha colocado nada.',
             ajHnErr: m => 'Adición interrumpida: ' + m,
             ajHnRights: 'Reservado a los editores L6.',
-            ajHnSee: 'Aparecen rodeados en turquesa en el mapa.',
+            ajHnSee: n => (un1(n) ? 'Aparece rodeado' : 'Aparecen rodeados') + ' en turquesa en el mapa.',
             ajHnPoseTip: 'Colocado por WBC, aún sin guardar: haga clic para centrar el mapa en él.',
             ajHnSaved: (c, r, q) => 'Guardado: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devueltos a la cuota (retirados antes de guardar). Cuota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado por WBC y guardado.',
@@ -1417,19 +1433,23 @@
             ajHnNone: 'Nessun numero può essere aggiunto automaticamente su questa via.',
             ajHnQuota: h => 'Quota raggiunta (150 numeri all’ora): prossima aggiunta possibile alle ' + h + '.',
             ajHnRunning: 'Aggiunta dei numeri…',
-            ajHnDone: (n, r) => n + (un1(n) ? ' numero inserito' : ' numeri inseriti') + ' — controllali, poi salva in WME. Quota residua: ' + r + '.',
+            bgTab: 'Scheda in secondo piano: Chrome rallenta il lavoro in corso (fino a 3 volte più lungo). Tieni questa scheda in primo piano.',
+            bgTabTip: 'Chrome rallenta i timer di una scheda nascosta (uno al secondo, poi uno al minuto dopo 5 minuti) e ne abbassa la priorità. Misurato il 29/09/2026: un dipartimento in 41 min in secondo piano contro 13 min in primo piano.',
+            ajHnDone: (n, r) => n + (un1(n) ? ' numero inserito — controllalo' : ' numeri inseriti — controllali') + ', poi salva in WME. Quota residua: ' + r + '.',
             ajHnAddMix: (n, r) => 'Aggiungi (' + n + ' numeri · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + (un1(n) ? ' numero' : ' numeri') + ' e ' + r + ' RPP inseriti — controllali, poi salva in WME. Quota residua: ' + q + '.',
+            ajHnDoneRpp: (r, q) => r + (un1(r) ? ' RPP inserito — controllalo' : ' RPP inseriti — controllali') + ', poi salva in WME. Quota residua: ' + q + '.',
             ajRppCrit: l => '⚠️ Da sistemare a mano: ' + l + '.',
             ajRppCritHn: n => 'numero ' + n + ' rimasto come numero civico su un segmento fuori centro abitato',
             ajRppCritPoi: n => 'RPP ' + n + ' rimasto senza indirizzo',
             ajRppCritDbl: n => 'indirizzo ' + n + ' DOPPIO (numero + RPP)',
             ajHnSansAlt: (r, c) => 'Alcuni segmenti fuori dal centro abitato portano «' + r + '» senza città ma non l’alternativo «' + r + ' / ' + c + '»: nessun RPP viene inserito finché manca.',
+            ajHnSansAltRoute: (r, c) => 'Alcuni segmenti fuori dal centro abitato hanno un numero di strada come nome principale, senza città, ma non l’alternativo «' + r + ' / ' + c + '»: nessun RPP vi viene inserito finché manca.',
             ajHnSkip: n => n + (un1(n) ? ' indirizzo scartato' : ' indirizzi scartati') + ' (dettagli nella console).',
             ajHnNoSeg: 'Nessun segmento caricato porta esattamente questo nome come nome principale con il comune come città: non è stato inserito nulla.',
             ajHnErr: m => 'Aggiunta interrotta: ' + m,
             ajHnRights: 'Riservato agli editor L6.',
-            ajHnSee: 'Sono cerchiati in turchese sulla mappa.',
+            ajHnSee: n => (un1(n) ? 'È cerchiato' : 'Sono cerchiati') + ' in turchese sulla mappa.',
             ajHnPoseTip: 'Inserito da WBC, non ancora salvato: clicca per centrare la mappa.',
             ajHnSaved: (c, r, q) => 'Salvataggio: ' + c + (un1(c) ? ' numero contato' : ' numeri contati') + ', ' + r + ' restituiti alla quota (rimossi prima del salvataggio). Quota residua: ' + q + '.',
             ajHnSavedTip: 'Inserito da WBC e salvato.',
@@ -1692,19 +1712,23 @@
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
             ajHnQuota: h => 'Cota atingida (150 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'Adicionando os números…',
+            bgTab: 'Aba em segundo plano: o Chrome deixa o trabalho em andamento mais lento (até 3 vezes mais longo). Mantenha esta aba em primeiro plano.',
+            bgTabTip: 'O Chrome limita os temporizadores de uma aba oculta (um por segundo, depois um por minuto após 5 minutos) e reduz sua prioridade. Medido em 29/09/2026: um departamento em 41 min em segundo plano contra 13 min em primeiro plano.',
             ajHnDone: (n, r) => n + (un1(n) ? ' número colocado' : ' números colocados') + ' — confira e depois salve no WME. Cota restante: ' + r + '.',
             ajHnAddMix: (n, r) => 'Adicionar (' + n + ' números · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + (un1(n) ? ' número' : ' números') + ' e ' + r + ' RPP colocados — confira e depois salve no WME. Cota restante: ' + q + '.',
+            ajHnDoneRpp: (r, q) => r + (un1(r) ? ' RPP colocado' : ' RPP colocados') + ' — confira e depois salve no WME. Cota restante: ' + q + '.',
             ajRppCrit: l => '⚠️ A corrigir à mão: ' + l + '.',
             ajRppCritHn: n => 'número ' + n + ' ficou como número de casa num segmento fora da área urbana',
             ajRppCritPoi: n => 'RPP ' + n + ' ficou sem endereço',
             ajRppCritDbl: n => 'endereço ' + n + ' em DUPLICIDADE (número + RPP)',
             ajHnSansAlt: (r, c) => 'Alguns segmentos fora da área urbana têm “' + r + '” sem cidade, mas não o alternativo “' + r + ' / ' + c + '”: nenhum RPP é colocado enquanto ele faltar.',
+            ajHnSansAltRoute: (r, c) => 'Alguns segmentos fora da área urbana têm um número de rodovia como nome principal, sem cidade, mas não o alternativo “' + r + ' / ' + c + '”: nenhum RPP é colocado ali enquanto faltar.',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes no console).',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
             ajHnErr: m => 'Adição interrompida: ' + m,
             ajHnRights: 'Reservado aos editores L6.',
-            ajHnSee: 'Eles aparecem circulados em turquesa no mapa.',
+            ajHnSee: n => un1(n) ? 'Ele aparece circulado em turquesa no mapa.' : 'Eles aparecem circulados em turquesa no mapa.',
             ajHnPoseTip: 'Colocado pelo WBC, ainda não salvo: clique para centralizar o mapa nele.',
             ajHnSaved: (c, r, q) => 'Salvamento: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à cota (removidos antes de salvar). Cota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e salvo.',
@@ -1967,19 +1991,23 @@
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
             ajHnQuota: h => 'Quota atingida (150 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'A adicionar os números…',
+            bgTab: 'Separador em segundo plano: o Chrome abranda o trabalho em curso (até 3 vezes mais longo). Mantenha este separador em primeiro plano.',
+            bgTabTip: 'O Chrome limita os temporizadores de um separador oculto (um por segundo, depois um por minuto após 5 minutos) e baixa a sua prioridade. Medido a 29/09/2026: um departamento em 41 min em segundo plano contra 13 min em primeiro plano.',
             ajHnDone: (n, r) => n + (un1(n) ? ' número colocado' : ' números colocados') + ' — verifique e depois guarde no WME. Quota restante: ' + r + '.',
             ajHnAddMix: (n, r) => 'Adicionar (' + n + ' números · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + (un1(n) ? ' número' : ' números') + ' e ' + r + ' RPP colocados — verifique e depois guarde no WME. Quota restante: ' + q + '.',
+            ajHnDoneRpp: (r, q) => r + (un1(r) ? ' RPP colocado' : ' RPP colocados') + ' — verifique e depois guarde no WME. Quota restante: ' + q + '.',
             ajRppCrit: l => '⚠️ A corrigir à mão: ' + l + '.',
             ajRppCritHn: n => 'número ' + n + ' ficou como número de porta num segmento fora da localidade',
             ajRppCritPoi: n => 'RPP ' + n + ' ficou sem morada',
             ajRppCritDbl: n => 'morada ' + n + ' em DUPLICADO (número + RPP)',
             ajHnSansAlt: (r, c) => 'Alguns segmentos fora da localidade têm «' + r + '» sem cidade, mas não o alternativo «' + r + ' / ' + c + '»: nenhum RPP é colocado enquanto faltar.',
+            ajHnSansAltRoute: (r, c) => 'Alguns segmentos fora da localidade têm um número de estrada como nome principal, sem localidade, mas não o alternativo «' + r + ' / ' + c + '»: nenhum RPP é colocado ali enquanto faltar.',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes na consola).',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
             ajHnErr: m => 'Adição interrompida: ' + m,
             ajHnRights: 'Reservado aos editores L6.',
-            ajHnSee: 'Aparecem rodeados a turquesa no mapa.',
+            ajHnSee: n => (un1(n) ? 'Aparece rodeado' : 'Aparecem rodeados') + ' a turquesa no mapa.',
             ajHnPoseTip: 'Colocado pelo WBC, ainda não guardado: clique para centrar o mapa nele.',
             ajHnSaved: (c, r, q) => 'Gravação: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à quota (retirados antes de guardar). Quota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e guardado.',
@@ -2242,19 +2270,23 @@
             ajHnNone: 'לא ניתן להוסיף אוטומטית אף מספר ברחוב זה.',
             ajHnQuota: h => 'המכסה נוצלה (150 מספרים בשעה): ההוספה הבאה אפשרית בשעה ' + h + '.',
             ajHnRunning: 'מוסיף את המספרים…',
+            bgTab: 'הלשונית ברקע: Chrome מאט את העבודה הנוכחית (עד פי 3). כדאי להשאיר את הלשונית הזו בחזית.',
+            bgTabTip: 'Chrome מגביל את הטיימרים של לשונית מוסתרת (אחד בשנייה, ואחרי 5 דקות אחד בדקה) ומוריד את העדיפות שלה. נמדד ב־29/09/2026: מחוז שלם ב־41 דקות ברקע לעומת 13 דקות בחזית.',
             ajHnDone: (n, r) => (un1(n) ? 'מספר אחד הוצב' : n + ' מספרים הוצבו') + ' — יש לבדוק ואז לשמור ב-WME. יתרת המכסה: ' + r + '.',
             ajHnAddMix: (n, r) => 'הוספה (' + n + ' מספרים · ' + r + ' RPP)',
             ajHnDoneMix: (n, r, q) => n + ' מספרים ו-' + r + ' RPP הוצבו — יש לבדוק ואז לשמור ב-WME. יתרת המכסה: ' + q + '.',
+            ajHnDoneRpp: (r, q) => (un1(r) ? 'RPP אחד הוצב' : r + ' RPP הוצבו') + ' — יש לבדוק ואז לשמור ב-WME. יתרת המכסה: ' + q + '.',
             ajRppCrit: l => '⚠️ לתיקון ידני: ' + l + '.',
             ajRppCritHn: n => 'מספר ' + n + ' נשאר מספר בית על מקטע מחוץ ליישוב',
             ajRppCritPoi: n => 'RPP ' + n + ' נשאר ללא כתובת',
             ajRppCritDbl: n => 'כתובת ' + n + ' כפולה (מספר + RPP)',
             ajHnSansAlt: (r, c) => 'חלק מהמקטעים מחוץ ליישוב נושאים את «' + r + '» ללא עיר אך ללא השם החלופי «' + r + ' / ' + c + '»: לא יוצב שם RPP כל עוד הוא חסר.',
+            ajHnSansAltRoute: (r, c) => 'לחלק מהמקטעים מחוץ לשטח הבנוי יש מספר כביש כשם ראשי, ללא עיר, אך אין להם השם החלופי „' + r + ' / ' + c + '”: לא יוצב שם RPP כל עוד הוא חסר.',
             ajHnSkip: n => (un1(n) ? 'כתובת אחת דולגה' : n + ' כתובות דולגו') + ' (פרטים במסוף).',
             ajHnNoSeg: 'אף מקטע טעון אינו נושא בדיוק שם זה כשם ראשי עם הרשות כעיר: דבר לא הוצב.',
             ajHnErr: m => 'ההוספה הופסקה: ' + m,
             ajHnRights: 'שמור לעורכי L6.',
-            ajHnSee: 'הם מוקפים בטורקיז על המפה.',
+            ajHnSee: n => un1(n) ? 'הוא מוקף בטורקיז על המפה.' : 'הם מוקפים בטורקיז על המפה.',
             ajHnPoseTip: 'הוצב על ידי WBC, טרם נשמר: יש ללחוץ כדי למרכז את המפה עליו.',
             ajHnSaved: (c, r, q) => 'שמירה: ' + (un1(c) ? 'מספר אחד נספר' : c + ' מספרים נספרו') + ', ' + r + ' הוחזרו למכסה (הוסרו לפני השמירה). יתרת המכסה: ' + q + '.',
             ajHnSavedTip: 'הוצב על ידי WBC ונשמר.',
@@ -3038,12 +3070,15 @@
             const enAgglo = segs.filter(s => bonNom(s) && villeHnOk(s.ville, commune) && traceOk(s));
             const horsA = segs.filter(s => horsAgglo(s) && traceOk(s));
             const admis = enAgglo.concat(horsA);
+            const probables = new Set((voie.adresses || []).filter(a => !a.trouve && a.seg != null).map(a => a.seg));
             const refus = {
                 nom: segs.filter(s => !bonNom(s) && !horsAgglo(s)).length,
                 ville: segs.filter(s => bonNom(s) && !villeHnOk(s.ville, commune) && !horsAgglo(s)).length,
                 // 0.13.04 : dont « hors agglo sans l'alternatif nom BAN / commune » — le cas du chemin des Baylés
                 // (02/10) : 16 adresses écartées sans que le message dise pourquoi.
                 sansAlt: segs.filter(s => bonNom(s) && !nomSouple(s.ville) && !horsAgglo(s)).length,
+                // 0.15.01 : principal = numéro de route sans ville, segment probable d'une adresse manquante de la voie.
+                sansAltRoute: segs.filter(s => ROUTE_RE.test(s.nom || '') && !nomSouple(s.ville) && !horsAgglo(s) && probables.has(s.id)).length,
             };
             const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0 };
             const poses = [];
@@ -3985,6 +4020,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     white-space: nowrap; font-variant-numeric: tabular-nums; }
 .wbc-progres.dep { grid-template-columns: 3.4em 4.6em 4.8em minmax(0, 1fr) 11em; }
 .wbc-progres[hidden] { display: none; }
+/* Onglet en arrière-plan pendant un passage (0.15.01) : resté affiché jusqu'à la fin, pour être vu au retour. */
+.wbc-arriere { margin: 6px 0 0; padding: 4px 8px; border-radius: 6px; background: #fff3e0; color: #8a3a00; font-size: 11px; line-height: 1.45; cursor: help; }
+.wbc-arriere[hidden] { display: none; }
 .wbc-progres > span { overflow: hidden; text-overflow: ellipsis; }
 .wbc-progres .st-pct, .wbc-progres .st-cpt { text-align: end; font-weight: 700; color: var(--wbc-text); }
 .wbc-progres .st-nom { font-weight: 600; color: var(--wbc-text); }
@@ -4125,6 +4163,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-pt.present { background: #43a047; }
 .wbc-pt.trop { background: #fb8c00; }
 .wbc-num.courant { outline: 2px solid var(--wbc-blue-dk); outline-offset: 1px; }
+.wbc-copier { display: inline-flex; align-items: center; gap: 5px; }
+.wbc-ico-copie { flex: none; }
 /* « + » d'une adresse seule (0.15.00) : pastille à l'angle, montrée au survol, au focus et sur la pastille courante —
    jamais « ✚ », qui marque déjà un numéro POSÉ. Turquoise de la pose (blanc sur #00838f : 4,6:1). */
 .wbc-num-g { position: relative; display: inline-flex; }
@@ -4252,11 +4292,36 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         b.hidden = frac == null;
         b.classList.toggle('en-cours', !!enCours);
         if (frac != null) b.firstElementChild.style.width = Math.round(frac * 100) + '%';
+        if (jeton && frac != null && !enCours) titreAvancement(frac);
         // Une étape de durée inconnue n'a pas de valeur : la barre est alors « indéterminée ».
         if (frac != null && !enCours) b.setAttribute('aria-valuenow', String(Math.round(frac * 100)));
         else b.removeAttribute('aria-valuenow');
     }
     const annoncer = txt => { const a = ovEl && $('#wbc-annonce'); if (a) a.textContent = txt; };
+    // ---- Onglet en arrière-plan (0.15.01, demande de l'auteur du 29/09) ----------------------------
+    // Caché, l'onglet est freiné par Chrome (voir ceder()) : un passage ou un ajout qui a connu l'arrière-plan le
+    // dit dans la fenêtre — c'est au RETOUR qu'on le lit : fini pendant l'absence, le bandeau reste jusqu'au retour
+    // sur l'onglet, puis 15 s (essai du 14/10 : un ajout d'un numéro dure 350 ms, il s'effaçait avant tout retour).
+    // Le titre de l'onglet porte l'avancement (« 35 % · WBC »), lisible depuis un autre onglet ; rendu à la fin.
+    let titreOrigine = null, arrierePlanVu = false, masqueArriere = null;
+    // hnEnCours est déclaré plus bas : un visibilitychange reçu avant sa déclaration ne doit pas lever d'erreur.
+    const travailEnCours = () => { try { return !!jeton || hnEnCours; } catch (e) { return !!jeton; } };
+    // `debut` : un nouveau travail part, l'avertissement du précédent ne vaut plus.
+    function majArrierePlan(debut) {
+        if (debut) arrierePlanVu = false;
+        if (travailEnCours() && document.hidden) arrierePlanVu = true;
+        clearTimeout(masqueArriere);
+        if (arrierePlanVu && !travailEnCours() && !document.hidden) masqueArriere = setTimeout(() => { arrierePlanVu = false; majArrierePlan(); }, 15000);
+        const e = ovEl && $('#wbc-arriere');
+        if (e) e.hidden = !arrierePlanVu;
+    }
+    function titreAvancement(frac) {
+        if (frac == null) { if (titreOrigine != null) { document.title = titreOrigine; titreOrigine = null; } return; }
+        if (titreOrigine == null) titreOrigine = document.title;
+        document.title = Math.round(frac * 100) + '\u00a0% · WBC';
+    }
+    // Fonction fléchée : passé tel quel, l'événement arrivait dans `debut` et effaçait le bandeau au retour (essai du 14/10).
+    document.addEventListener('visibilitychange', () => majArrierePlan());
     // Chaque attente se voit (28/09) : durée connue ⇒ barre qui avance, inconnue
     // ⇒ barre animée ou roue, jamais un texte seul. `attendre(p)` tient la barre animée le temps de p ;
     // un passage en cours la pilote déjà, et des attentes qui se chevauchent ne l'éteignent pas trop tôt.
@@ -4283,6 +4348,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const j = jeton = { stop: false, certSeules: cert, departement: !!reprise || (!tache && opts.mode === 'dep') };
         const t0 = Date.now();
         majBoutons();
+        majArrierePlan(true);
         // Jusqu'à la première étape chiffrée (commune localisée, liste du département, mémoire) : barre animée.
         barre(0, true);
         annoncer(t('analyse') + '…');
@@ -4306,6 +4372,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             jeton = null;
             barre(null);
             progres(null);
+            titreAvancement(null);
+            majArrierePlan();
             majBoutons();
             annoncer(fin);
             // Les boutons qui n'existent qu'une fois le passage fini (reprise des échecs, Vérifier WME, Rafraîchir)
@@ -4822,12 +4890,16 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             } catch (e2) { ok = false; }
         }
         // Le bouton le dit deux secondes, puis reprend son libellé.
-        const lbl = t('copyBtn');
         bouton.textContent = ok ? '✓ ' + t('copyDone') : t('copyFail');
         annoncer(ok ? t('copyDone') : t('copyFail'));
-        setTimeout(() => { if (bouton.isConnected) bouton.textContent = lbl; }, 2000);
+        setTimeout(() => { if (bouton.isConnected) bouton.innerHTML = LIB_COPIER; }, 2000);
     }
-    const boutonCopier = () => droitChamp && !jeton ? '<button type="button" class="wbc-btn wbc-btn-neutral" data-act="copier" title="' + esc(t('copyTip')) + '">' + esc(t('copyBtn')) + '</button>' : '';
+    // Libellé (0.15.01, demande de l'auteur du 28/09) : l'icône de copie puis « Discord », la destination du texte.
+    // Icône dessinée (deux feuilles décalées) plutôt que « ⧉ », absent de bien des polices.
+    const LIB_COPIER = '<svg class="wbc-ico-copie" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false">' +
+        '<rect x="5.5" y="5.5" width="8.5" height="8.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/>' +
+        '<path d="M10.5 3.2V3a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Discord';
+    const boutonCopier = () => droitChamp && !jeton ? '<button type="button" class="wbc-btn wbc-btn-neutral wbc-copier" data-act="copier" title="' + esc(t('copyTip')) + '" aria-label="' + esc(t('copyBtn') + ' — Discord') + '">' + LIB_COPIER + '</button>' : '';
 
     function htmlDepartement(d) {
         const ok = d.communes.filter(c => c.totaux);
@@ -5396,6 +5468,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             // L'avancement en CASES FIXES (%, temps restant, compteur, commune, étape) : chaque information
             // garde sa place, la ligne ne passe plus de une à deux lignes selon le nom de la commune.
             '<div class="wbc-progres" id="wbc-progres" aria-hidden="true" hidden></div>' +
+            '<p class="wbc-arriere" id="wbc-arriere" role="status" title="' + esc(t('bgTabTip')) + '" hidden>&#x26A0;&#xFE0F; ' + esc(t('bgTab')) + '</p>' +
             '<div class="wbc-barre" id="wbc-barre" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="' + esc(t('analyse')) + '" hidden><i></i></div>' +
             '<p class="wbc-lecteur" id="wbc-annonce" role="status" aria-live="polite"></p></div>' +
             '<div id="wbc-corps"></div><div id="wbc-resize"></div>' +
@@ -6081,6 +6154,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const q = Core.quotaHn(lireHorodatages(), Date.now());
         if (!q.reste) { statut(t('ajHnQuota', heureCourte(q.libre)), true); return; }
         hnEnCours = true;
+        majArrierePlan(true);
         statut(t('ajHnRunning'));
         let msg = null;
         try {
@@ -6088,7 +6162,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             const critiques = [];
             const horo = q.garder.slice();
             // Une passe : lire ce qui est chargé, planifier, poser. Rend le plan (ses écartés servent au message).
-            let sansAlt = 0;
+            let sansAlt = 0, sansAltR = 0;
+            const msgAlt = () => (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : '') + (sansAltR ? ' ' + t('ajHnSansAltRoute', v.nom, commune) : '');
             const passe = async (cadrerSiBesoin, zone) => {
                 const { segs, existants } = await lireVoieHn(v, cadrerSiBesoin, zone);
                 const plan = Core.planHn(vPlan, commune, segs, existants, Core.quotaHn(horo, Date.now()).reste);
@@ -6096,6 +6171,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     ' (hors agglo ' + plan.hors + ', autre nom ' + plan.refus.nom + ', autre ville ' + plan.refus.ville + '), écartés ' + JSON.stringify(plan.ecartes));
                 admisTotal += plan.admis;
                 sansAlt = Math.max(sansAlt, plan.refus.sansAlt || 0);
+                sansAltR = Math.max(sansAltR, plan.refus.sansAltRoute || 0);
                 const parSeg = new Map(segs.map(x => [x.id, x]));
                 for (const p of plan.poses) {
                     // Les numéros de ce segment AVANT la pose : le numéro posé est le seul nouveau (addHouseNumber ne
@@ -6138,9 +6214,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 plan = await passe(false, { lon: seule.lon, lat: seule.lat, adresses: [seule] });
                 if (!n && !nRpp && !err) {
                     const e = plan.ecartes, num = Core.numeroHn(seule.brut);
-                    if (!admisTotal) msg = [t('ajHnNoSeg') + (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : ''), true];
+                    if (!admisTotal) msg = [t('ajHnNoSeg') + msgAlt(), true];
                     else if (e.existe) msg = [t('ajHn1Exists', num), true];
-                    else if (e.loin) msg = [t('ajHn1Far', num) + (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : ''), true];
+                    else if (e.loin) msg = [t('ajHn1Far', num) + msgAlt(), true];
                     else msg = [t('ajHnNone'), true];
                     return;
                 }
@@ -6161,17 +6237,18 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 plan = { ecartes: Object.assign({}, plan.ecartes, { loin: restantes().filter(a => !a.hnPose).length }) };
                 plan.ecartes.existe = 0; plan.ecartes.quota = 0;
             }
-            if (!admisTotal) { msg = [t('ajHnNoSeg') + (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : ''), true]; return; }
+            if (!admisTotal) { msg = [t('ajHnNoSeg') + msgAlt(), true]; return; }
             const e = plan.ecartes, ecartes = seule ? 0 : e.existe + e.suffixe + e.format + e.loin + e.quota;
             msg = [(critiques.length ? t('ajRppCrit', critiques.join(' · ')) + ' ' : '') +
-                (nRpp ? t('ajHnDoneMix', nb(n), nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : t('ajHnDone', nb(n), nb(Core.quotaHn(horo, Date.now()).reste))) +
-                (n + nRpp ? ' ' + t('ajHnSee') : '') + (ecartes ? ' ' + t('ajHnSkip', nb(ecartes)) : '') +
-                (e.loin && sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : '') +
+                (nRpp && !n ? t('ajHnDoneRpp', nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : nRpp ? t('ajHnDoneMix', nb(n), nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : t('ajHnDone', nb(n), nb(Core.quotaHn(horo, Date.now()).reste))) +
+                (n + nRpp ? ' ' + t('ajHnSee', n + nRpp) : '') + (ecartes ? ' ' + t('ajHnSkip', nb(ecartes)) : '') +
+                (e.loin ? msgAlt() : '') +
                 (err ? ' ' + t('ajHnErr', (err && (err.message || err.name)) || '') : ''), (!(n + nRpp) && !!err) || critiques.length > 0];
         } catch (e) { log('ajout de numéros : ' + e.message); msg = [t('ajHnErr', e.message), true]; }
         finally {
             // hnEnCours retombe AVANT le rendu : sinon le bouton reste grisé (vu à l'essai du 29/09).
             hnEnCours = false;
+            majArrierePlan();
             v.apercuHn = null;
             apercuHn(i);
             if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] };

@@ -350,6 +350,11 @@ function cas(Core) {
         ok('hors agglo : sans alternatif ou avec une autre commune, rien (25 et 29 trop loin)', plH.ecartes.loin === 2 && plH.hors === 2 && plH.admis === 4, JSON.stringify([plH.ecartes, plH.hors, plH.admis]));
         ok('hors agglo : nommé ⇒ admis (pas refusé) ; sans alternatif ou autre commune ⇒ refusé « ville »', plH.refus.nom === 0 && plH.refus.ville === 2, JSON.stringify(plH.refus));
         ok('hors agglo : nommage incomplet compté à part (sans l’alternatif, ou alternatif d’une autre commune)', plH.refus.sansAlt === 2, JSON.stringify(plH.refus));
+        // 0.15.01 : principal = numéro de route sans l'alternatif — compté seulement s'il est le segment probable d'une adresse.
+        const segsR = [sgH(10, 'D633', '', [], 0), sgH(11, 'D12', '', [], 600), sgH(12, 'D633', '', [{ nom: 'Rue Haute', ville: 'Brie' }], 1200)];
+        const voieR = { nom: 'Rue Haute', adresses: [ad('2', 20, 10, { seg: 10 }), ad('4', 20, 1210, { seg: 12 })] };
+        const plR = Core.planHn(voieR, 'Brie', segsR, [], 100);
+        ok('hors agglo : D633 sans alternatif, probable d’une adresse ⇒ signalé ; D12 voisine ⇒ non ; D633 nommée ⇒ admise', plR.refus.sansAltRoute === 1 && plR.admis === 1, JSON.stringify([plR.refus, plR.admis]));
         const plH2 = Core.planHn(voieH, 'Brie', segsH, ['23'], 100);
         ok('hors agglo : un RPP déjà présent (même en attente) n’est pas reposé', !plH2.poses.some(x => x.number === '23') && plH2.ecartes.existe === 1, JSON.stringify(plH2.ecartes));
         // Rapprochement d'un RPP : enregistré compté, disparu rendu, indécidable gardé réservé.
@@ -440,6 +445,8 @@ const TEMOINS = [
     ['0.12.00 : ville ignorée', 'bonNom(s) && villeHnOk(s.ville, commune) && traceOk(s)', 'bonNom(s) && traceOk(s)'],
     ['0.13.03 : zone sans limite (tout dans une seule)', 'if (Math.abs(x - x0) <= 2 * demiX && Math.abs(y - y0) <= 2 * demiY)', 'if (true)'],
     ['0.13.03 : centre pris au premier point', 'const lon = dedans.reduce((t, a) => t + a.lon, 0) / dedans.length', 'const lon = a0.lon'],
+    ['0.15.01 : numéro de route sans alternatif jamais compté', '!nomSouple(s.ville) && !horsAgglo(s) && probables.has(s.id)).length,', '!nomSouple(s.ville) && !horsAgglo(s) && false).length,'],
+    ['0.15.01 : toute départementale voisine comptée', '!nomSouple(s.ville) && !horsAgglo(s) && probables.has(s.id)).length,', '!nomSouple(s.ville) && !horsAgglo(s)).length,'],
     ['0.13.04 : nommage incomplet jamais compté', 'sansAlt: segs.filter(s => bonNom(s) && !nomSouple(s.ville) && !horsAgglo(s)).length,', 'sansAlt: 0,'],
     ['0.13.00 : hors agglo jamais admis', 'const horsA = segs.filter(s => horsAgglo(s) && traceOk(s));', 'const horsA = [];'],
     ['0.13.00 : principal avec ville pris pour hors agglo', 'const horsAgglo = s => !nomSouple(s.ville) && !!altBan(s);', 'const horsAgglo = s => !!altBan(s);'],
