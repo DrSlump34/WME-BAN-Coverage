@@ -277,6 +277,24 @@ le vocabulaire « département » et la clé de la mémoire locale (sans pays).
 Recherche par code postal (0.16.06) : toutes les communes du code, les plus peuplées d'abord. Limitée
 à 10 dans l'ordre alphabétique, elle perdait la ville principale (30700 : Uzès arrivait 16e sur 17).
 
+## Point d'arrêt, panneau des calques, quota visible (0.16.08 – 0.16.09)
+
+- **Point d'arrêt** : un numéro WME a deux positions, son marqueur (sur la maison) et son point d'arrêt (le
+  point du segment pour un HN, l'entrée principale pour un RPP). La BAN place souvent l'adresse au bord de
+  la voie. Au bout d'une longue allée privée, le marqueur dépassait les 150 m alors que le point d'arrêt
+  était sur l'adresse : numéro « manquant » et « en trop » à la fois, et impossible à ajouter puisqu'il
+  existe. Mesuré à Saint-Laurent-des-Arbres le 15/10/2026 : chemin de la Chapelle 732 (154 m / 3 m), RPP 736
+  (187 m / entrée à 139 m), chemin de la Coste de l'Evesque 703 et 705 (218 et 201 m / 5 m). Le
+  rapprochement compte désormais la plus courte des deux distances.
+- **Panneau « Calques »** : la fenêtre est insérée dans la zone de carte de WME (`.edit-area-main`, niveau 1),
+  sous ses panneaux ; posée sur la page à 9989, elle recouvrait le panneau des calques.
+- **Quota** : une pastille sous la couverture, pour qui peut ajouter, rouge quand il est plein.
+- **Présent loin** (0.16.11) : même numéro, même voie, entre 150 et 1 000 m, dans la commune — l'adresse est
+  TROUVÉE, marquée « loin » (« dont N loin de la BAN » sous les trouvées, « Placé à 175 m de l'adresse BAN » dans
+  la fiche, distance sur la pastille d'un RPP). Quand l'habitation est au bout d'un chemin non clos, on amène
+  Waze devant la propriété : le numéro est loin du point BAN par choix. Saint-Laurent-des-Arbres, 450 Route
+  Nationale : RPP à 209 m, entrée à 175 m. (La 0.16.10 la laissait manquante, marquée « position à vérifier ».)
+
 ## Mesures qui ont fixé la conception (26/09/2026)
 
 - Le serveur de WME **allège une zone trop grande sans le dire** : à Nîmes, un carreau de 0,1° rend

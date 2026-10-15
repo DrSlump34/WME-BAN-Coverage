@@ -40,7 +40,7 @@ function village(Core) {
         hn(10, '1', 10, 5), hn(10, '3', 50, 5), hn(10, '5bis', 90, 5), hn(10, '7 QUATER', 130, 5),
         hn(10, '12bis', 170, 5),                       // la BAN a « 12 b » : une lettre n'est pas « bis »
         hn(10, '99', 300, 5),                          // absent de la BAN : en trop
-        hn(10, '9', 450, 5),                           // BAN « 9 » à 240 m : trop loin, c'est une autre adresse
+        hn(10, '9', 450, 5),                           // BAN « 9 » à 240 m, même rue : présent LOIN (choix de l'auteur, 15/10/2026)
         hn(20, '2', 20, 205), hn(20, '4', 60, 205),    // rue sans nom : rattachée par la géométrie
         hn(30, '1', 20, 405),                          // « des Herbes » porte le 1 des « Herses »
         hn(50, '1', 30, 628),                          // posé sur Bourgneuf, mais à 13 m du « Herbé 1 »
@@ -142,7 +142,7 @@ function cas(Core) {
     ok('suffixe bis trouvé', a('Grand\'Rue', '5 bis').trouve === 'HN');
     ok('suffixe qua = QUATER trouvé', a('Grand\'Rue', '7 qua').trouve === 'HN');
     ok('« 12 b » BAN ≠ « 12bis » WME', !a('Grand\'Rue', '12 b').trouve);
-    ok('même numéro à 240 m : non trouvé', !a('Grand\'Rue', '9').trouve);
+    ok('même numéro à 240 m : trouvé, mais marqué loin (pas par le rayon de 150 m)', a("Grand'Rue", '9').trouve === 'HN' && a("Grand'Rue", '9').loin === true);
     ok('règle 2 : rue SANS NOM rattachée par la géométrie', a('Chemin du Lac', '2').trouve === 'HN' && a('Chemin du Lac', '4').trouve === 'HN');
     ok('rue sans nom : statut « sansNom »', V('Chemin du Lac').statutNom === 'sansNom', V('Chemin du Lac').statutNom);
     ok('rue sans nom : 6 manquant', (V('Chemin du Lac').manquants || []).join() === '6');
@@ -162,7 +162,15 @@ function cas(Core) {
     ok('… et Herbé 1 reste manquant', !a('Rue Herbé', '1').trouve);
     ok('adresse plus proche d\'une rue voisine : la voie garde son nom', V('Place de l’Église').statutNom === 'identique', V('Place de l’Église').statutNom + ' / ' + V('Place de l’Église').nomWme);
     ok('RPP qui double un HN : doublon', R.doublons.length === 1 && R.doublons[0].type === 'RPP', JSON.stringify(R.doublons));
-    ok('HN absent de la BAN : en trop (hors commune écarté)', R.enTrop.map(x => x.brut).sort().join() === '9,99', R.enTrop.map(x => x.brut).join());
+    ok('HN absent de la BAN : en trop (hors commune écarté)', R.enTrop.map(x => x.brut).sort().join() === '99', R.enTrop.map(x => x.brut).join());
+    ok('même numéro, même rue, à 240 m : TROUVÉ, marqué loin, pas en trop', a("Grand'Rue", '9').trouve === 'HN' && a("Grand'Rue", '9').loin === true && a("Grand'Rue", '9').dm >= 235 && a("Grand'Rue", '9').dm <= 245 && R.totaux.eloignes === 1, JSON.stringify([a("Grand'Rue", '9').trouve, a("Grand'Rue", '9').loin, a("Grand'Rue", '9').dm]));
+    {
+        // L'ajout ne propose jamais une adresse trouvée loin : elle est trouvée.
+        const v = R.voies.find(x => x.nom === "Grand'Rue");
+        const segs = [{ id: 10, nom: 'Grand’Rue', ville: 'Village', alts: [], coords: [P(0, 0), P(500, 0)] }];
+        const pl = Core.planHn(v, 'Village', segs, [], 100);
+        ok('présent loin : jamais proposé à l’ajout', !pl.poses.some(x => x.number === '9'), JSON.stringify([pl.poses.map(x => x.number), pl.ecartes]));
+    }
     ok('« 12 b » BAN / « 12bis » WME : suffixe à vérifier', a('Grand\'Rue', '12 b').suffixe === '12bis' && R.totaux.suffixes === 1, a('Grand\'Rue', '12 b').suffixe);
     ok('coeurNom : le type et les articles tombent', Core.coeurNom(M('Chemin de la Justice')) === Core.coeurNom(M('Rue Justice')) && Core.coeurNom(M('Rue du Stade')) === 'stade');
 
@@ -186,7 +194,7 @@ function cas(Core) {
         const vi = trois('Route de Saint-Ambroix', 'D979', 'Route de Saint-Ambroix');
         ok('nom BAN en principal (n° en alternatif) : « identique »', vi.statutNom === 'identique', vi.statutNom);
     }
-    ok('totaux cohérents', R.totaux.ban === 13 && R.totaux.presents + R.totaux.manquants === R.totaux.ban && R.totaux.hn === 8, JSON.stringify(R.totaux));
+    ok('totaux cohérents', R.totaux.ban === 13 && R.totaux.presents + R.totaux.manquants === R.totaux.ban && R.totaux.hn === 9, JSON.stringify(R.totaux));
 
     // Une longue diagonale de 4 km à 2 sommets (une rocade) et une adresse à 60 m de son milieu :
     // le rangement par cases échantillonnées ne doit pas la perdre.
@@ -412,6 +420,39 @@ function cas(Core) {
         ok('variante d’article : l’écart de nom reste signalé', vA.statutNom === 'autreArticle', vA.statutNom);
         ok('type différent (Impasse / Rue du Moulin) : pas une variante, le 4 reste manquant', vM.presents === 0, JSON.stringify([vM.presents, vM.statutNom]));
     }
+    // POINT D'ARRÊT (Saint-Laurent-des-Arbres, chemin de la Chapelle, 15/10/2026) : la BAN pose 732 et 736 au bout
+    // du chemin ; dans WME, le marqueur du HN 732 et le RPP 736 sont sur les maisons, au fond d'une allée privée
+    // (ici à 400 m), mais le point d'arrêt du HN (sur le segment) et l'entrée du RPP sont près de l'adresse.
+    // Un 740 dont marqueur ET point d'arrêt sont loin reste manquant.
+    {
+        const segsC = [{ id: 90, primaryStreetID: 11, streetIDs: [], geometry: { coordinates: [P(0, 3000), P(300, 3000)] } }];
+        const stC = [{ id: 11, name: 'Chemin de la Chapelle' }];
+        const pt = (dx, dy) => ({ type: 'Point', coordinates: P(dx, dy) });
+        const hns = [{ id: '90/732', segID: 90, number: '732', geometry: pt(300, 2600), fractionPoint: pt(298, 3000) },
+            { id: '90/740', segID: 90, number: '740', geometry: pt(300, 2600), fractionPoint: pt(0, 3000) }];
+        const rpps = [{ id: 's736', streetID: 11, houseNumber: '736', residential: true, geometry: pt(300, 2580), entryExitPoints: [{ point: pt(250, 2950), primary: true }] }];
+        const mC = Core.analyser({ adresses: [adr(Core, 'Chemin de la Chapelle', '732', '', 300, 3002), adr(Core, 'Chemin de la Chapelle', '736', '', 302, 3002),
+                adr(Core, 'Chemin de la Chapelle', '740', '', 304, 3002)], segments: segsC, streets: stC, hns, rpps, contour: null });
+        const vC = mC.voies.find(v => v.nom === 'Chemin de la Chapelle');
+        const tr = n => (vC.adresses.find(a => a.brut === n) || {}).trouve;
+        ok('point d’arrêt : HN 732 trouvé par son point sur le segment, marqueur à 400 m', tr('732') === 'HN' && !vC.adresses.find(a => a.brut === '732').loin && !mC.enTrop.some(x => x.brut === '732'), JSON.stringify([tr('732'), mC.enTrop.map(x => x.brut)]));
+        ok('point d’arrêt : RPP 736 trouvé par son entrée, marqueur à 400 m', tr('736') === 'RPP', tr('736'));
+        ok('point d’arrêt : 740 à 300 m par son point d’arrêt — trouvé, mais marqué loin (le 732 et le 736 ne le sont pas)', tr('740') === 'HN' && vC.adresses.find(a => a.brut === '740').loin && !vC.adresses.find(a => a.brut === '736').loin, tr('740'));
+    }
+    // « Présent loin » borné : même rue mais à plus de 1 000 m (460), ou hors de la commune à 600 m (470) ⇒ pas rattaché.
+    {
+        const segsL = [{ id: 95, primaryStreetID: 12, streetIDs: [], geometry: { coordinates: [P(0, 4000), P(3000, 4000)] } }];
+        const stL = [{ id: 12, name: 'Route Nationale' }];
+        const [w, s0] = P(-100, 3800), [e, n] = P(2000, 4200);
+        const contourL = { type: 'Polygon', coordinates: [[[w, s0], [e, s0], [e, n], [w, n], [w, s0]]] };
+        const mL = Core.analyser({ adresses: [adr(Core, 'Route Nationale', '450', '', 0, 4002), adr(Core, 'Route Nationale', '460', '', 0, 4002), adr(Core, 'Route Nationale', '470', '', 0, 4002)],
+            segments: segsL, streets: stL, contour: contourL, rpps: [],
+            hns: [hn(95, '450', 200, 4005), hn(95, '460', 1500, 4005), hn(95, '470', -600, 4005)] });
+        const vL = mL.voies.find(v => v.nom === 'Route Nationale'), lo = n2 => { const x = vL.adresses.find(a => a.brut === n2); return x.trouve && x.loin ? x : null; };
+        ok('présent loin : 450 à 200 m trouvé', !!lo('450') && vL.presents === 1, JSON.stringify([lo('450'), vL.presents]));
+        ok('présent loin : 460 à 1 500 m non rattaché (au-delà de 1 000 m)', !lo('460'), JSON.stringify(lo('460')));
+        ok('présent loin : 470 hors de la commune non rattaché', !lo('470') && !mL.enTrop.some(x => x.brut === '470'), JSON.stringify(lo('470')));
+    }
     return r;
 }
 
@@ -454,6 +495,14 @@ const TEMOINS = [
     ['nom tronqué non reconnu', "if (court.length >= 6 && long.startsWith(court)) return 'nomPartiel';", ''],
     ['article confondu avec le type', "return typeDe(ban) === typeDe(wme) ? 'autreArticle' : 'autreType';", "return 'autreType';"],
     ['suffixe non rapproché', 'if (meilleur) { a.suffixe = meilleur.brut; suffixes.add(meilleur); }', ''],
+    ['présent loin retiré (même rue au-delà de 150 m redevient manquant et en trop)', 'a.trouve = meilleur.type;', ''],
+    ['présent loin non retiré des numéros WME (compté aussi en trop)', '                    pris.add(meilleur);', ''],
+    ['présent loin hors commune rattaché', '|| !dansContour(x.lon, x.lat, contourCommune)) continue;', ') continue;'],
+    ['présent loin sans borne de distance', 'const LOIN_MAX_M = 1000;', 'const LOIN_MAX_M = 1e9;'],
+    ['point d’arrêt ignoré dans la distance', 'if (!x.arret) return d1;', 'return d1;'],
+    ['point d’arrêt non indexé (case du marqueur seule)', 'if (x.arret) { const k2 = cleCase(ci(x.arret[0]), cj(x.arret[1])); if (k2 !== k) ranger(parCase, k2, x); }', ''],
+    ['point du segment du HN non lu', 'arret: fp || null,', 'arret: null,'],
+    ['entrée du RPP non lue', 'arret: ee ? ee.point.coordinates : null,', 'arret: null,'],
     ['rangement par sommets seulement (côtés non échantillonnés)', 'for (let q = 0; q <= pas; q++)', 'for (let q = 0; q <= pas; q += pas)'],
     ['0.05 : pied pris au premier sommet', 'return { seg: best, d: bd, fx, fy };', 'return { seg: best, d: bd, fx: best.xy[0][0], fy: best.xy[0][1] };'],
     ['0.05 : segment probable jamais gardé', 'a.proche = pp;', 'a.proche = null;'],

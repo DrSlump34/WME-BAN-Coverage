@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.16.07
+// @version      0.16.11
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; kein Ergebnis wird gespeichert.
@@ -287,6 +287,8 @@
             vType: n => n + (un1(n) ? " under a close name" : " under a close name"),
             kSuf: n => 'incl. ' + n + (un1(n) ? ' suffix to check' : ' suffixes to check'),
             tipSuf: w => "WME has " + w + ": check the suffix",
+            kFar: n => 'incl. ' + n + ' far from the BAN point',
+            tipFar: d => 'Placed ' + d + ' m from the BAN address',
             certOnly: 'Certified',
             nextMissing: "Next missing",
             etaSoon: "less than a minute left",
@@ -583,6 +585,8 @@
             vType: n => n + (un(n) ? " sous un nom proche" : " sous un nom proche"),
             kSuf: n => 'dont ' + n + (un(n) ? ' suffixe à vérifier' : ' suffixes à vérifier'),
             tipSuf: w => "WME porte " + w + "\u00a0: suffixe à vérifier",
+            kFar: n => 'dont ' + n + ' loin de la BAN',
+            tipFar: d => 'Placé à ' + d + '\u00a0m de l’adresse BAN',
             certOnly: 'Certifiées',
             certNote: n => 'Adresses certifiées seulement\u00a0: ' + n + (un(n) ? ' non certifiée écartée' : ' non certifiées écartées'),
             nextMissing: "Manquant suivant",
@@ -881,6 +885,8 @@
             vType: n => n + (un1(n) ? " unter ähnlichem Namen" : " unter ähnlichem Namen"),
             kSuf: n => 'davon ' + n + (un1(n) ? ' Zusatz prüfen' : ' Zusätze prüfen'),
             tipSuf: w => "WME hat " + w + ": Zusatz prüfen",
+            kFar: n => 'davon ' + n + ' weit vom BAN-Punkt',
+            tipFar: d => 'Liegt ' + d + ' m von der BAN-Adresse entfernt',
             certOnly: 'Zertifiziert',
             nextMissing: "Nächste fehlende",
             etaSoon: "weniger als eine Minute",
@@ -1178,6 +1184,8 @@
             vType: n => n + (un1(n) ? " con un nombre parecido" : " con un nombre parecido"),
             kSuf: n => 'de ellas ' + n + (un1(n) ? ' sufijo a revisar' : ' sufijos a revisar'),
             tipSuf: w => "WME tiene " + w + ": revise el sufijo",
+            kFar: n => 'de ellas ' + n + ' lejos del punto BAN',
+            tipFar: d => 'Situado a ' + d + ' m de la dirección BAN',
             certOnly: 'Certificadas',
             nextMissing: "Siguiente que falta",
             etaSoon: "menos de un minuto",
@@ -1475,6 +1483,8 @@
             vType: n => n + (un1(n) ? " con un nome simile" : " con un nome simile"),
             kSuf: n => 'di cui ' + n + (un1(n) ? ' suffisso da verificare' : ' suffissi da verificare'),
             tipSuf: w => "WME ha " + w + ": verificare il suffisso",
+            kFar: n => 'di cui ' + n + ' lontani dal punto BAN',
+            tipFar: d => 'Posto a ' + d + ' m dall’indirizzo BAN',
             certOnly: 'Certificati',
             nextMissing: "Mancante successivo",
             etaSoon: "meno di un minuto",
@@ -1772,6 +1782,8 @@
             vType: n => n + (un1(n) ? " com um nome parecido" : " com um nome parecido"),
             kSuf: n => 'sendo ' + n + (un1(n) ? ' sufixo a verificar' : ' sufixos a verificar'),
             tipSuf: w => "O WME tem " + w + ": verifique o sufixo",
+            kFar: n => 'sendo ' + n + ' longe do ponto BAN',
+            tipFar: d => 'Colocado a ' + d + ' m do endereço BAN',
             certOnly: 'Certificados',
             nextMissing: "Próximo faltando",
             etaSoon: "menos de um minuto",
@@ -2069,6 +2081,8 @@
             vType: n => n + (un1(n) ? " com um nome parecido" : " com um nome parecido"),
             kSuf: n => 'das quais ' + n + (un1(n) ? ' sufixo a verificar' : ' sufixos a verificar'),
             tipSuf: w => "O WME tem " + w + ": verifique o sufixo",
+            kFar: n => 'das quais ' + n + ' longe do ponto BAN',
+            tipFar: d => 'Colocado a ' + d + ' m da morada BAN',
             certOnly: 'Certificadas',
             nextMissing: "Seguinte em falta",
             etaSoon: "menos de um minuto",
@@ -2364,6 +2378,8 @@
             vType: n => n + ' בשם דומה',
             kSuf: n => 'מהן ' + n + ' סיומות לבדיקה',
             tipSuf: w => "ב-WME מופיע " + w + ": יש לבדוק את הסיומת",
+            kFar: n => 'מהן ' + n + ' רחוקות מנקודת ה-BAN',
+            tipFar: d => 'ממוקם במרחק ' + d + ' מ׳ מכתובת ה-BAN',
             certOnly: 'מאושרות',
             certNote: n => 'כתובות מאושרות בלבד: ' + n + ' לא מאושרות הושמטו',
             nextMissing: "החסר הבא",
@@ -2824,6 +2840,18 @@
             const lat0 = d.adresses.length ? d.adresses[0].lat : 46;
             const m = versMetres(lat0);
             const dist = (a, b) => { const [ax, ay] = m(a.lon, a.lat), [bx, by] = m(b.lon, b.lat); return Math.hypot(ax - bx, ay - by); };
+            // Un numéro WME a deux positions : son marqueur (posé sur la maison) et son point d'arrêt (là où Waze
+            // guide : le point du segment pour un HN, l'entrée principale pour un RPP). La BAN, elle, place souvent
+            // l'adresse au bord de la voie ou à la boîte aux lettres. Au bout d'une longue allée privée, le
+            // marqueur s'éloigne de plus de RAYON_M alors que le point d'arrêt est sur l'adresse (Saint-Laurent-
+            // des-Arbres, chemin de la Chapelle, 15/10/2026 : 732 à 154 m par son marqueur, à 3 m par son point
+            // d'arrêt ; RPP 736 à 187 m, son entrée à 139 m). On compte donc la plus courte des deux.
+            const distWme = (a, x) => {
+                const d1 = dist(a, x);
+                if (!x.arret) return d1;
+                const [ax, ay] = m(a.lon, a.lat), [bx, by] = m(x.arret[0], x.arret[1]);
+                return Math.min(d1, Math.hypot(ax - bx, ay - by));
+            };
 
             const rues = new Map();
             for (const s of d.streets || []) rues.set(s.id, { nom: s.name || '', norm: normNom(s.name) });
@@ -2853,7 +2881,8 @@
                 const p = h.geometry && h.geometry.coordinates;
                 if (!p || h.number == null || h.number === '') continue;
                 const s = parId.get(h.segID);
-                wme.push({ type: 'HN', brut: String(h.number), num: normNum(h.number), lon: p[0], lat: p[1], seg: s || null, noms: s ? s.noms : new Set(), rue: s ? s.nom : '', id: h.id });
+                const fp = h.fractionPoint && h.fractionPoint.coordinates;
+                wme.push({ type: 'HN', brut: String(h.number), num: normNum(h.number), lon: p[0], lat: p[1], arret: fp || null, seg: s || null, noms: s ? s.noms : new Set(), rue: s ? s.nom : '', id: h.id });
             }
             for (const v of d.rpps || []) {
                 const geo = v.geometry;
@@ -2862,7 +2891,9 @@
                 if (geo.type === 'Polygon') { const a = p[0]; p = [a.reduce((x, q) => x + q[0], 0) / a.length, a.reduce((x, q) => x + q[1], 0) / a.length]; }
                 const r = rues.get(v.streetID);
                 const pp = plusProche(g, p[0], p[1], SEG_MAX_M, m);
-                wme.push({ type: 'RPP', brut: String(v.houseNumber), num: normNum(v.houseNumber), lon: p[0], lat: p[1], seg: pp ? pp.seg : null, noms: new Set(r && r.norm ? [r.norm] : []), rue: r ? r.nom : '', id: v.id });
+                const ees = (v.entryExitPoints || []).filter(e => e && e.point && e.point.coordinates);
+                const ee = ees.find(e => e.primary) || ees[0];
+                wme.push({ type: 'RPP', brut: String(v.houseNumber), num: normNum(v.houseNumber), lon: p[0], lat: p[1], arret: ee ? ee.point.coordinates : null, seg: pp ? pp.seg : null, noms: new Set(r && r.norm ? [r.norm] : []), rue: r ? r.nom : '', id: v.id });
             }
             // Les numéros WME par NUMÉRO ET PAR CASE de RAYON_M : une adresse ne compare plus qu'aux
             // numéros égaux de son voisinage. Indexés par le seul numéro, les « 1 », « 2 »… d'une commune
@@ -2872,19 +2903,24 @@
             const kx = 111320 * Math.cos(lat0 * Math.PI / 180);
             const ci = lon => Math.floor(lon * kx / RAYON_M), cj = lat => Math.floor(lat * 110540 / RAYON_M);
             const cleCase = (i, j) => (i + 1048576) * 2097152 + (j + 1048576);
+            // Un numéro est rangé dans la case de son marqueur ET dans celle de son point d'arrêt : l'un ou
+            // l'autre peut être le seul à moins de RAYON_M de l'adresse.
+            const ranger = (parCase, k, x) => { const l = parCase.get(k); if (l) l.push(x); else parCase.set(k, [x]); };
             const indexer = (cle, x, idx) => {
                 let parCase = idx.get(cle);
                 if (!parCase) idx.set(cle, parCase = new Map());
-                const k = cleCase(ci(x.lon), cj(x.lat)), l = parCase.get(k);
-                if (l) l.push(x); else parCase.set(k, [x]);
+                const k = cleCase(ci(x.lon), cj(x.lat));
+                ranger(parCase, k, x);
+                if (x.arret) { const k2 = cleCase(ci(x.arret[0]), cj(x.arret[1])); if (k2 !== k) ranger(parCase, k2, x); }
             };
             // Les numéros égaux dans la case de l'adresse et ses huit voisines : tout numéro à moins de
-            // RAYON_M y est forcément.
+            // RAYON_M y est forcément. Un numéro rangé deux fois n'est rendu qu'une (marque de passage).
+            let passage = 0;
             const autour = (idx, cle, lon, lat) => {
                 const parCase = idx.get(cle);
                 if (!parCase) return [];
-                const i = ci(lon), j = cj(lat), res = [];
-                for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const l = parCase.get(cleCase(i + di, j + dj)); if (l) for (const x of l) res.push(x); }
+                const i = ci(lon), j = cj(lat), res = [], n = ++passage;
+                for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) { const l = parCase.get(cleCase(i + di, j + dj)); if (l) for (const x of l) if (x.passage !== n) { x.passage = n; res.push(x); } }
                 return res;
             };
             const parNum = new Map();
@@ -2987,7 +3023,7 @@
                 for (const a of v.adresses) {
                     a.trouve = null;
                     for (const x of autourDe(a.num, a.lon, a.lat)) {
-                        const dm = dist(a, x);
+                        const dm = distWme(a, x);
                         if (dm > RAYON_M) continue;
                         const regle = memeNom(x, v) ? 1 : (x.seg && v.segs.has(x.seg)) ? 2 : dm <= PROCHE_M ? 3 : 0;
                         if (regle) couples.push({ a, x, regle, dm });
@@ -3019,10 +3055,40 @@
                 let meilleur = null, dmin = RAYON_M;
                 for (const x of baseAutour(base(a.num), a.lon, a.lat)) {
                     if (suffixes.has(x) || x.num === a.num) continue;
-                    const dm = dist(a, x);
+                    const dm = distWme(a, x);
                     if (dm <= dmin && (memeNom(x, v) || (x.seg && v.segs.has(x.seg)))) { meilleur = x; dmin = dm; }
                 }
                 if (meilleur) { a.suffixe = meilleur.brut; suffixes.add(meilleur); }
+            }
+            // Même numéro, même voie, mais LOIN (au-delà de RAYON_M, jusqu'à LOIN_MAX_M, dans la commune) : c'est
+            // l'adresse, placée exprès devant l'habitation au bout de son chemin — quand la maison est loin de la voie
+            // et que l'accès n'est pas clos, on amène Waze devant la propriété (doctrine rappelée par l'auteur,
+            // 15/10/2026 ; Saint-Laurent-des-Arbres, 450 Route Nationale : RPP à 209 m, entrée à 175 m). L'adresse est
+            // TROUVÉE, marquée « loin » (distance dite dans la fiche). Avant 0.16.11 elle restait manquante alors que
+            // l'ajout la refusait (WME a déjà ce numéro sur la voie), et le numéro WME passait « en trop ».
+            const LOIN_MAX_M = 1000;
+            const parNumTous = new Map();
+            for (const x of wme) {
+                if (pris.has(x) || suffixes.has(x)) continue;
+                const l = parNumTous.get(x.num);
+                if (l) l.push(x); else parNumTous.set(x.num, [x]);
+            }
+            const contourCommune = d.contour;
+            for (const v of voies.values()) for (const a of v.adresses) {
+                if (a.trouve || a.suffixe) continue;
+                let meilleur = null, dmin = LOIN_MAX_M;
+                for (const x of parNumTous.get(a.num) || []) {
+                    if (pris.has(x) || !(memeNom(x, v) || (x.seg && v.segs.has(x.seg))) || !dansContour(x.lon, x.lat, contourCommune)) continue;
+                    const dm = distWme(a, x);
+                    if (dm <= dmin) { meilleur = x; dmin = dm; }
+                }
+                if (meilleur) {
+                    a.trouve = meilleur.type;
+                    a.wme = meilleur;
+                    a.dm = dmin;
+                    a.loin = true;
+                    pris.add(meilleur);
+                }
             }
             // Un numéro WME resté seul alors qu'une adresse BAN admissible existait double un
             // numéro déjà trouvé : c'est un doublon, pas un numéro en trop.
@@ -3049,7 +3115,8 @@
                     ban: gardees.length, hn, rpp, presents: hn + rpp,
                     manquants: gardees.filter(a => !a.trouve).map(a => a.brut),
                     suffixes: gardees.filter(a => a.suffixe).length,
-                    adresses: gardees.map(a => ({ brut: a.brut, lon: a.lon, lat: a.lat, trouve: a.trouve, suffixe: a.suffixe || '', cert: a.cert,
+                    eloignes: gardees.filter(a => a.loin).length,
+                    adresses: gardees.map(a => ({ brut: a.brut, lon: a.lon, lat: a.lat, trouve: a.trouve, suffixe: a.suffixe || '', loin: !!a.loin, cert: a.cert,
                         wlon: a.trouve ? a.wme.lon : null, wlat: a.trouve ? a.wme.lat : null, dm: a.trouve ? Math.round(a.dm) : null,
                         seg: !a.trouve && a.proche ? a.proche.seg.id : null,
                         plon: !a.trouve && a.proche ? a.proche.fx / kx : null, plat: !a.trouve && a.proche ? a.proche.fy / 110540 : null,
@@ -3059,7 +3126,7 @@
                 });
             }
             const sortie = x => ({ type: x.type, brut: x.brut, rue: x.rue, lon: x.lon, lat: x.lat });
-            const tot = liste.reduce((s, v) => ({ ban: s.ban + v.ban, hn: s.hn + v.hn, rpp: s.rpp + v.rpp, suf: s.suf + v.suffixes }), { ban: 0, hn: 0, rpp: 0, suf: 0 });
+            const tot = liste.reduce((s, v) => ({ ban: s.ban + v.ban, hn: s.hn + v.hn, rpp: s.rpp + v.rpp, suf: s.suf + v.suffixes, elo: s.elo + v.eloignes }), { ban: 0, hn: 0, rpp: 0, suf: 0, elo: 0 });
             return {
                 chrono: Object.assign(chrono, { fin: Date.now() - topPrec, total: Date.now() - top0 }),
                 voies: liste,
@@ -3067,7 +3134,7 @@
                 doublons: doublons.map(sortie),
                 totaux: {
                     ban: tot.ban, cert: d.adresses.filter(a => a.cert).length, hn: tot.hn, rpp: tot.rpp, presents: tot.hn + tot.rpp,
-                    manquants: tot.ban - tot.hn - tot.rpp, enTrop: enTrop.length, doublons: doublons.length, suffixes: tot.suf,
+                    manquants: tot.ban - tot.hn - tot.rpp, enTrop: enTrop.length, doublons: doublons.length, suffixes: tot.suf, eloignes: tot.elo,
                     certSeules: !!d.certSeules, ecartees: d.adresses.length - tot.ban, adressesBan: d.adresses.length,
                     voies: liste.length, voiesCompletes: liste.filter(v => v.presents === v.ban).length,
                     voiesSansNom: liste.filter(v => v.statutNom === 'sansNom').length,
@@ -3593,7 +3660,7 @@
             const v = {
                 segments: ((r.segments && r.segments.objects) || []).map(x => ({ id: x.id, geometry: x.geometry, primaryStreetID: x.primaryStreetID, streetIDs: x.streetIDs, hasHNs: x.hasHNs, date: x.updatedOn || x.createdOn || 0 })),
                 streets: ((r.streets && r.streets.objects) || []).map(x => ({ id: x.id, name: x.name })),
-                rpps: ((r.venues && r.venues.objects) || []).filter(x => x.residential).map(x => ({ id: x.id, geometry: x.geometry, streetID: x.streetID, houseNumber: x.houseNumber, date: x.updatedOn || x.createdOn || 0 })),
+                rpps: ((r.venues && r.venues.objects) || []).filter(x => x.residential).map(x => ({ id: x.id, geometry: x.geometry, streetID: x.streetID, houseNumber: x.houseNumber, entryExitPoints: (x.entryExitPoints || []).filter(e => e && e.point).map(e => ({ point: e.point, primary: !!e.primary })), date: x.updatedOn || x.createdOn || 0 })),
             };
             cache.carreaux.set(k, v);
             while (cache.carreaux.size > CARREAUX_GARDES) cache.carreaux.delete(cache.carreaux.keys().next().value);
@@ -3622,7 +3689,7 @@
             ids.forEach(id => cache.hn.set(id, []));
             for (const h of (r.segmentHouseNumbers && r.segmentHouseNumbers.objects) || []) {
                 if (!cache.hn.has(h.segID)) cache.hn.set(h.segID, []);
-                cache.hn.get(h.segID).push({ id: h.id, segID: h.segID, number: h.number, geometry: h.geometry });
+                cache.hn.get(h.segID).push({ id: h.id, segID: h.segID, number: h.number, geometry: h.geometry, fractionPoint: h.fractionPoint || null });
             }
         }), PARALLELE, jeton, finLot);
         const hns = [];
@@ -3906,7 +3973,7 @@
             const a = p.ad, v = p.voie;
             lignes.push('<b><bdi>' + esc(a.brut + ' ' + v.nom) + '</bdi></b>');
             lignes.push('<bdi>' + esc(r ? r.commune.nom : '') + (v.deleguee ? ' (' + esc(v.deleguee) + ')' : '') + '</bdi>');
-            if (a.trouve) lignes.push(etiq('present', t('hovFound', a.trouve)) + (a.dm != null ? ' · ' + esc(t('hovDist', nb(a.dm))) : ''));
+            if (a.trouve) lignes.push(etiq('present', t('hovFound', a.trouve)) + (a.loin ? ' · ' + esc(t('tipFar', nb(a.dm))) : a.dm != null ? ' · ' + esc(t('hovDist', nb(a.dm))) : ''));
             else if (a.hnPose) lignes.push('<span class="wbc-f-etat pose">' + esc(t('ajHnPoseTip')) + '</span>');
             else if (a.suffixe) lignes.push(etiq('suffixe', t('tipSuf', a.suffixe)));
             else lignes.push(etiq('manquant', t('hovMissing')));
@@ -4351,6 +4418,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-cov-l { display: flex; align-items: center; gap: 8px; margin: 6px 0 6px; font-size: 11px; color: var(--wbc-text2); }
 .wbc-cov-l b { font-size: 13px; color: var(--wbc-text); font-variant-numeric: tabular-nums; }
 .wbc-cov-l .wbc-cov { flex: 1; margin: 0; }
+/* 0.16.08 : le quota d'ajout sous la couverture, en pastille turquoise (la couleur des numéros posés), rouge quand il est plein. */
+.wbc-quota-l { margin: 0 0 6px; }
+.wbc-quota { display: inline-block; padding: 2px 8px; border-radius: 8px; background: #e0f7fa; color: #00585f; font-size: 11px; font-weight: 600; }
+.wbc-quota.plein { background: #ffebee; color: #c62828; }
 .wbc-titre-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 6px; }
 .wbc-titre-l .wbc-titre { margin: 0; flex: 1 1 auto; min-width: 0; }
 .wbc-actions { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -4426,7 +4497,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-hn-msg.erreur { background: #ffebee; color: #b71c1c; }
 /* Le temps que la fenêtre d'enregistrement de WME est affichée, WBC passe SOUS elle (mesuré le 29/09 :
    .save-popover-container est empilée au niveau 9, WBC à 9989 ⇒ le compte rendu d'enregistrement et ses
-   erreurs étaient cachés). */
+   erreurs étaient cachés). Depuis 0.16.08 la fenêtre est dans la zone de carte, déjà sous ce compte rendu :
+   la règle ne sert plus qu'au repli sur <body>. */
 #wbc-ov.wbc-sous { z-index: 8 !important; }
 .wbc-num.enregistre { border-color: #a5d6a7; background: #e8f5e9; color: #1b5e20; }
 /* RPP de la voie (0.16.00) : indigo, distinct du rouge des manquants, du violet des suffixes et du turquoise des posés. */
@@ -4990,7 +5062,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const s = k => vs.reduce((x, v) => x + v[k], 0);
         const nbStatut = st => vs.filter(v => v.statutNom === st).length;
         return Object.assign({}, r.totaux, {
-            ban: s('ban'), hn: s('hn'), rpp: s('rpp'), presents: s('presents'), manquants: s('ban') - s('presents'), suffixes: s('suffixes'),
+            ban: s('ban'), hn: s('hn'), rpp: s('rpp'), presents: s('presents'), manquants: s('ban') - s('presents'), suffixes: s('suffixes'), eloignes: vs.reduce((x, v) => x + (v.eloignes || 0), 0),
             cert: vs.reduce((x, v) => x + v.adresses.filter(a => a.cert).length, 0), enTrop: null, doublons: null,
             voies: vs.length, voiesCompletes: vs.filter(v => v.presents === v.ban).length,
             voiesSansNom: nbStatut('sansNom'), voiesAutreNom: nbStatut('different'), voiesSansSegment: nbStatut('aucun'),
@@ -5005,12 +5077,20 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const c = pct(T.presents, T.ban);
         return '<div class="wbc-kpis">' +
             kpi(nb(T.ban), t('kBan'), '', t('kCert', nb(T.cert))) +
-            kpi(nb(T.presents), t('kWme'), '', t('kHnRpp', nb(T.hn), nb(T.rpp))) +
+            kpi(nb(T.presents), t('kWme'), '', t('kHnRpp', nb(T.hn), nb(T.rpp)) + (T.eloignes ? ' · ' + t('kFar', nb(T.eloignes)) : '')) +
             kpi(nb(T.manquants), t('kMiss'), T.manquants ? 'ko' : 'ok', T.suffixes ? t('kSuf', nb(T.suffixes)) : '') +
             (T.enTrop == null ? kpi('—', t('kExtra'), '', t('delNote'))
                 : kpi(nb(T.enTrop), t('kExtra'), T.enTrop ? 'warn' : '', T.doublons ? t('kDup', nb(T.doublons)) : '')) +
             '</div><div class="wbc-cov-l" title="' + esc(t('kCov')) + '"><b>' + esc(c) + '</b><span class="wbc-cov" role="img" aria-label="' + esc(t('kCov') + ' ' + c) + '"><i style="width:' +
-            (T.ban ? (100 * T.presents / T.ban).toFixed(1) : 0) + '%"></i></span><span class="wbc-cov-lbl">' + esc(t('kCov')) + '</span></div>';
+            (T.ban ? (100 * T.presents / T.ban).toFixed(1) : 0) + '%"></i></span><span class="wbc-cov-lbl">' + esc(t('kCov')) + '</span></div>' +
+            (droitHn ? ligneQuota() : '');
+    }
+    // Le quota d'ajout, en permanence sous la couverture pour qui peut ajouter (15/10/2026 : affiché seulement
+    // dans une voie dépliée, il passait inaperçu). Mêmes textes et même infobulle qu'à côté du bouton.
+    function ligneQuota() {
+        const q = Core.quotaHn(lireHorodatages(), Date.now());
+        return '<p class="wbc-quota-l"><span class="wbc-quota' + (q.reste ? '' : ' plein') + '" title="' + esc(t('ajHnQuotaTip')) + '">&#x271A; ' +
+            esc(q.reste ? t('ajHnLeft', nb(q.reste)) : t('ajHnFull', heureCourte(q.libre))) + '</span></p>';
     }
 
     function voiesFiltrees(r) {
@@ -5066,7 +5146,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const conv = v.statutNom === 'identique' && !hnEnCours && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
         return '<h4>' + esc(t('rhnT', nb(liste.length))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) => {
             const courant = vue.curseurRpp === i + ':' + k ? ' courant' : '';
-            const num = '<button type="button" class="wbc-num rpp' + (a.rppHn ? ' pose' : '') + courant + '" data-rppgo="' + i + ':' + k + '" title="' + esc(a.rppHn ? t('rhnPoseTip') : t('rhnTip')) + '">' + (a.rppHn ? '&#x271A; ' : '') + esc(a.brut) + '</button>';
+            const num = '<button type="button" class="wbc-num rpp' + (a.rppHn ? ' pose' : '') + courant + '" data-rppgo="' + i + ':' + k + '" title="' + esc((a.rppHn ? t('rhnPoseTip') : t('rhnTip')) + (a.loin ? ' — ' + t('tipFar', nb(a.dm)) : '')) + '">' + (a.rppHn ? '&#x271A; ' : '') + esc(a.brut) + (a.loin ? ' · ' + esc(nb(a.dm)) + '\u00a0m' : '') + '</button>';
             return conv && !a.rppHn ? '<span class="wbc-num-g' + courant + '">' + num + '<button type="button" class="wbc-num-plus rpp" data-rpphn="' + i + ':' + k + '" title="' + esc(t('rhnConv') + ' — ' + t('rhnConvTip')) + '" aria-label="' + esc(t('rhnConv') + ' ' + a.brut) + '">&#x21C4;</button></span>' : num;
         }).join('') + '</div>';
     }
@@ -5192,9 +5272,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     function htmlDepartement(d) {
         const ok = d.communes.filter(c => c.totaux);
         const T = ok.reduce((s, c) => {
-            for (const k of ['ban', 'cert', 'hn', 'rpp', 'presents', 'manquants', 'enTrop', 'doublons', 'suffixes']) s[k] += c.totaux[k];
+            for (const k of ['ban', 'cert', 'hn', 'rpp', 'presents', 'manquants', 'enTrop', 'doublons', 'suffixes', 'eloignes']) s[k] += c.totaux[k] || 0;
             return s;
-        }, { ban: 0, cert: 0, hn: 0, rpp: 0, presents: 0, manquants: 0, enTrop: 0, doublons: 0, suffixes: 0 });
+        }, { ban: 0, cert: 0, hn: 0, rpp: 0, presents: 0, manquants: 0, enTrop: 0, doublons: 0, suffixes: 0, eloignes: 0 });
         const tri = {
             nom: c => c.commune.nom, ban: c => c.totaux ? c.totaux.ban : -1, wmeN: c => c.totaux ? c.totaux.presents : -1,
             ecart: c => c.totaux ? c.totaux.manquants : -1, cov: c => c.totaux && c.totaux.ban ? c.totaux.presents / c.totaux.ban : -1,
@@ -6739,6 +6819,19 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         }
     }
 
+    // La fenêtre vit DANS la zone de carte de WME, juste sous ses panneaux : posée sur <body> à 9989, elle
+    // recouvrait le panneau « Calques » (empilé au niveau 2 dans .edit-area-main, elle-même au niveau 1 :
+    // aucun z-index posé sur <body> ne peut passer dessous sans passer sous la carte ; mesuré le 15/10/2026).
+    // Au niveau 1 de cette zone, elle reste au-dessus de la carte et sous le panneau des calques, les
+    // panneaux flottants de WME et ses messages de zoom. Sans cette zone (WME changé), repli sur <body>.
+    const zoneCarte = () => document.querySelector('div.edit-area-main');
+    const zFenetre = () => (ovEl && ovEl.parentElement === document.body ? '9991' : '1');
+    function poserFenetre() {
+        const z = zoneCarte();
+        if (z && ovEl.parentElement !== z) z.appendChild(ovEl);
+        else if (!z && !ovEl.isConnected) document.body.appendChild(ovEl);
+        ovEl.style.zIndex = zFenetre();
+    }
     function construireFenetre() {
         ovEl = document.createElement('div');
         ovEl.id = 'wbc-ov';
@@ -6747,7 +6840,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         ovEl.setAttribute('role', 'dialog');
         ovEl.setAttribute('aria-label', SCRIPT_NAME);
         ovEl.innerHTML = htmlFenetre();
-        document.body.appendChild(ovEl);
+        poserFenetre();
         ovEl.addEventListener('click', surClic);
         ovEl.addEventListener('keydown', gardeTouche);
         // Échap ferme la fenêtre quand le focus y est (la liste de suggestions ouverte se ferme d'abord,
@@ -6759,8 +6852,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             fermerFenetre();
         });
         // Toucher la fenêtre la passe devant celle d'un autre script au même niveau (WRP est à 9989,
-        // la première construite restait dessous : audit M14).
-        const auPremierPlan = () => { ovEl.style.zIndex = '9991'; };
+        // la première construite restait dessous : audit M14). Dans la zone de carte, le niveau ne bouge pas.
+        const auPremierPlan = () => { ovEl.style.zIndex = zFenetre(); };
         ovEl.addEventListener('mousedown', auPremierPlan, true);
         ovEl.addEventListener('focusin', auPremierPlan);
         ovEl.addEventListener('keydown', ev => {
@@ -6805,7 +6898,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (!ovEl) return;
         const deja = ovEl.classList.contains('open');
         ovEl.classList.add('open');
-        ovEl.style.zIndex = '9991';
+        poserFenetre();
         if (!deja) placerFenetre(lireGeom());
         majFab();
         appliquerVisibilite();
