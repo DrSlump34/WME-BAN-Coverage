@@ -264,6 +264,19 @@ aucun segment de la voie (nom BAN principal, commune pour ville) à moins de 80 
   fait retirer le numéro posé : jamais d'adresse en double.
 - **Même quota** que l'ajout (une conversion = un numéro), compté à l'enregistrement ; rien n'est enregistré par WBC.
 
+## Un adaptateur par pays (0.16.06)
+
+Tout ce qui tient à la France est rangé dans un seul objet, `PAYS_FR` : lecture de la BAN (dont les
+arrondissements de Paris, Marseille et Lyon), commune au centre de la carte, recherche, départements,
+emprise d'un choix, empreinte et date de révision du fichier. Le reste — lecture de WME, rapprochement,
+calques, mémoire, quota — ne dépend d'aucun pays. Seule la France est branchée : un autre pays n'ouvrira
+qu'avec une source accréditée par Waze (annonce du 06/04/2026). Restent propres à la France, hors
+adaptateur : le format BAL (`Core.lireBan`), les règles de noms et de numéros du cœur, la doctrine RPP,
+le vocabulaire « département » et la clé de la mémoire locale (sans pays).
+
+Recherche par code postal (0.16.06) : toutes les communes du code, les plus peuplées d'abord. Limitée
+à 10 dans l'ordre alphabétique, elle perdait la ville principale (30700 : Uzès arrivait 16e sur 17).
+
 ## Mesures qui ont fixé la conception (26/09/2026)
 
 - Le serveur de WME **allège une zone trop grande sans le dire** : à Nîmes, un carreau de 0,1° rend
@@ -289,6 +302,7 @@ node tools/temoins-idents.js                    # … et le contrôle voit bien 
 node tools/check-i18n.js                        # 8 langues, mêmes clés, typographie française
 node tools/check-await.js                       # chaque appel du modèle de données (SDK async) est attendu
 node tools/banc-coeur.js                        # 58 cas sur le cœur extrait du fichier livré + 28 témoins
+node tools/banc-pays.js                         # adaptateur France sur les vrais serveurs (Uzès, Gard, recherche, emprise) + 6 témoins
 node tools/banc-cadrage.js                      # 6 cadrages dans la zone visible (Mercator) + 5 témoins
 node tools/banc-perf.js                         # 4 communes-types de la taille de Nîmes, chacune en moins de 700 ms
 node tools/banc-quota.js                        # compteur du quota : illisible, scellé, 3 copies + 5 mutants

@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.16.05
+// @version      0.16.07
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; kein Ergebnis wird gespeichert.
@@ -78,14 +78,6 @@
     const GEOM_KEY = 'wbc.fenetre';
     const OPTS_KEY = 'wbc.opts';
 
-    const BAN_URL = code => 'https://plateforme.adresse.data.gouv.fr/ban/communes/' + code + '/download/csv-bal/adresses';
-    const GEO_URL = 'https://geo.api.gouv.fr';
-    // Paris, Marseille et Lyon : la BAN n'existe que par arrondissement (le code de la commune rend 404).
-    const ARRONDISSEMENTS = {
-        '75056': Array.from({ length: 20 }, (_, i) => String(75101 + i)),
-        '13055': Array.from({ length: 16 }, (_, i) => String(13201 + i)),
-        '69123': Array.from({ length: 9 }, (_, i) => String(69381 + i)),
-    };
     // Au-delà d'environ 0,08° de côté, le serveur de WME rend une zone ALLÉGÉE sans le dire
     // (mesuré le 26/09/2026 à Nîmes : 2 391 segments et 0 RPP au lieu de 13 566 et 458). On
     // découpe donc en carreaux de 0,05°, calés sur une grille fixe pour pouvoir les réutiliser
@@ -3351,7 +3343,7 @@
     const errReseau = (msg, status, source) => Object.assign(new Error(msg), { reseau: true, status, source });
     const errFormat = source => Object.assign(new Error('format'), { format: true, source });
     function messageErreur(e) {
-        if (e.format) return t('errFormat', e.source === 'wme' ? 'WME' : e.source === 'ban' ? 'BAN' : 'geo.api.gouv.fr');
+        if (e.format) return t('errFormat', e.source === 'wme' ? 'WME' : e.source === 'ban' ? pays.source : pays.referentiel);
         // Une session WME expirée répond 401 ou 403 : recharger la page, pas « réessayer plus tard ».
         if (e.source === 'wme' && (e.status === 401 || e.status === 403)) return t('errSession');
         if (e.reseau && e.source === 'wme') return t('errWme') + e.message;
@@ -3448,72 +3440,133 @@
         const xs = c.map(p => p[0]), ys = c.map(p => p[1]);
         return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
     };
-    const versCommune = c => ({ code: c.code, nom: c.nom, dep: c.codeDepartement || (c.departement && c.departement.code) || '', bbox: c.bbox ? bboxDe(c.bbox) : null, contour: c.contour || null });
-
-    const Geo = {
-        auPoint: async (lon, lat) => {
-            const l = await gmJson(GEO_URL + '/communes?lat=' + lat.toFixed(6) + '&lon=' + lon.toFixed(6) + '&fields=nom,code,codeDepartement,bbox,contour');
-            return l.length ? versCommune(l[0]) : null;
-        },
-        parCode: async code => versCommune(await gmJson(GEO_URL + '/communes/' + encodeURIComponent(code) + '?fields=nom,code,codeDepartement,bbox,contour')),
-        chercher: async q => {
-            const F = '&fields=nom,code,codeDepartement,codesPostaux&limit=10';
-            if (/^\d{5}$/.test(q)) {
-                // Les deux lectures (code postal, code INSEE) : une seule en échec ne masque pas l'autre,
-                // les deux en échec remontent l'erreur au lieu d'un « aucune commune » trompeur.
-                const [ra, rb] = await Promise.allSettled([gmJson(GEO_URL + '/communes?codePostal=' + q + F), gmJson(GEO_URL + '/communes?code=' + q + F)]);
-                if (ra.status === 'rejected' && rb.status === 'rejected') throw ra.reason;
-                const a = ra.status === 'fulfilled' ? ra.value : [], b = rb.status === 'fulfilled' ? rb.value : [];
-                const vus = new Set();
-                return b.concat(a).filter(c => !vus.has(c.code) && vus.add(c.code));
-            }
-            if (/^(2[ab]|\d{2})\d{3}$/i.test(q)) return gmJson(GEO_URL + '/communes?code=' + q.toUpperCase() + F);
-            return gmJson(GEO_URL + '/communes?nom=' + encodeURIComponent(q) + '&boost=population' + F);
-        },
-        departements: null,
-        listeDepartements: async () => {
-            if (!Geo.departements) Geo.departements = await gmJson(GEO_URL + '/departements?fields=nom,code');
-            return Geo.departements;
-        },
-        communesDe: async dep => (await gmJson(GEO_URL + '/departements/' + encodeURIComponent(dep) + '/communes?fields=nom,code,codeDepartement,bbox,contour')).map(versCommune),
-    };
-
-    async function lireBanCommune(code, avance) {
-        const codes = ARRONDISSEMENTS[code] || [code];
-        // Paris, Marseille, Lyon : les arrondissements se lisent QUATRE à la fois (un par un, Marseille
-        // enchaînait 16 téléchargements, audit M25). Les octets reçus s'additionnent pour l'affichage.
-        const recus = new Array(codes.length).fill(0);
-        let finis = 0;
-        const total = () => recus.reduce((a, b) => a + b, 0);
-        const parts = new Array(codes.length), etags = new Array(codes.length).fill('');
-        let reserve = 0;
-        let suivant = 0;
-        const ouvrier = async () => {
-            while (suivant < codes.length) {
-                const k = suivant++;
-                let texte;
-                try {
-                    const rep = await gm(BAN_URL(codes[k]), (f, o) => { recus[k] = o; avance(codes.length > 1 ? finis / codes.length : f, total()); }, true);
-                    texte = rep.texte;
-                    etags[k] = etagDe(rep.entetes);
-                }
-                catch (e) { if (e.status === 404) { etags[k] = '404'; finis++; continue; } throw e; }
-                recus[k] = texte.length;
-                finis++;
-                avance(codes.length > 1 ? finis / codes.length : null, total());
-                const lu = Core.lireBan(texte);
-                parts[k] = lu.adresses;
-                reserve += lu.reserve;
-            }
+    // =====================================================================
+    //  Les pays — un adaptateur par base nationale d'adresses
+    // =====================================================================
+    //  Tout ce qui tient au pays passe par l'adaptateur : où lire les adresses d'une commune, comment
+    //  trouver la commune au centre de la carte, la chercher, lister celles d'un regroupement
+    //  (département) et en tirer l'emprise, savoir si la source a changé. Le reste du script — lecture
+    //  de WME, rapprochement, calques, mémoire, quota — ne dépend d'aucun pays.
+    //  Seule la France est branchée. Un autre pays n'ouvrira qu'avec une source accréditée par Waze
+    //  (annonce du 06/04/2026).
+    const PAYS_FR = (() => {
+        const BAN_URL = code => 'https://plateforme.adresse.data.gouv.fr/ban/communes/' + code + '/download/csv-bal/adresses';
+        const GEO_URL = 'https://geo.api.gouv.fr';
+        // Paris, Marseille et Lyon : la BAN n'existe que par arrondissement (le code de la commune rend 404).
+        const ARRONDISSEMENTS = {
+            '75056': Array.from({ length: 20 }, (_, i) => String(75101 + i)),
+            '13055': Array.from({ length: 16 }, (_, i) => String(13201 + i)),
+            '69123': Array.from({ length: 9 }, (_, i) => String(69381 + i)),
         };
-        await Promise.all(Array.from({ length: Math.min(4, codes.length) }, ouvrier));
-        const adresses = parts.filter(Boolean).flat();
-        // L'empreinte du ou des fichiers lus, dans l'ordre des codes : relue par un HEAD, elle dit si la BAN a changé.
-        adresses.etag = etags.every(x => x) ? etags.join('|') : '';
-        // Numéros de réserve écartés (9990-9999 sans voisin sur la voie) : dits au journal, pas à l'écran.
-        adresses.reserve = reserve;
-        return adresses;
-    }
+        const versCommune = c => ({ code: c.code, nom: c.nom, dep: c.codeDepartement || (c.departement && c.departement.code) || '', bbox: c.bbox ? bboxDe(c.bbox) : null, contour: c.contour || null });
+        let departements = null;
+        // L'emprise d'un département est l'union de ses communes, gardée le temps de la session.
+        const empriseDep = new Map();
+
+        async function adresses(code, avance) {
+            const codes = ARRONDISSEMENTS[code] || [code];
+            // Paris, Marseille, Lyon : les arrondissements se lisent QUATRE à la fois (un par un, Marseille
+            // enchaînait 16 téléchargements, audit M25). Les octets reçus s'additionnent pour l'affichage.
+            const recus = new Array(codes.length).fill(0);
+            let finis = 0;
+            const total = () => recus.reduce((a, b) => a + b, 0);
+            const parts = new Array(codes.length), etags = new Array(codes.length).fill('');
+            let reserve = 0;
+            let suivant = 0;
+            const ouvrier = async () => {
+                while (suivant < codes.length) {
+                    const k = suivant++;
+                    let texte;
+                    try {
+                        const rep = await gm(BAN_URL(codes[k]), (f, o) => { recus[k] = o; avance(codes.length > 1 ? finis / codes.length : f, total()); }, true);
+                        texte = rep.texte;
+                        etags[k] = etagDe(rep.entetes);
+                    }
+                    catch (e) { if (e.status === 404) { etags[k] = '404'; finis++; continue; } throw e; }
+                    recus[k] = texte.length;
+                    finis++;
+                    avance(codes.length > 1 ? finis / codes.length : null, total());
+                    const lu = Core.lireBan(texte);
+                    parts[k] = lu.adresses;
+                    reserve += lu.reserve;
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(4, codes.length) }, ouvrier));
+            const adresses = parts.filter(Boolean).flat();
+            // L'empreinte du ou des fichiers lus, dans l'ordre des codes : relue par un HEAD, elle dit si la BAN a changé.
+            adresses.etag = etags.every(x => x) ? etags.join('|') : '';
+            // Numéros de réserve écartés (9990-9999 sans voisin sur la voie) : dits au journal, pas à l'écran.
+            adresses.reserve = reserve;
+            return adresses;
+        }
+
+        return {
+            code: 'FR',
+            source: 'BAN',                  // nom de la base d'adresses, dans les messages
+            referentiel: 'geo.api.gouv.fr', // service des communes, dans les messages
+            auPoint: async (lon, lat) => {
+                const l = await gmJson(GEO_URL + '/communes?lat=' + lat.toFixed(6) + '&lon=' + lon.toFixed(6) + '&fields=nom,code,codeDepartement,bbox,contour');
+                return l.length ? versCommune(l[0]) : null;
+            },
+            parCode: async code => versCommune(await gmJson(GEO_URL + '/communes/' + encodeURIComponent(code) + '?fields=nom,code,codeDepartement,bbox,contour')),
+            chercher: async q => {
+                const F = '&fields=nom,code,codeDepartement,codesPostaux&limit=10';
+                if (/^\d{5}$/.test(q)) {
+                    // Les deux lectures (code postal, code INSEE) : une seule en échec ne masque pas l'autre,
+                    // les deux en échec remontent l'erreur au lieu d'un « aucune commune » trompeur.
+                    // Un code postal sert jusqu'à 46 communes (51300), rendues dans l'ordre ALPHABÉTIQUE : limitées
+                    // à 10, elles perdaient la ville principale (30700 : Uzès arrivait 16e sur 17, mesuré le
+                    // 15/10/2026). Toutes, les plus peuplées d'abord.
+                    const parPopulation = l => l.sort((x, y) => (y.population || 0) - (x.population || 0));
+                    const [ra, rb] = await Promise.allSettled([gmJson(GEO_URL + '/communes?codePostal=' + q + '&fields=nom,code,codeDepartement,codesPostaux,population').then(parPopulation), gmJson(GEO_URL + '/communes?code=' + q + F)]);
+                    if (ra.status === 'rejected' && rb.status === 'rejected') throw ra.reason;
+                    const a = ra.status === 'fulfilled' ? ra.value : [], b = rb.status === 'fulfilled' ? rb.value : [];
+                    const vus = new Set();
+                    return b.concat(a).filter(c => !vus.has(c.code) && vus.add(c.code));
+                }
+                if (/^(2[ab]|\d{2})\d{3}$/i.test(q)) return gmJson(GEO_URL + '/communes?code=' + q.toUpperCase() + F);
+                return gmJson(GEO_URL + '/communes?nom=' + encodeURIComponent(q) + '&boost=population' + F);
+            },
+            // Les regroupements de communes : les départements.
+            groupes: async () => {
+                if (!departements) departements = await gmJson(GEO_URL + '/departements?fields=nom,code');
+                return departements;
+            },
+            communesDe: async dep => (await gmJson(GEO_URL + '/departements/' + encodeURIComponent(dep) + '/communes?fields=nom,code,codeDepartement,bbox,contour')).map(versCommune),
+            // Seule l'emprise est demandée, pas les contours.
+            emprise: async (type, code) => {
+                if (type === 'commune') {
+                    const c = await gmJson(GEO_URL + '/communes/' + encodeURIComponent(code) + '?fields=bbox');
+                    return c && c.bbox ? bboxDe(c.bbox) : null;
+                }
+                if (!empriseDep.has(code)) {
+                    const l = await gmJson(GEO_URL + '/departements/' + encodeURIComponent(code) + '/communes?fields=code,bbox');
+                    const bs = l.filter(c => c.bbox).map(c => bboxDe(c.bbox));
+                    if (bs.length) empriseDep.set(code, [Math.min(...bs.map(x => x[0])), Math.min(...bs.map(x => x[1])), Math.max(...bs.map(x => x[2])), Math.max(...bs.map(x => x[3]))]);
+                }
+                return empriseDep.get(code) || null;
+            },
+            adresses,
+            // Le fichier BAN a-t-il changé ? ETag par HEAD : quelques centaines d'octets.
+            empreinte: async code => {
+                const l = [];
+                for (const c of ARRONDISSEMENTS[code] || [code]) l.push(await gmTete(BAN_URL(c)));
+                return l.join('|');
+            },
+            // La date de révision n'est lue que pour les communes signalées, pour l'afficher.
+            dateRevision: async code => {
+                try {
+                    const j = await gmJson('https://plateforme.adresse.data.gouv.fr/api/district/cog/' + encodeURIComponent(code));
+                    const d = j && j.response && j.response[0];
+                    const x = d && ((d.meta && d.meta.bal && d.meta.bal.dateRevision) || d.lastRecordDate);
+                    return x ? Date.parse(x) : null;
+                } catch (e) { return null; }
+            },
+        };
+    })();
+    const PAYS = { FR: PAYS_FR };
+    // Le pays actif. Un seul est branché ; le choix selon la zone affichée viendra avec le deuxième.
+    const pays = PAYS.FR;
 
     // Les carreaux WME d'un passage : gardés le temps d'un département, pour que deux communes
     // voisines ne relisent pas les mêmes ; les plus anciens sortent au-delà de CARREAUX_GARDES.
@@ -3596,7 +3649,7 @@
     async function analyserCommune(com, cache, jeton, prog, banPret) {
         const t0 = Date.now();
         prog(t('stBan'), 0, true);
-        const toutes = await (banPret || lireBanCommune(com.code, (f, o) => prog(t('stBanMo', mo(o)), f == null ? 0 : 0.3 * f, f == null)));
+        const toutes = await (banPret || pays.adresses(com.code, (f, o) => prog(t('stBanMo', mo(o)), f == null ? 0 : 0.3 * f, f == null)));
         if (jeton.stop) throw Arret();
         const adresses = toutes;
         if (!adresses.length) return { commune: com, vide: true, totaux: null };
@@ -4106,25 +4159,12 @@
         }
     }
     // Choisir une commune ou un département montre son emprise ENTIÈRE sur la carte
-    // (28/09). Seule l'emprise est demandée (pas les contours) ; celle d'un département est
-    // l'union de ses communes, gardée le temps de la session. Un choix plus récent l'emporte.
-    const empriseDep = new Map();
+    // (28/09). Un choix plus récent l'emporte.
     let cadrageNo = 0;
     async function cadrerChoix(type, code) {
         const no = ++cadrageNo;
         try {
-            let b = null;
-            if (type === 'commune') {
-                const c = await attendre(gmJson(GEO_URL + '/communes/' + encodeURIComponent(code) + '?fields=bbox'));
-                b = c && c.bbox ? bboxDe(c.bbox) : null;
-            } else {
-                if (!empriseDep.has(code)) {
-                    const l = await attendre(gmJson(GEO_URL + '/departements/' + encodeURIComponent(code) + '/communes?fields=code,bbox'));
-                    const bs = l.filter(c => c.bbox).map(c => bboxDe(c.bbox));
-                    if (bs.length) empriseDep.set(code, [Math.min(...bs.map(x => x[0])), Math.min(...bs.map(x => x[1])), Math.max(...bs.map(x => x[2])), Math.max(...bs.map(x => x[3]))]);
-                }
-                b = empriseDep.get(code);
-            }
+            const b = await attendre(pays.emprise(type, code));
             if (b && no === cadrageNo) cadrer(b);
         } catch (e) { log('cadrage : ' + e.message); }
     }
@@ -4673,7 +4713,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     // Centre de la carte : la commune est localisée ici, et le passage reprend CETTE commune
                     // (la carte a pu bouger pendant la question).
                     statut(t('stLocate'));
-                    try { const c = await sdk.Map.getMapCenter(); cible = await Geo.auPoint(c.lon, c.lat); } catch (er) { cible = null; }
+                    try { const c = await sdk.Map.getMapCenter(); cible = await pays.auPoint(c.lon, c.lat); } catch (er) { cible = null; }
                     statut('');
                     code = cible && cible.code;
                 }
@@ -4699,8 +4739,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         let v = 'aucune', date = null;
         if (r && r.memo && r.memo.etag && !r.memo.etag.split('|').some(x => !x)) {
             try {
-                v = (await etagBan(d.e.code)) === r.memo.etag ? 'ok' : 'maj';
-                if (v === 'maj') date = await dateBan(d.e.code);
+                v = (await pays.empreinte(d.e.code)) === r.memo.etag ? 'ok' : 'maj';
+                if (v === 'maj') date = await pays.dateRevision(d.e.code);
             } catch (er) { v = 'erreur'; log('BAN ' + d.e.nom + ' : ' + er.message); }
         }
         if (deja !== d) return;
@@ -4753,12 +4793,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         else if (opts.mode === 'here') {
             statut(t('stLocate'));
             const c = await sdk.Map.getMapCenter();
-            com = await Geo.auPoint(c.lon, c.lat);
+            com = await pays.auPoint(c.lon, c.lat);
             if (!com) throw new Error(t('errNoCommune'));
         } else {
             if (!choixCommune) throw new Error(t('errPick'));
             statut(t('stLocate'));
-            com = await Geo.parCode(choixCommune.code);
+            com = await pays.parCode(choixCommune.code);
         }
         if (j.stop) throw Arret();
         statut('');
@@ -4792,9 +4832,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         } else {
             if (!choixDep) throw new Error(t('errPickDep'));
             statut(t('stLocate'));
-            const deps = await Geo.listeDepartements();
+            const deps = await pays.groupes();
             const dep = deps.find(d => d.code === choixDep) || { code: choixDep, nom: choixDep };
-            const liste = await Geo.communesDe(dep.code);
+            const liste = await pays.communesDe(dep.code);
             // Ordre spatial (bandes de latitude, puis longitude en serpentin) : deux communes
             // successives se touchent le plus souvent, et leurs carreaux WME resservent.
             const centre = c => c.bbox ? [(c.bbox[0] + c.bbox[2]) / 2, (c.bbox[1] + c.bbox[3]) / 2] : [0, 0];
@@ -4822,7 +4862,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const cache = nouveauCache();
         // La BAN de la commune SUIVANTE se télécharge pendant que la courante lit WME et calcule :
         // les deux attentes se recouvrent au lieu de s'additionner.
-        const lireBan = k => { const p = lireBanCommune(communes[k].code, () => { }); p.catch(() => { }); return p; };
+        const lireBan = k => { const p = pays.adresses(communes[k].code, () => { }); p.catch(() => { }); return p; };
         let suivante = null;
         const debut = Date.now();
         let reste = '';
@@ -5450,21 +5490,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         montrerCommune(r);
     }
 
-    // ---- BAN : le fichier a-t-il changé ? (ETag, par HEAD) -------------------------------------------------
-    const etagBan = async code => {
-        const l = [];
-        for (const c of ARRONDISSEMENTS[code] || [code]) l.push(await gmTete(BAN_URL(c)));
-        return l.join('|');
-    };
-    // La date de révision n'est lue que pour les communes signalées, pour l'afficher.
-    async function dateBan(code) {
-        try {
-            const j = await gmJson('https://plateforme.adresse.data.gouv.fr/api/district/cog/' + encodeURIComponent(code));
-            const d = j && j.response && j.response[0];
-            const x = d && ((d.meta && d.meta.bal && d.meta.bal.dateRevision) || d.lastRecordDate);
-            return x ? Date.parse(x) : null;
-        } catch (e) { return null; }
-    }
+    // ---- La source a-t-elle changé ? (pays.empreinte, pays.dateRevision) ----------------------------------
     let verifBan = null;              // {i, n} pendant la vérification BAN du périmètre affiché
     let rendreMemoTimer = null;
     const rendreBientot = () => { if (!rendreMemoTimer) rendreMemoTimer = setTimeout(() => { rendreMemoTimer = null; rendre(); }, 600); };
@@ -5489,9 +5515,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 if (verifBan !== moi) return;
                 o.verif = o.verif || {};
                 try {
-                    const e = await etagBan(o.commune.code);
+                    const e = await pays.empreinte(o.commune.code);
                     o.verif.ban = e === o.memo.etag ? 'ok' : 'maj';
-                    if (o.verif.ban === 'maj') o.verif.banDate = await dateBan(o.commune.code);
+                    if (o.verif.ban === 'maj') o.verif.banDate = await pays.dateRevision(o.commune.code);
                 } catch (er) { o.verif.ban = 'erreur'; log('BAN ' + o.commune.nom + ' : ' + er.message); }
                 moi.i++;
                 avance();
@@ -5762,7 +5788,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const sel = $('#wbc-dep');
         if (sel.options.length > 1) return;
         try {
-            const l = await attendre(Geo.listeDepartements());
+            const l = await attendre(pays.groupes());
             sel.insertAdjacentHTML('beforeend', l.map(d => '<option value="' + esc(d.code) + '">' + esc(d.code + ' — ' + d.nom) + '</option>').join(''));
             if (choixDep) sel.value = choixDep;
         } catch (e) { statut(t('errNet', e.message), true); }
@@ -5794,7 +5820,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 let l = [], erreur = null;
                 // Une panne de geo.api.gouv.fr se DIT : elle s'affichait « Aucune commune trouvée »,
                 // pour un code postal pourtant valide (audit du 26/09, M9).
-                try { l = await Geo.chercher(q); } catch (e) { erreur = messageErreur(e); }
+                try { l = await pays.chercher(q); } catch (e) { erreur = messageErreur(e); }
                 if (no !== rechNo) return;
                 suggs = l;
                 champ.removeAttribute('aria-activedescendant');
