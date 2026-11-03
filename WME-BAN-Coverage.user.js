@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.19.02
+// @version      0.19.03
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -2786,6 +2786,8 @@
     // ==WBC-CORE== — le calcul, sans rien toucher à la page : le banc l'extrait du fichier servi
     // et le fait tourner sous Node.
     const Core = (() => {
+        // 2 < 2 bis < 2 ter < 3 < 10 : numérique d'abord, puis le suffixe.
+        const ordreNum = (x, y) => String(x.brut).localeCompare(String(y.brut), 'fr', { numeric: true });
         // Les globales des boucles chaudes, liées UNE fois : dans le bac à sable du gestionnaire de
         // scripts, chaque `Math.…` ou `Infinity` d'une boucle traverse sa couche d'interception de
         // la portée globale (Nîmes : calcul ~10 fois plus lent que le même code sous Node, 26/09).
@@ -3396,12 +3398,14 @@
             for (const v of voies.values()) for (const a of v.adresses) if (a.cle) nCle.set(a.cle, (nCle.get(a.cle) || 0) + 1);
             const liste = [], sansNomBan = [];
             for (const v of voies.values()) {
-                const gardees = v.adresses.filter(compte);
+                // Ordre croissant des numéros (0.19.03) : le fichier BAN les donne dans l'ordre de sa base, d'où des
+                // pastilles en désordre et un « manquant suivant » qui sautait d'un bout à l'autre de la rue.
+                const gardees = v.adresses.filter(compte).sort(ordreNum);
                 if (!gardees.length) continue;
                 if (v.remplacement) {
                     sansNomBan.push({ nom: v.nom, deleguee: v.deleguee, ban: gardees.length, nomProche: v.nomProche || '',
                         idVoie: voieDeCles(gardees.map(a => a.cle)), uidV: plusFrequent(gardees.map(a => a.uidV)),
-                        nums: gardees.map(a => a.brut).sort((x, y) => x.localeCompare(y, 'fr', { numeric: true })), lon: gardees[0].lon, lat: gardees[0].lat, bbox: v.bbox });
+                        nums: gardees.map(a => a.brut), lon: gardees[0].lon, lat: gardees[0].lat, bbox: v.bbox });
                     continue;
                 }
                 const hn = gardees.filter(a => a.trouve === 'HN').length, rpp = gardees.filter(a => a.trouve === 'RPP').length;
@@ -3846,7 +3850,7 @@
             return liste.filter(x => x.type === 'MISSING_ADDRESS' && Math.hypot((x.lon - lon) * kx, (x.lat - lat) * 110540) <= lim)
                 .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
         }
-        return { nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, zonesHn, pointLePlusProche };
+        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, zonesHn, pointLePlusProche };
     })();
     // ==/WBC-CORE==
 
@@ -5916,6 +5920,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     }
 
     function montrerCommune(r) {
+        // Un balayage gardé avant la 0.19.03 garde l'ordre du fichier BAN : remis en ordre à l'ouverture.
+        if (r && r.voies) for (const v of r.voies) if (v.adresses) v.adresses.sort(Core.ordreNum);
         resultat = r;
         vue.ouverte = null;
         vue.texte = '';
