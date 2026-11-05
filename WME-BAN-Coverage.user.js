@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.19.03
+// @version      0.20.01
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -306,6 +306,12 @@
             kSuf: n => 'incl. ' + n + (un1(n) ? ' suffix to check' : ' suffixes to check'),
             tipSuf: w => "WME has " + w + ": check the suffix",
             kFar: n => 'incl. ' + n + ' far from the BAN point',
+            kArret: n => n + ' arrival point(s) far off',
+            hovArret: d => 'Arrival point ' + d + ' m too far from the address',
+            arrT: (n, s) => 'Arrival points far off (' + n + ', beyond ' + s + ' m)',
+            arrTip: d => 'The arrival point is ' + d + ' m further than the street next to the WME number: check it in WME',
+            sbArret: 'Flag arrival points far off beyond',
+            sbArretHint: 'Distance between the WME number and where Waze guides, minus its distance to its street. Applied straight away, no new analysis.',
             tipFar: d => 'Placed ' + d + ' m from the BAN address',
             certOnly: 'Certified',
             nextMissing: "Next missing",
@@ -634,6 +640,12 @@
             kSuf: n => 'dont ' + n + (un(n) ? ' suffixe à vérifier' : ' suffixes à vérifier'),
             tipSuf: w => "WME porte " + w + "\u00a0: suffixe à vérifier",
             kFar: n => 'dont ' + n + ' loin de la BAN',
+            kArret: n => n + ' point(s) d’arrivée éloigné(s)',
+            hovArret: d => 'Point d’arrivée à ' + d + ' m de trop',
+            arrT: (n, s) => 'Points d’arrivée éloignés (' + n + ', au-delà de ' + s + ' m)',
+            arrTip: d => 'Le point d’arrivée est ' + d + ' m plus loin que la rue voisine du numéro WME : le vérifier dans WME',
+            sbArret: 'Signaler un point d’arrivée éloigné au-delà de',
+            sbArretHint: 'Distance entre le numéro WME et l’endroit où Waze conduit, moins sa distance à sa rue. Appliqué tout de suite, sans nouvelle analyse.',
             tipFar: d => 'Placé à ' + d + '\u00a0m de l’adresse BAN',
             certOnly: 'Certifiées',
             certNote: n => 'Adresses certifiées seulement\u00a0: ' + n + (un(n) ? ' non certifiée écartée' : ' non certifiées écartées'),
@@ -964,6 +976,12 @@
             kSuf: n => 'davon ' + n + (un1(n) ? ' Zusatz prüfen' : ' Zusätze prüfen'),
             tipSuf: w => "WME hat " + w + ": Zusatz prüfen",
             kFar: n => 'davon ' + n + ' weit vom BAN-Punkt',
+            kArret: n => n + ' entfernte(r) Ankunftspunkt(e)',
+            hovArret: d => 'Ankunftspunkt ' + d + ' m zu weit',
+            arrT: (n, s) => 'Entfernte Ankunftspunkte (' + n + ', über ' + s + ' m)',
+            arrTip: d => 'Der Ankunftspunkt liegt ' + d + ' m weiter als die Straße neben der WME-Nummer: in WME prüfen',
+            sbArret: 'Entfernte Ankunftspunkte melden ab',
+            sbArretHint: 'Abstand zwischen der WME-Nummer und dem Ort, zu dem Waze führt, abzüglich ihres Abstands zur Straße. Sofort angewendet, ohne neue Analyse.',
             tipFar: d => 'Liegt ' + d + ' m von der BAN-Adresse entfernt',
             certOnly: 'Zertifiziert',
             nextMissing: "Nächste fehlende",
@@ -1293,6 +1311,12 @@
             kSuf: n => 'de ellas ' + n + (un1(n) ? ' sufijo a revisar' : ' sufijos a revisar'),
             tipSuf: w => "WME tiene " + w + ": revise el sufijo",
             kFar: n => 'de ellas ' + n + ' lejos del punto BAN',
+            kArret: n => n + ' punto(s) de llegada lejano(s)',
+            hovArret: d => 'Punto de llegada ' + d + ' m de más',
+            arrT: (n, s) => 'Puntos de llegada lejanos (' + n + ', más allá de ' + s + ' m)',
+            arrTip: d => 'El punto de llegada está ' + d + ' m más lejos que la calle junto al número de WME: revisarlo en WME',
+            sbArret: 'Señalar un punto de llegada lejano a partir de',
+            sbArretHint: 'Distancia entre el número de WME y el lugar al que guía Waze, menos su distancia a su calle. Se aplica al momento, sin nuevo análisis.',
             tipFar: d => 'Situado a ' + d + ' m de la dirección BAN',
             certOnly: 'Certificadas',
             nextMissing: "Siguiente que falta",
@@ -1622,6 +1646,12 @@
             kSuf: n => 'di cui ' + n + (un1(n) ? ' suffisso da verificare' : ' suffissi da verificare'),
             tipSuf: w => "WME ha " + w + ": verificare il suffisso",
             kFar: n => 'di cui ' + n + ' lontani dal punto BAN',
+            kArret: n => n + ' punto/i di arrivo lontano/i',
+            hovArret: d => 'Punto di arrivo ' + d + ' m di troppo',
+            arrT: (n, s) => 'Punti di arrivo lontani (' + n + ', oltre ' + s + ' m)',
+            arrTip: d => 'Il punto di arrivo è ' + d + ' m più lontano della strada accanto al numero WME: controllarlo in WME',
+            sbArret: 'Segnalare un punto di arrivo lontano oltre',
+            sbArretHint: 'Distanza tra il numero WME e il punto in cui Waze porta, meno la sua distanza dalla strada. Applicato subito, senza nuova analisi.',
             tipFar: d => 'Posto a ' + d + ' m dall’indirizzo BAN',
             certOnly: 'Certificati',
             nextMissing: "Mancante successivo",
@@ -1951,6 +1981,12 @@
             kSuf: n => 'sendo ' + n + (un1(n) ? ' sufixo a verificar' : ' sufixos a verificar'),
             tipSuf: w => "O WME tem " + w + ": verifique o sufixo",
             kFar: n => 'sendo ' + n + ' longe do ponto BAN',
+            kArret: n => n + ' ponto(s) de chegada distante(s)',
+            hovArret: d => 'Ponto de chegada ' + d + ' m a mais',
+            arrT: (n, s) => 'Pontos de chegada distantes (' + n + ', além de ' + s + ' m)',
+            arrTip: d => 'O ponto de chegada está ' + d + ' m além da rua ao lado do número do WME: verifique no WME',
+            sbArret: 'Sinalizar ponto de chegada distante a partir de',
+            sbArretHint: 'Distância entre o número do WME e o local para onde o Waze guia, menos a distância dele até a rua. Aplicado na hora, sem nova análise.',
             tipFar: d => 'Colocado a ' + d + ' m do endereço BAN',
             certOnly: 'Certificados',
             nextMissing: "Próximo faltando",
@@ -2280,6 +2316,12 @@
             kSuf: n => 'das quais ' + n + (un1(n) ? ' sufixo a verificar' : ' sufixos a verificar'),
             tipSuf: w => "O WME tem " + w + ": verifique o sufixo",
             kFar: n => 'das quais ' + n + ' longe do ponto BAN',
+            kArret: n => n + ' ponto(s) de chegada distante(s)',
+            hovArret: d => 'Ponto de chegada ' + d + ' m a mais',
+            arrT: (n, s) => 'Pontos de chegada distantes (' + n + ', além de ' + s + ' m)',
+            arrTip: d => 'O ponto de chegada está ' + d + ' m para além da rua junto ao número do WME: verifique no WME',
+            sbArret: 'Assinalar ponto de chegada distante a partir de',
+            sbArretHint: 'Distância entre o número do WME e o local para onde o Waze guia, menos a distância dele à sua rua. Aplicado de imediato, sem nova análise.',
             tipFar: d => 'Colocado a ' + d + ' m da morada BAN',
             certOnly: 'Certificadas',
             nextMissing: "Seguinte em falta",
@@ -2607,6 +2649,12 @@
             kSuf: n => 'מהן ' + n + ' סיומות לבדיקה',
             tipSuf: w => "ב-WME מופיע " + w + ": יש לבדוק את הסיומת",
             kFar: n => 'מהן ' + n + ' רחוקות מנקודת ה-BAN',
+            kArret: n => n + ' נקודות הגעה רחוקות',
+            hovArret: d => 'נקודת ההגעה רחוקה ב-' + d + ' מ׳ מדי',
+            arrT: (n, s) => 'נקודות הגעה רחוקות (' + n + ', מעל ' + s + ' מ׳)',
+            arrTip: d => 'נקודת ההגעה רחוקה ב-' + d + ' מ׳ יותר מהרחוב שליד המספר ב-WME: יש לבדוק ב-WME',
+            sbArret: 'סימון נקודת הגעה רחוקה מעל',
+            sbArretHint: 'המרחק בין המספר ב-WME למקום שאליו Waze מנחה, פחות המרחק שלו לרחוב. מוחל מיד, ללא ניתוח חדש.',
             tipFar: d => 'ממוקם במרחק ' + d + ' מ׳ מכתובת ה-BAN',
             certOnly: 'מאושרות',
             certNote: n => 'כתובות מאושרות בלבד: ' + n + ' לא מאושרות הושמטו',
@@ -3099,6 +3147,20 @@
         // 37 m, rue à 104 m ; mesuré le 01/11 sur 3 communes, 23 000 adresses).
         const ALLEE_MAX_M = 80, RUE_RPP_M = 250;
         const MARGE_NOM = 0.003;  // ≈ 300 m : un segment du même nom au-delà est un homonyme
+        // 0.20.00 — Le point d'arrivée trop loin de l'adresse (suggestion de milkyway35, 05/11/2026). Un numéro trouvé
+        // peut avoir son marqueur sur la maison et son point d'arrivée (là où Waze conduit) au bout de la rue :
+        // Guipry-Messac, 29 rue Saint-Exupéry, arrivée à 125 m. On mesure l'EXCÈS : distance du marqueur WME au point
+        // d'arrivée, MOINS sa distance à sa propre rue — sans quoi tous les hameaux, maison loin de la route, sortiraient
+        // (mesuré le 05/11 sur Guipry-Messac, Saint-Laurent-des-Arbres et Narbonne, 4 000 numéros). L'excès est rangé par
+        // paliers de 10 m, de 30 à 200 m : le SEUIL est un réglage du panneau (80 m par défaut), appliqué à l'affichage,
+        // donc le changer ne relance aucune analyse.
+        const PALIERS_ARRET = Array.from({ length: 18 }, (_, i) => 30 + 10 * i);
+        const histoArret = () => PALIERS_ARRET.map(() => 0);
+        // Somme de plusieurs histogrammes (voies → commune → département) ; un histogramme absent (balayage gardé
+        // d'avant 0.20.00) compte zéro.
+        const sommeHisto = hs => { const s = histoArret(); for (const h of hs) if (Array.isArray(h)) h.forEach((n, i) => { if (i < s.length) s[i] += n || 0; }); return s; };
+        // Le nombre d'adresses au-delà du seuil réglé ; un seuil hors des paliers est ramené au palier voisin.
+        const arretsAuDela = (h, seuil) => { if (!Array.isArray(h)) return 0; const i = Math.max(0, Math.min(PALIERS_ARRET.length - 1, Math.round((Number(seuil) - PALIERS_ARRET[0]) / 10))); return h[i] || 0; };
 
         function analyser(d) {
             // Durée de chaque étape, rendue avec le résultat : c'est elle qui désigne l'étape lente
@@ -3377,6 +3439,26 @@
                     pris.add(meilleur);
                 }
             }
+            // L'excès du point d'arrivée (0.20.01, voir PALIERS_ARRET), vu du MARQUEUR WME : distance du marqueur (la maison
+            // telle que WME la connaît) au point d'arrivée, moins la distance du marqueur à SA rue. Mesuré d'abord depuis le
+            // point BAN (0.20.00), le critère signalait les adresses que la BAN place à l'entrée de l'allée quand le numéro et
+            // son arrivée sont, à raison, devant la maison (Saint-Laurent-des-Arbres, chemin du Plan, 05/11/2026 : 12 cas sur
+            // 12 de ce type, aucun du défaut visé). Une rue qui a des segments à son nom ne se compare qu'à elle (banc :
+            // hameau à 70 m de sa rue, 10 m d'une autre) ; sans segment à son nom, le plus proche quel qu'il soit. Recherche
+            // bornée à la distance du point d'arrivée : plus loin, l'excès serait nul.
+            for (const v of voies.values()) for (const a of v.adresses) {
+                a.ea = null;
+                if (!a.trouve || !a.wme || !a.wme.arret) continue;
+                const x = a.wme, o = x;   // o = l'origine de la mesure : le marqueur WME
+                const [ax, ay] = m(o.lon, o.lat), [bx, by] = m(x.arret[0], x.arret[1]);
+                const dArr = Math.hypot(ax - bx, ay - by);
+                if (dArr < PALIERS_ARRET[0]) continue;
+                const nomX = (x.type === 'HN' && x.seg && x.seg.principal) || [...x.noms][0] || '';
+                const aSonNom = !!nomX && (parNom.get(nomX) || []).length > 0;
+                const pr = aSonNom ? plusProche(g, o.lon, o.lat, dArr + 1, m, nomX) : plusProche(g, o.lon, o.lat, dArr + 1, m);
+                const ea = dArr - (pr ? pr.d : dArr);
+                if (ea >= PALIERS_ARRET[0]) a.ea = ea;
+            }
             // Un numéro WME resté seul alors qu'une adresse BAN admissible existait double un
             // numéro déjà trouvé : c'est un doublon, pas un numéro en trop.
             top('couples');
@@ -3409,17 +3491,21 @@
                     continue;
                 }
                 const hn = gardees.filter(a => a.trouve === 'HN').length, rpp = gardees.filter(a => a.trouve === 'RPP').length;
+                const arretsHist = histoArret();
+                for (const a of gardees) if (a.ea != null) PALIERS_ARRET.forEach((p, i) => { if (a.ea >= p) arretsHist[i]++; });
                 liste.push({
                     nom: v.nom, deleguee: v.deleguee, nomWme: v.nomWme, nomPrincipal: v.nomPrincipal, statutNom: v.statutNom, nomAbsent: v.nomAbsent,
                     ban: gardees.length, hn, rpp, presents: hn + rpp,
                     manquants: gardees.filter(a => !a.trouve).map(a => a.brut),
                     suffixes: gardees.filter(a => a.suffixe).length,
                     eloignes: gardees.filter(a => a.loin).length,
+                    arretsHist,
                     idVoie: voieDeCles(gardees.map(a => a.cle)),
                     uidV: plusFrequent(gardees.map(a => a.uidV)),
                     adresses: gardees.map(a => ({ brut: a.brut, lon: a.lon, lat: a.lat, trouve: a.trouve, suffixe: a.suffixe || '', loin: !!a.loin, cert: a.cert,
                         cle: a.cle || '', cleDouble: (nCle.get(a.cle) || 0) > 1, uidA: a.uidA || '',
                         wlon: a.trouve ? a.wme.lon : null, wlat: a.trouve ? a.wme.lat : null, dm: a.trouve ? Math.round(a.dm) : null,
+                        ea: a.ea != null ? Math.round(a.ea) : null, alon: a.ea != null ? a.wme.arret[0] : null, alat: a.ea != null ? a.wme.arret[1] : null,
                         seg: !a.trouve && a.proche ? a.proche.seg.id : null,
                         plon: !a.trouve && a.proche ? a.proche.fx / kx : null, plat: !a.trouve && a.proche ? a.proche.fy / 110540 : null,
                         pd: !a.trouve && a.proche ? Math.round(a.proche.d) : null })),
@@ -3442,6 +3528,7 @@
                 totaux: {
                     ban: tot.ban, cert: d.adresses.filter(a => a.cert).length, hn: tot.hn, rpp: tot.rpp, presents: tot.hn + tot.rpp,
                     manquants: tot.ban - tot.hn - tot.rpp, enTrop: enTrop.length, doublons: doublons.length, suffixes: tot.suf, eloignes: tot.elo,
+                    arretsHist: sommeHisto(liste.map(v => v.arretsHist)),
                     certSeules: !!d.certSeules, ecartees: d.adresses.length - tot.ban - sansNomBan.reduce((x, v) => x + v.ban, 0), adressesBan: d.adresses.length,
                     sansNomBan: sansNomBan.reduce((x, v) => x + v.ban, 0), voiesSansNomBan: sansNomBan.length,
                     voies: liste.length, voiesCompletes: liste.filter(v => v.presents === v.ban).length,
@@ -3850,7 +3937,7 @@
             return liste.filter(x => x.type === 'MISSING_ADDRESS' && Math.hypot((x.lon - lon) * kx, (x.lat - lat) * 110540) <= lim)
                 .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
         }
-        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, zonesHn, pointLePlusProche };
+        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, zonesHn, pointLePlusProche };
     })();
     // ==/WBC-CORE==
 
@@ -4420,6 +4507,8 @@
                     { predicate: p => p.etat === 'lien', style: { strokeColor: '${coul}', strokeWidth: 2, strokeOpacity: 0.9, strokeDashstyle: 'dash' } },
                     // Adresse manquante → segment qui devrait probablement la porter : pointillé fin.
                     { predicate: p => p.etat === 'lienManq', style: { strokeColor: '${coul}', strokeWidth: 2, strokeOpacity: 0.85, strokeDashstyle: 'dot' } },
+                    // Adresse trouvée → point d'arrivée éloigné (0.20.00) : trait plein orange, plus épais que les liens.
+                    { predicate: p => p.etat === 'lienArret', style: { strokeColor: '#e65100', strokeWidth: 3, strokeOpacity: 0.9, strokeDashstyle: 'solid' } },
                 ],
             });
             calqueOk = true;
@@ -4480,6 +4569,7 @@
             lignes.push('<b><bdi>' + esc(a.brut + ' ' + v.nom) + '</bdi></b>');
             lignes.push('<bdi>' + esc(r ? r.commune.nom : '') + (v.deleguee ? ' (' + esc(v.deleguee) + ')' : '') + '</bdi>');
             if (a.trouve) lignes.push(etiq('present', t('hovFound', a.trouve)) + (a.loin ? ' · ' + esc(t('tipFar', nb(a.dm))) : a.dm != null ? ' · ' + esc(t('hovDist', nb(a.dm))) : ''));
+            if (a.trouve && arretLoin(a)) lignes.push('<span class="wbc-f-etat arret">' + esc(t('hovArret', nb(a.ea))) + '</span>');
             else if (a.hnPose) lignes.push('<span class="wbc-f-etat pose">' + esc(t('ajHnPoseTip')) + '</span>');
             else if (a.suffixe) lignes.push(etiq('suffixe', t('tipSuf', a.suffixe)));
             else lignes.push(etiq('manquant', t('hovMissing')));
@@ -4800,6 +4890,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-toggle-row:has(input:disabled) .wbc-toggle-lbl { color: var(--wbc-text2); }
 #wbc-sidebar[dir="rtl"] .wbc-toggle input:checked + .wbc-toggle-slider:before { transform: translateX(-16px); }
 .wbc-sb-lbl { margin: 10px 0 4px; font-size: 12px; font-weight: 600; }
+/* Liste du panneau (charte : pleine largeur, 26 px, libellé 12 px 600 au-dessus). */
+.wbc-sb-select { box-sizing: border-box; width: 100%; height: 26px; margin: 0; padding: 2px 6px; font: 12px Rubik, sans-serif; color: #2d3748; border: 1px solid #c8d0da; border-radius: 6px; background: #fff; }
 .wbc-couleurs { display: flex; flex-wrap: wrap; gap: 6px 14px; }
 .wbc-couleur { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer; }
 .wbc-couleur input[type="color"] { width: 26px; height: 24px; padding: 0; border: 1px solid var(--wbc-border); border-radius: 6px; background: #fff; cursor: pointer; }
@@ -5010,6 +5102,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 /* RPP de la voie (0.16.00) : indigo, distinct du rouge des manquants, du violet des suffixes et du turquoise des posés. */
 .wbc-num.rpp { border-color: #9fa8da; background: #e8eaf6; color: #283593; }
 .wbc-num.rpp:hover { background: #c5cae9; }
+/* Point d'arrivée éloigné (0.20.00) : orange, comme son trait sur la carte. Contraste #8a3200 sur #fff3e0 = 7,6:1. */
+.wbc-num.arret { border-color: #ffb74d; background: #fff3e0; color: #8a3200; }
+.wbc-num.arret:hover { background: #ffe0b2; }
 .wbc-legende { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: -2px 0 6px; font-size: 11px; color: var(--wbc-text2); }
 .wbc-pt { display: inline-block; width: 10px; height: 10px; margin-inline-end: 4px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #9aa5b1; vertical-align: -1px; }
 .wbc-pt.manquant { background: #e53935; }
@@ -5111,6 +5206,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-f-etat.manquant { background: #ffebee; color: #c62828; }
 .wbc-f-etat.present { background: #e8f5e9; color: #2e7d32; }
 .wbc-f-etat.trop { background: #fff3e0; color: #b23c00; }
+.wbc-f-etat.arret { background: #fff3e0; color: #8a3200; }
 .wbc-f-etat.suffixe { background: #f3e5f5; color: #6a1b9a; }
 `;
 
@@ -5119,7 +5215,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // =====================================================================
 
     let ovEl = null;
-    const OPTS_DEF = () => ({ mode: 'here', carte: false, trouves: false, certSeules: false, survol: true, couleurs: {}, carteDep: true, replie: false });
+    const OPTS_DEF = () => ({ mode: 'here', carte: false, trouves: false, certSeules: false, survol: true, couleurs: {}, carteDep: true, replie: false, seuilArret: 80 });
     let opts = OPTS_DEF();
     let choixCommune = null;          // {code, nom, dep} choisi dans la recherche
     let choixDep = '';
@@ -5511,7 +5607,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // Le corps de la fenêtre se reconstruit en entier ; l'élément qui avait le focus (filtre, tri,
     // ligne, numéro…) et la position de défilement sont RENDUS après coup — sans cela, chaque clic de
     // filtre ou de tri renvoyait le clavier au début de la page (audit du 26/09, M19).
-    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-hn1', 'data-rpphn', 'data-rppgo', 'data-act', 'data-trop', 'data-doublon'];
+    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-hn1', 'data-rpphn', 'data-rppgo', 'data-arretgo', 'data-act', 'data-trop', 'data-doublon'];
     function rendre() {
         if (!ovEl) return;
         const corps = $('#wbc-corps');
@@ -5591,6 +5687,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // Les chiffres affichés suivent le filtre de commune déléguée : avant, seul le tableau filtrait
     // et les chiffres restaient ceux de la commune nouvelle entière (audit du 26/09, M7). Les numéros
     // en trop ou en double ne se rattachent à aucune voie BAN, donc à aucune déléguée : « — ».
+    // Le seuil du point d'arrivée éloigné (0.20.00), réglé dans le panneau : 30 à 200 m par pas de 10, 80 par défaut.
+    function seuilArret() { const s = Math.round(Number(opts.seuilArret) / 10) * 10; return s >= 30 && s <= 200 ? s : 80; }
+    function arretLoin(a) { return a.ea != null && a.ea >= seuilArret() && a.alon != null; }
     function totauxVus(r) {
         if (!vue.deleguee) return r.totaux;
         const vs = r.voies.filter(v => v.deleguee === vue.deleguee);
@@ -5598,6 +5697,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const nbStatut = st => vs.filter(v => v.statutNom === st).length;
         return Object.assign({}, r.totaux, {
             ban: s('ban'), hn: s('hn'), rpp: s('rpp'), presents: s('presents'), manquants: s('ban') - s('presents'), suffixes: s('suffixes'), eloignes: vs.reduce((x, v) => x + (v.eloignes || 0), 0),
+            arretsHist: Core.sommeHisto(vs.map(v => v.arretsHist)),
             cert: vs.reduce((x, v) => x + v.adresses.filter(a => a.cert).length, 0), enTrop: null, doublons: null,
             voies: vs.length, voiesCompletes: vs.filter(v => v.presents === v.ban).length,
             voiesSansNom: nbStatut('sansNom'), voiesAutreNom: nbStatut('different'), voiesSansSegment: nbStatut('aucun'),
@@ -5612,7 +5712,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const c = pct(T.presents, T.ban);
         return '<div class="wbc-kpis">' +
             kpi(nb(T.ban), t('kBan'), '', t('kCert', nb(T.cert))) +
-            kpi(nb(T.presents), t('kWme'), '', t('kHnRpp', nb(T.hn), nb(T.rpp)) + (T.eloignes ? ' · ' + t('kFar', nb(T.eloignes)) : '')) +
+            kpi(nb(T.presents), t('kWme'), '', t('kHnRpp', nb(T.hn), nb(T.rpp)) + (T.eloignes ? ' · ' + t('kFar', nb(T.eloignes)) : '') +
+                (Core.arretsAuDela(T.arretsHist, seuilArret()) ? ' · ' + t('kArret', nb(Core.arretsAuDela(T.arretsHist, seuilArret()))) : '')) +
             kpi(nb(T.manquants), t('kMiss'), T.manquants ? 'ko' : 'ok', T.suffixes ? t('kSuf', nb(T.suffixes)) : '') +
             (T.enTrop == null ? kpi('—', t('kExtra'), '', t('delNote'))
                 : kpi(nb(T.enTrop), t('kExtra'), T.enTrop ? 'warn' : '', T.doublons ? t('kDup', nb(T.doublons)) : '')) +
@@ -5684,6 +5785,16 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             const num = '<button type="button" class="wbc-num rpp' + (a.rppHn ? ' pose' : '') + courant + '" data-rppgo="' + i + ':' + k + '" title="' + esc((a.rppHn ? t('rhnPoseTip') : t('rhnTip')) + (a.loin ? ' — ' + t('tipFar', nb(a.dm)) : '')) + '">' + (a.rppHn ? '&#x271A; ' : '') + esc(a.brut) + (a.loin ? ' · ' + esc(nb(a.dm)) + '\u00a0m' : '') + '</button>';
             return conv && !a.rppHn ? '<span class="wbc-num-g' + courant + '">' + num + '<button type="button" class="wbc-num-plus rpp" data-rpphn="' + i + ':' + k + '" title="' + esc(t('rhnConv') + ' — ' + t('rhnConvTip')) + '" aria-label="' + esc(t('rhnConv') + ' ' + a.brut) + '">&#x21C4;</button></span>' : num;
         }).join('') + '</div>';
+    }
+    // Les points d'arrivée éloignés de la voie ouverte (0.20.00) : une pastille par adresse trouvée dont le point
+    // d'arrivée dépasse le seuil réglé ; le clic cadre l'adresse et son point d'arrivée. Lecture seule : rien n'est
+    // corrigé d'ici, le point d'arrivée se déplace à la main dans WME.
+    function htmlArrets(v, i) {
+        const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => x.a.trouve && arretLoin(x.a));
+        if (!liste.length) return '';
+        return '<h4>' + esc(t('arrT', nb(liste.length), nb(seuilArret()))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) =>
+            '<button type="button" class="wbc-num arret" data-arretgo="' + i + ':' + k + '" title="' + esc(t('arrTip', nb(a.ea))) + '">' +
+            esc(a.brut) + ' · +' + esc(nb(a.ea)) + ' m</button>').join('') + '</div>';
     }
     // Les pastilles des numéros manquants d'une voie ouverte. Le « + » (0.15.00, L6) ajoute l'adresse SEULE : visible
     // au survol, au focus et sur la pastille courante, seulement si l'ajout peut la poser (pré-contrôle du bouton).
@@ -5801,7 +5912,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     (droitHn && vue.hnMsg && vue.hnMsg.i === i ? '<p class="wbc-hn-msg' + (vue.hnMsg.err ? ' erreur' : '') + '" role="status">' + esc(vue.hnMsg.txt) + '</p>' : '') + '<h4>' + esc(t('missingT')) +
                     (v.manquants.length ? ' <button type="button" class="wbc-btn wbc-btn-neutral wbc-suivant" data-act="suivant" title="' + esc(t('tipNext')) + '">' + esc(t('nextMissing')) + ' <span class="wbc-fl">&#x25B6;</span></button>' : '') + '</h4>' +
                     (v.manquants.length ? htmlNums(v, i)
-                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') + (droitHn ? htmlRpps(v, i) : '') + htmlSigVoie(v, r) + '</td></tr>';
+                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') + (droitHn ? htmlRpps(v, i) : '') + htmlArrets(v, i) + htmlSigVoie(v, r) + '</td></tr>';
             }
             h += '</tbody></table>';
         }
@@ -5878,6 +5989,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             for (const k of ['ban', 'cert', 'hn', 'rpp', 'presents', 'manquants', 'enTrop', 'doublons', 'suffixes', 'eloignes']) s[k] += c.totaux[k] || 0;
             return s;
         }, { ban: 0, cert: 0, hn: 0, rpp: 0, presents: 0, manquants: 0, enTrop: 0, doublons: 0, suffixes: 0, eloignes: 0 });
+        T.arretsHist = Core.sommeHisto(ok.map(c => c.totaux.arretsHist));
         const tri = {
             nom: c => c.commune.nom, ban: c => c.totaux ? c.totaux.ban : -1, wmeN: c => c.totaux ? c.totaux.presents : -1,
             ecart: c => c.totaux ? c.totaux.manquants : -1, cov: c => c.totaux && c.totaux.ban ? c.totaux.presents / c.totaux.ban : -1,
@@ -6094,6 +6206,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 // Tracés avant les points, pour passer dessous.
                 v.adresses.forEach(a => { if (a.trouve && a.wlon != null) pts.unshift({ ligne: [[a.lon, a.lat], [a.wlon, a.wlat]], etat: 'lien' }); });
                 v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && a.plon != null) pts.unshift({ ligne: [[a.lon, a.lat], [a.plon, a.plat]], etat: 'lienManq' }); });
+                // Point d'arrivée éloigné (0.20.01) : trait plein orange du numéro WME à l'endroit où Waze conduit.
+                v.adresses.forEach(a => { if (a.trouve && arretLoin(a)) pts.unshift({ ligne: [[a.wlon, a.wlat], [a.alon, a.alat]], etat: 'lienArret' }); });
                 v.adresses.forEach(a => { if ((a.trouve && !(opts.carte && opts.trouves)) || (!a.trouve && !a.hnPose && !opts.carte)) pts.push({ lon: a.lon, lat: a.lat, etat: a.trouve ? 'present' : 'manquant', lbl: a.brut, ad: a, voie: v }); });
             }
             if (tropMontre) pts.push({ lon: tropMontre.lon, lat: tropMontre.lat, etat: 'trop', lbl: tropMontre.brut, trop: tropMontre });
@@ -7079,6 +7193,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             const x = resultat.enTrop[+bt.dataset.bantrop];
             const url = x && Core.lienAlerte(x.lon, x.lat, 'Adresse présente dans Waze\u00a0: ' + x.brut + (x.rue ? ' ' + x.rue : ''));
             if (url) window.open(url, '_blank', 'noopener');
+            return;
+        }
+        // Point d'arrivée éloigné (0.20.01) : la carte se cadre au milieu du numéro WME et de son point d'arrivée.
+        const ag = ev.target.closest('[data-arretgo]');
+        if (ag && resultat) {
+            const [i, k] = ag.dataset.arretgo.split(':').map(Number), a = resultat.voies[i] && resultat.voies[i].adresses[k];
+            if (a && a.alon != null) centrerLibre((a.wlon + a.alon) / 2, (a.wlat + a.alat) / 2, 18);
             return;
         }
         const snb = ev.target.closest('[data-snb]');
@@ -8275,6 +8396,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     <div class="wbc-toggle-row wbc-sb-ligne"><label class="wbc-toggle-lbl" for="wbc-survol">${esc(t('sbHover'))}</label>
         <label class="wbc-toggle"><input type="checkbox" id="wbc-survol"${opts.survol ? ' checked' : ''}><span class="wbc-toggle-slider"></span></label></div>
     <p class="wbc-sb-hint">${esc(t('sbHoverHint'))}</p>
+    <p class="wbc-sb-lbl"><label for="wbc-arret">${esc(t('sbArret'))}</label></p>
+    <select class="wbc-champ wbc-sb-select" id="wbc-arret">${Core.PALIERS_ARRET.map(p => `<option value="${p}"${p === seuilArret() ? ' selected' : ''}>${esc(nb(p))} m</option>`).join('')}</select>
+    <p class="wbc-sb-hint">${esc(t('sbArretHint'))}</p>
     <p class="wbc-sb-lbl">${esc(t('sbColors'))}</p>
     <div class="wbc-couleurs">
         ${['manquant', 'present', 'trop', 'carte'].map(e => `<label class="wbc-couleur"><input type="color" data-couleur="${e}" value="${couleur(e)}" title="${esc(t(e === 'carte' ? 'tipColMap' : 'tipColPoint'))}"> ${esc(t(e === 'manquant' ? 'legMiss' : e === 'present' ? 'legFound' : e === 'trop' ? 'legExtra' : 'legColMap'))}</label>`).join('')}
@@ -8306,6 +8430,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             const appliquerCouleurs = () => { ecrireOpts(); majCalque(); majCommunes(); if (resultat || resDep) rendre(); };
             res.tabPane.addEventListener('change', ev => {
                 if (ev.target.id === 'wbc-survol') { opts.survol = ev.target.checked; ecrireOpts(); if (!opts.survol) cacherFiche(); }
+                // Seuil du point d'arrivée éloigné (0.20.00) : appliqué à l'affichage, aucune analyse relancée.
+                if (ev.target.id === 'wbc-arret') { opts.seuilArret = Number(ev.target.value) || 80; ecrireOpts(); majCalque(); if (resultat || resDep) rendre(); }
             });
             // « input » et non « change » : la carte suit le sélecteur de couleur pendant qu'on le règle.
             res.tabPane.addEventListener('input', ev => {
