@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.20.01
+// @version      0.20.02
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -354,6 +354,7 @@
             ajHnAddTip: r => 'L6 only: places in WME the missing numbers of this street, on the segments whose primary name is exactly the BAN name (accents and case aside) and whose city is the commune or “Village (Commune)”. At most 500 numbers per sliding hour, counted when saved (' + r + ' left). Nothing is saved: check them, then save in WME. Out of town (primary name without a city, BAN name with the commune as an alternate), the address becomes a residential place (RPP) — same conversion as the WME Naming Auditor ⚡ — and counts in the quota.',
             ajHnNoName: 'The WME name of this street is not the BAN name: automatic adding needs a primary name identical to the BAN.',
             ajHnNone: 'No number can be added automatically on this street.',
+            ajHnLoin: n => 'No number can be added automatically: ' + n + ' address(es) more than 80 m from the street as drawn in WME. Move the segment closer if it is misplaced.',
             ajHnQuota: h => 'Limit reached (500 numbers per hour): next adding possible at ' + h + '.',
             ajHnRunning: 'Adding the house numbers…',
             bgTab: 'Tab in the background: Chrome slows the work in progress down (up to 3 times longer). Keep this tab in front.',
@@ -689,6 +690,7 @@
             ajHnAddTip: r => 'Réservé aux L6\xa0: pose dans WME les numéros manquants de cette voie, sur les segments dont le nom principal est exactement celui de la BAN (aux accents et à la casse près) et dont la ville est la commune ou «\xa0Village (Commune)\xa0». Au plus 500 numéros par heure glissante, comptés à l’enregistrement (reste ' + r + '). Rien n’est enregistré\xa0: vérifiez, puis enregistrez dans WME. Hors agglomération (nom principal sans ville, nom BAN avec la commune en alternatif), l’adresse devient un POI résidentiel (RPP) — même conversion que le ⚡ de WME Naming Auditor — et compte au quota.',
             ajHnNoName: 'Le nom WME de cette voie n’est pas celui de la BAN\xa0: l’ajout automatique exige un nom principal identique à la BAN.',
             ajHnNone: 'Aucun numéro à ajouter automatiquement sur cette voie.',
+            ajHnLoin: n => 'Aucun numéro à ajouter automatiquement\u00a0: ' + n + ' adresse(s) à plus de 80\u00a0m de la voie tracée dans WME. Rapproche le segment s’il est mal placé.',
             ajHnQuota: h => 'Quota atteint (500 numéros par heure)\xa0: prochain ajout possible à ' + h + '.',
             ajHnRunning: 'Ajout des numéros…',
             bgTab: 'Onglet passé en arrière-plan\xa0: Chrome ralentit le travail en cours (jusqu’à 3 fois plus long). Gardez cet onglet au premier plan.',
@@ -1024,6 +1026,7 @@
             ajHnAddTip: r => 'Nur L6: setzt in WME die fehlenden Nummern dieser Straße, auf den Segmenten, deren Hauptname genau der BAN-Name ist (bis auf Akzente und Groß-/Kleinschreibung) und deren Stadt die Gemeinde oder „Ortsteil (Gemeinde)“ ist. Höchstens 500 Nummern pro gleitender Stunde, beim Speichern gezählt (' + r + ' übrig). Nichts wird gespeichert: prüfen, dann in WME speichern. Außerorts (Hauptname ohne Stadt, BAN-Name mit der Gemeinde als Alternativname) wird die Adresse zu einem Wohnort-POI (RPP) — gleiche Umwandlung wie das ⚡ von WME Naming Auditor — und zählt zum Kontingent.',
             ajHnNoName: 'Der WME-Name dieser Straße ist nicht der BAN-Name: automatisches Hinzufügen erfordert einen mit der BAN identischen Hauptnamen.',
             ajHnNone: 'Auf dieser Straße kann keine Nummer automatisch hinzugefügt werden.',
+            ajHnLoin: n => 'Keine Nummer automatisch hinzuzufügen: ' + n + ' Adresse(n) mehr als 80 m von der in WME gezeichneten Straße entfernt. Rücke das Segment näher, falls es falsch liegt.',
             ajHnQuota: h => 'Kontingent erreicht (500 Nummern pro Stunde): nächstes Hinzufügen um ' + h + ' möglich.',
             ajHnRunning: 'Hausnummern werden hinzugefügt…',
             bgTab: 'Tab im Hintergrund: Chrome verlangsamt die laufende Arbeit (bis zu 3-mal länger). Diesen Tab im Vordergrund lassen.',
@@ -1359,6 +1362,7 @@
             ajHnAddTip: r => 'Solo L6: coloca en WME los números que faltan en esta calle, en los segmentos cuyo nombre principal es exactamente el de la BAN (salvo acentos y mayúsculas) y cuya ciudad es el municipio o «Pueblo (Municipio)». Como máximo 500 números por hora móvil, contados al guardar (quedan ' + r + '). No se guarda nada: compruébelos y luego guarde en WME. Fuera de poblado (nombre principal sin ciudad, nombre BAN con el municipio como alternativo), la dirección se convierte en un lugar residencial (RPP) — misma conversión que el ⚡ de WME Naming Auditor — y cuenta en la cuota.',
             ajHnNoName: 'El nombre WME de esta calle no es el de la BAN: la adición automática exige un nombre principal idéntico al de la BAN.',
             ajHnNone: 'Ningún número se puede añadir automáticamente en esta calle.',
+            ajHnLoin: n => 'Ningún número se puede añadir automáticamente: ' + n + ' dirección(es) a más de 80 m de la calle dibujada en WME. Acerca el segmento si está mal colocado.',
             ajHnQuota: h => 'Cuota alcanzada (500 números por hora): próxima adición posible a las ' + h + '.',
             ajHnRunning: 'Añadiendo los números…',
             bgTab: 'Pestaña en segundo plano: Chrome ralentiza el trabajo en curso (hasta 3 veces más largo). Mantenga esta pestaña en primer plano.',
@@ -1694,6 +1698,7 @@
             ajHnAddTip: r => 'Solo L6: inserisce in WME i numeri mancanti di questa via, sui segmenti il cui nome principale è esattamente quello della BAN (a meno di accenti e maiuscole) e la cui città è il comune o «Frazione (Comune)». Al massimo 500 numeri per ora mobile, contati al salvataggio (ne restano ' + r + '). Niente viene salvato: controllali, poi salva in WME. Fuori dal centro abitato (nome principale senza città, nome BAN con il comune come alternativo), l’indirizzo diventa un luogo residenziale (RPP) — stessa conversione del ⚡ di WME Naming Auditor — e conta nella quota.',
             ajHnNoName: 'Il nome WME di questa via non è quello della BAN: l’aggiunta automatica richiede un nome principale identico a quello della BAN.',
             ajHnNone: 'Nessun numero può essere aggiunto automaticamente su questa via.',
+            ajHnLoin: n => 'Nessun numero da aggiungere automaticamente: ' + n + ' indirizzo/i a più di 80 m dalla via disegnata in WME. Avvicina il segmento se è mal posizionato.',
             ajHnQuota: h => 'Quota raggiunta (500 numeri all’ora): prossima aggiunta possibile alle ' + h + '.',
             ajHnRunning: 'Aggiunta dei numeri…',
             bgTab: 'Scheda in secondo piano: Chrome rallenta il lavoro in corso (fino a 3 volte più lungo). Tieni questa scheda in primo piano.',
@@ -2029,6 +2034,7 @@
             ajHnAddTip: r => 'Somente L6: coloca no WME os números que faltam nesta rua, nos segmentos cujo nome principal é exatamente o da BAN (exceto acentos e maiúsculas) e cuja cidade é o município ou “Vila (Município)”. No máximo 500 números por hora móvel, contados ao salvar (restam ' + r + '). Nada é salvo: confira e depois salve no WME. Fora da área urbana (nome principal sem cidade, nome BAN com o município como alternativo), o endereço vira um local residencial (RPP) — mesma conversão do ⚡ do WME Naming Auditor — e conta na cota.',
             ajHnNoName: 'O nome WME desta rua não é o da BAN: a adição automática exige um nome principal idêntico ao da BAN.',
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
+            ajHnLoin: n => 'Nenhum número a adicionar automaticamente: ' + n + ' endereço(s) a mais de 80 m da rua desenhada no WME. Aproxime o segmento se estiver mal colocado.',
             ajHnQuota: h => 'Cota atingida (500 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'Adicionando os números…',
             bgTab: 'Aba em segundo plano: o Chrome deixa o trabalho em andamento mais lento (até 3 vezes mais longo). Mantenha esta aba em primeiro plano.',
@@ -2364,6 +2370,7 @@
             ajHnAddTip: r => 'Apenas L6: coloca no WME os números em falta nesta rua, nos segmentos cujo nome principal é exatamente o da BAN (exceto acentos e maiúsculas) e cuja cidade é o município ou «Aldeia (Município)». No máximo 500 números por hora móvel, contados ao guardar (restam ' + r + '). Nada é guardado: verifique e depois guarde no WME. Fora da localidade (nome principal sem cidade, nome BAN com o município como alternativo), a morada passa a local residencial (RPP) — mesma conversão do ⚡ do WME Naming Auditor — e conta na quota.',
             ajHnNoName: 'O nome WME desta rua não é o da BAN: a adição automática exige um nome principal idêntico ao da BAN.',
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
+            ajHnLoin: n => 'Nenhum número a adicionar automaticamente: ' + n + ' endereço(s) a mais de 80 m da rua desenhada no WME. Aproxime o segmento se estiver mal colocado.',
             ajHnQuota: h => 'Quota atingida (500 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'A adicionar os números…',
             bgTab: 'Separador em segundo plano: o Chrome abranda o trabalho em curso (até 3 vezes mais longo). Mantenha este separador em primeiro plano.',
@@ -2699,6 +2706,7 @@
             ajHnAddTip: r => 'L6 בלבד: מציב ב-WME את המספרים החסרים ברחוב זה, על המקטעים ששמם הראשי זהה בדיוק לשם ב-BAN (למעט סימנים דיאקריטיים ואותיות רישיות) ושהעיר שלהם היא הרשות או «כפר (רשות)». לכל היותר 500 מספרים בשעה נעה, נספרים בשמירה (נותרו ' + r + '). דבר אינו נשמר: יש לבדוק ואז לשמור ב-WME. מחוץ ליישוב (שם ראשי ללא עיר, שם ה-BAN עם הרשות כשם חלופי), הכתובת הופכת למקום מגורים (RPP) — אותה המרה כמו ⚡ של WME Naming Auditor — ונספרת במכסה.',
             ajHnNoName: 'שם הרחוב ב-WME אינו השם ב-BAN: הוספה אוטומטית דורשת שם ראשי זהה לשם ב-BAN.',
             ajHnNone: 'לא ניתן להוסיף אוטומטית אף מספר ברחוב זה.',
+            ajHnLoin: n => 'לא ניתן להוסיף מספרים אוטומטית: ' + n + ' כתובות במרחק של יותר מ-80 מטר מהרחוב כפי שצויר ב-WME. קרבו את המקטע אם הוא ממוקם שלא כראוי.',
             ajHnQuota: h => 'המכסה נוצלה (500 מספרים בשעה): ההוספה הבאה אפשרית בשעה ' + h + '.',
             ajHnRunning: 'מוסיף את המספרים…',
             bgTab: 'הלשונית ברקע: Chrome מאט את העבודה הנוכחית (עד פי 3). כדאי להשאיר את הלשונית הזו בחזית.',
@@ -7611,7 +7619,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         // 0.19.00 : le bouton de la voie ne pose que des NUMÉROS ; les RPP (hors agglo, allées) se posent un par un, par le
         // « + » de leur pastille — l'aperçu lu à l'ouverture de la voie les compte à part.
         const k = ap ? Math.min(ap.hn, q.reste) : Math.min(n, q.reste);
-        const tip = !nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !k ? (ap && ap.rpp ? t('ajHnRppUnit', nb(ap.rpp)) : t('ajHnNone')) : t('ajHnAddTip', nb(q.reste));
+        const tip = !nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !k ? (ap && ap.rpp ? t('ajHnRppUnit', nb(ap.rpp)) : ap && ap.loin ? t('ajHnLoin', nb(ap.loin)) : t('ajHnNone')) : t('ajHnAddTip', nb(q.reste));
         const lib = t('ajHnAdd', nb(k));
         return ' <button type="button" class="wbc-btn wbc-btn-neutral" data-act="hnvoie" title="' + esc(tip) + '"' + (nomOk && k && !hnEnCours ? '' : ' disabled') + '>' + esc(lib) + '</button>' +
             // Le bouton d'arrêt d'une passe de voie (0.19.00) : lu entre deux poses et entre deux zones.
@@ -7728,7 +7736,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 if (ad.houseNumber && ad.street && Core.nomSouple(ad.street.name) === nomBan) existants.push(ad.houseNumber);
             }
         } catch (e) { log('RPP chargés : ' + e.message); }
-        return { segs, existants };
+        // 0.20.02 : `attendus` / `charges` disent si la voie était entièrement chargée (cf. apercuHn).
+        return { segs, existants, attendus: ids.length, charges: l.length };
     }
 
     // Une étape d'écriture qui échoue : on DÉFAIT ce que ce geste a ajouté à la pile d'annulation de WME, jusqu'à
@@ -8077,13 +8086,24 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
 
     // Aperçu à l'ouverture d'une voie (0.13.00) : combien de numéros et combien de RPP partiraient, lu sur les
     // segments déjà chargés, sans rien poser. Faute de segments chargés, le bouton garde le seul total.
-    async function apercuHn(i) {
+    // 🔴 0.20.02 (milkyway35, 06/11, rue de Trichet à Saint-Malo) : cette règle n'était PAS appliquée. L'aperçu part
+    // 1,2 s après le cadrage ; si WME n'a pas encore chargé les segments, le plan se faisait sur une voie vide et
+    // l'aperçu valait 0 — « Ajouter les numéros (0) », « Aucun numéro à ajouter » — alors que la ligne d'en dessous
+    // annonçait 5 numéros à ajouter. Voie incomplète ⇒ pas d'aperçu (le total reste affiché), nouvel essai plus tard.
+    async function apercuHn(i, essai) {
         const v = resultat && resultat.voies[i];
         if (!v || !droitHn || !v.adresses.some(a => !a.trouve && !a.hnPose)) return;
         try {
-            const { segs, existants } = await lireVoieHn(v, false);
+            const { segs, existants, attendus, charges } = await lireVoieHn(v, false);
+            if (charges < attendus) {
+                v.apercuHn = null;
+                const n = essai || 0;
+                if (n < 8 && vue.ouverte === i) setTimeout(() => { if (vue.ouverte === i) apercuHn(i, n + 1); }, 1500);
+                if (vue.ouverte === i && !hnEnCours) rendre();
+                return;
+            }
             const pl = Core.planHn(v, resultat.commune.nom, segs, existants, Infinity);
-            v.apercuHn = { hn: pl.poses.filter(p => !p.rpp).length, rpp: pl.poses.filter(p => p.rpp).length };
+            v.apercuHn = { hn: pl.poses.filter(p => !p.rpp).length, rpp: pl.poses.filter(p => p.rpp).length, loin: pl.ecartes.loin };
             if (vue.ouverte === i && !hnEnCours) rendre();
         } catch (e) { log('aperçu ' + v.nom + ' : ' + e.message); }
     }
