@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.20.02
+// @version      0.20.03
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -3741,6 +3741,21 @@
             }
             return { poses, ecartes, unites, admis: admis.length, hors: horsA.length, refus };
         }
+        // 0.20.03 — Les segments dont les numéros comptent comme « déjà dans WME » pour une voie : ceux que l'analyse a
+        // rattachés à la voie (`voie` = segsVoie : nom BAN, variantes d'article, nom WME gagnant), et tout autre segment
+        // lu qui porte le nom BAN en principal ou en alternatif. Le segment le plus proche d'une adresse manquante
+        // (`a.seg`, tout nom) sert à charger la carte, PAS à lire les numéros existants : à Veyrier-du-Lac (07/11/2026),
+        // le 53 bis route de Menthon avait pour plus proche un segment de la route du Crêt des Vignes, qui porte les
+        // 36, 40, 42… de SA rue ⇒ 13 numéros de la route de Menthon écartés « existe déjà », 0 posé.
+        function segsDesExistants(nomBan, voie, ids, segs) {
+            const nb = nomSouple(nomBan), deVoie = new Set(voie || []);
+            const parId = new Map((segs || []).map(s => [s.id, s]));
+            return [...new Set((ids || []).concat((segs || []).map(s => s.id)))].filter(id => {
+                if (deVoie.has(id)) return true;
+                const s = parId.get(id);
+                return !!s && (nomSouple(s.nom) === nb || (s.alts || []).some(a => nomSouple(a.nom) === nb));
+            });
+        }
         // 0.18.10 — l'allée d'une adresse trop loin de sa voie. Rend { rue, allee, entree } ou null. `admis` = les segments
         // de la voie (nom BAN, bonne ville) ; `segs` = tous les segments lus. Il faut, À LA FOIS :
         //   1. que le segment le plus proche de l'adresse, toutes voies confondues, soit une ALLÉE — chemin privé (17) ou voie
@@ -3945,7 +3960,7 @@
             return liste.filter(x => x.type === 'MISSING_ADDRESS' && Math.hypot((x.lon - lon) * kx, (x.lat - lat) * 110540) <= lim)
                 .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
         }
-        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, zonesHn, pointLePlusProche };
+        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, segsDesExistants, zonesHn, pointLePlusProche };
     })();
     // ==/WBC-CORE==
 
@@ -7641,7 +7656,6 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // sans lui (aperçu à l'ouverture de la voie), on se contente de ce qui est chargé.
     async function lireVoieHn(v, cadrerSiBesoin, zone) {
         let ids = [...new Set((v.segs || []).concat(v.adresses.filter(a => !a.trouve && a.seg != null).map(a => a.seg)))];
-        const idsVoie = new Set(ids);
         // 0.13.04 : une passe de ZONE prend aussi les segments chargés à moins de ~100 m de ses adresses. L'analyse
         // ne rattache à une voie que les segments qu'elle a reconnus (un seul au chemin des Baylés, le 02/10) ;
         // planHn trie ensuite par nom, ville et alternatif — un segment voisin d'un autre nom est simplement refusé.
@@ -7709,15 +7723,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const existants = [];
         // Sur TOUS les segments de la voie, chargés ou non (essai du 29/09 à Brie : 1 segment chargé sur 2 —
         // un numéro du segment manquant aurait été reposé ; fetchHouseNumbers lit aussi un segment non chargé).
-        // Les numéros existants : ceux de la voie. Un segment ajouté par la ZONE ne compte que s'il porte le nom BAN
-        // (principal ou alternatif) — sinon le « 5 » d'une autre rue voisine empêcherait de poser le 5 de celle-ci.
-        const nomBanV = Core.nomSouple(v.nom);
-        const deLaVoie = id => {
-            if (idsVoie.has(id)) return true;
-            const sg = segs.find(x => x.id === id);
-            return !!sg && (Core.nomSouple(sg.nom) === nomBanV || (sg.alts || []).some(x => Core.nomSouple(x.nom) === nomBanV));
-        };
-        const tous = [...new Set(ids.concat(segs.map(s => s.id)))].filter(deLaVoie);
+        // Les numéros existants : ceux de la voie. Un segment qui n'est pas de la voie (ajouté par la ZONE, ou plus proche
+        // d'une adresse manquante) ne compte que s'il porte le nom BAN (principal ou alternatif) — sinon le « 5 » d'une
+        // autre rue voisine empêcherait de poser le 5 de celle-ci (0.13.04 pour la zone ; 0.20.03 pour le plus proche).
+        const tous = Core.segsDesExistants(v.nom, v.segs, ids, segs);
         for (let k = 0; k < tous.length; k += 250) {
             const lot = await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: tous.slice(k, k + 250) });
             for (const h of lot || []) existants.push(h.number);
