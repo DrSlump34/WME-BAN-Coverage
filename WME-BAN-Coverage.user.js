@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.00
+// @version      0.21.02
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -230,6 +230,7 @@
             hovNotCert: "Address not certified by the commune",
             hovWmeStreet: r => 'WME street: ' + r,
             sizeTip: "Enlarge / restore the window",
+            smallTip: "Small window (original size)",
             searching: "Searching…",
             tipAnalyse: "Analyse the chosen area. If it was already scanned, its date is shown first, with Open or Run again.",
             tipAnalyseCom: c => "Analyse " + c + " again, the commune shown, and update its line in the département. To scan the whole département, go back to it first.",
@@ -566,6 +567,7 @@
             hovNotCert: "Adresse non certifiée par la commune",
             hovWmeStreet: r => 'Voie WME\u00a0: ' + r,
             sizeTip: "Agrandir / rétablir la fenêtre",
+            smallTip: "Petite fenêtre (taille d’origine)",
             searching: "Recherche…",
             tipAnalyse: "Lancer l’analyse du périmètre choisi. S’il a déjà été balayé, sa date s’affiche d’abord, avec Ouvrir ou Relancer.",
             tipAnalyseCom: c => "Relancer l’analyse de " + c + ", la commune affichée, et mettre à jour sa ligne du département. Pour balayer tout le département, revenez-y d’abord.",
@@ -902,6 +904,7 @@
             hovNotCert: "Nicht von der Gemeinde zertifizierte Adresse",
             hovWmeStreet: r => 'WME-Straße: ' + r,
             sizeTip: "Fenster vergrößern / wiederherstellen",
+            smallTip: "Kleines Fenster (ursprüngliche Größe)",
             searching: "Suche…",
             tipAnalyse: "Den gewählten Bereich analysieren. Wurde er schon durchlaufen, erscheint zuerst sein Datum, mit Öffnen oder Neu starten.",
             tipAnalyseCom: c => c + " erneut analysieren (angezeigte Gemeinde) und ihre Zeile im Département aktualisieren. Für das ganze Département zuerst dorthin zurückkehren.",
@@ -1238,6 +1241,7 @@
             hovNotCert: "Dirección no certificada por el municipio",
             hovWmeStreet: r => 'Calle WME: ' + r,
             sizeTip: "Ampliar / restaurar la ventana",
+            smallTip: "Ventana pequeña (tamaño original)",
             searching: "Buscando…",
             tipAnalyse: "Analizar la zona elegida. Si ya se analizó, primero se muestra su fecha, con Abrir o Relanzar.",
             tipAnalyseCom: c => "Volver a analizar " + c + ", el municipio mostrado, y actualizar su línea del departamento. Para analizar todo el departamento, vuelva primero a él.",
@@ -1574,6 +1578,7 @@
             hovNotCert: "Indirizzo non certificato dal comune",
             hovWmeStreet: r => 'Via WME: ' + r,
             sizeTip: "Ingrandisci / ripristina la finestra",
+            smallTip: "Finestra piccola (dimensione originale)",
             searching: "Ricerca…",
             tipAnalyse: "Analizza la zona scelta. Se è già stata scansionata, compare prima la sua data, con Apri o Rilancia.",
             tipAnalyseCom: c => "Rianalizza " + c + ", il comune mostrato, e aggiorna la sua riga nel dipartimento. Per scansionare tutto il dipartimento, tornaci prima.",
@@ -1910,6 +1915,7 @@
             hovNotCert: "Endereço não certificado pelo município",
             hovWmeStreet: r => 'Rua WME: ' + r,
             sizeTip: "Ampliar / restaurar a janela",
+            smallTip: "Janela pequena (tamanho original)",
             searching: "Buscando…",
             tipAnalyse: "Analisar a área escolhida. Se já foi varrida, a data aparece antes, com Abrir ou Refazer.",
             tipAnalyseCom: c => "Analisar de novo " + c + ", o município mostrado, e atualizar a sua linha do departamento. Para varrer todo o departamento, volte primeiro a ele.",
@@ -2246,6 +2252,7 @@
             hovNotCert: "Morada não certificada pelo município",
             hovWmeStreet: r => 'Rua WME: ' + r,
             sizeTip: "Ampliar / repor a janela",
+            smallTip: "Janela pequena (tamanho original)",
             searching: "A procurar…",
             tipAnalyse: "Analisar a área escolhida. Se já foi analisada, a data aparece primeiro, com Abrir ou Voltar a correr.",
             tipAnalyseCom: c => "Analisar de novo " + c + ", o município exibido, e atualizar sua linha do departamento. Para analisar todo o departamento, volte primeiro a ele.",
@@ -2582,6 +2589,7 @@
             hovNotCert: "כתובת שאינה מאושרת על ידי הרשות",
             hovWmeStreet: r => 'רחוב ב-WME: ' + r,
             sizeTip: "הגדלה / שחזור של החלון",
+            smallTip: "חלון קטן (גודל מקורי)",
             searching: "מחפש…",
             tipAnalyse: "ניתוח האזור שנבחר. אם כבר נסרק, התאריך שלו מוצג קודם, עם פתיחה או הרצה מחדש.",
             tipAnalyseCom: c => "ניתוח מחדש של " + c + ", היישוב המוצג, ועדכון השורה שלו במחוז. כדי לסרוק את כל המחוז, חזרו אליו קודם.",
@@ -3155,7 +3163,7 @@
         // 37 m, rue à 104 m ; mesuré le 01/11 sur 3 communes, 23 000 adresses).
         const ALLEE_MAX_M = 80, RUE_RPP_M = 250;
         const MARGE_NOM = 0.003;  // ≈ 300 m : un segment du même nom au-delà est un homonyme
-        // 0.20.00 — Le point d'arrivée trop loin de l'adresse (suggestion de milkyway35, 05/11/2026). Un numéro trouvé
+        // 0.20.00 — Le point d'arrivée trop loin de l'adresse (suggestion d'un éditeur, 05/11/2026). Un numéro trouvé
         // peut avoir son marqueur sur la maison et son point d'arrivée (là où Waze conduit) au bout de la rue :
         // Guipry-Messac, 29 rue Saint-Exupéry, arrivée à 125 m. On mesure l'EXCÈS : distance du marqueur WME au point
         // d'arrivée, MOINS sa distance à sa propre rue — sans quoi tous les hameaux, maison loin de la route, sortiraient
@@ -3876,7 +3884,7 @@
         // 0.20.04 — Corse : la BAN écrit les clés d'adresse en minuscules (« 2b298_0037_00005 ») mais ses services
         // n'acceptent la VOIE et la COMMUNE qu'en majuscules : /lookup/2b298_0037 ⇒ 404 « La voie n'existe pas »,
         // /settings/commune-status/2b298 ⇒ « pas de Base Adresse Locale » (faux : 2B298 ⇒ FULL). Mesuré le 08/11/2026
-        // sur Saint-Florent (signalé par Glenan56). L'identifiant d'ADRESSE, lui, reste en minuscules (2B… ⇒ 404).
+        // sur Saint-Florent (signalé par un éditeur). L'identifiant d'ADRESSE, lui, reste en minuscules (2B… ⇒ 404).
         const idVoieBan = cle => { const m = CLE_RE.exec(String(cle || '').trim()); return m ? m[1].replace(/^2[ab]/i, s => s.toUpperCase()) : ''; };
         const inseeCle = cle => idVoieBan(cle).slice(0, 5);
         function lienSignalement(cle, voie) {
@@ -5070,7 +5078,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-ligne { font-size: 11px; color: var(--wbc-text2); margin: 4px 0 8px; line-height: 1.5; }
 .wbc-outils { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 6px; }
 /* 0.21.00 — Les filtres et le champ « Filtrer les voies » restent en haut pendant qu'on fait défiler les voies
-   (Glenan56, 08/11/2026 : on ne savait pas « dans quels cas il s'affiche »). -10px = la marge haute de #wbc-corps. */
+   (remontée d'un éditeur, 08/11/2026 : on ne savait pas « dans quels cas il s'affiche »). -10px = la marge haute de #wbc-corps. */
 #wbc-corps tr.wbc-l { scroll-margin-top: 52px; }
 #wbc-corps > .wbc-outils { position: sticky; top: -10px; z-index: 2; background: #fff; padding: 6px 0; margin: 2px 0 4px; box-shadow: 0 1px 0 var(--wbc-border); }
 .wbc-filtres { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -5149,12 +5157,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-num-g { position: relative; display: inline-flex; }
 .wbc-num-plus { position: absolute; top: -6px; inset-inline-end: -6px; z-index: 1; display: flex; align-items: center; justify-content: center;
     width: 17px; height: 17px; min-height: 0; margin: 0; padding: 0; border: 1px solid #fff; border-radius: 50%; background: #00838f; color: #fff;
-    font: 700 13px/1 'Rubik','Open Sans',sans-serif; cursor: pointer; opacity: 0; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
-.wbc-num-g:hover .wbc-num-plus, .wbc-num-g:focus-within .wbc-num-plus, .wbc-num-g.courant .wbc-num-plus { opacity: 1; }
+    font: 700 13px/1 'Rubik','Open Sans',sans-serif; cursor: pointer; opacity: 0; pointer-events: none; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+/* 0.21.01 — Caché, il ne capte plus la souris : transparent mais cliquable, le ⚑ d'une pastille recouvrait le « + »
+   de sa voisine et prenait le clic (remontée de deux éditeurs, 08/11/2026). Le clavier l'atteint toujours (focus). */
+.wbc-num-g:hover .wbc-num-plus, .wbc-num-g:focus-within .wbc-num-plus, .wbc-num-g.courant .wbc-num-plus { opacity: 1; pointer-events: auto; }
 .wbc-num-plus:hover { background: #006064; }
 .wbc-num-plus:focus-visible { outline: 2px solid var(--wbc-blue-dk); outline-offset: 1px; }
-/* « ⚑ » signaler à la BAN (0.18.00) : même pastille, à l'angle opposé, bleu de l'État. */
-.wbc-num-plus.wbc-num-ban { inset-inline-end: auto; inset-inline-start: -6px; background: #000091; font-size: 10px; }
+/* « ⚑ » signaler à la BAN (0.18.00) : même pastille, bleu de l'État. 0.21.01 : en BAS à droite, sous le « + » — en haut
+   à gauche, il touchait le « + » de la pastille précédente (3 px d'écart, 6 px de débord chacun). */
+.wbc-num-plus.wbc-num-ban { top: auto; bottom: -6px; background: #000091; font-size: 10px; }
 .wbc-num-plus.wbc-num-ban:hover { background: #1212ff; }
 /* Signalements à la BAN (0.18.01) : une ligne par signalement, statut en couleur. */
 .wbc-sig-l { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; margin-bottom: 5px; font-size: 11px; list-style: none; }
@@ -7016,6 +7027,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         return '<div id="wbc-hdr" title="' + esc(t('dragTip')) + '"><span class="wbc-hdr-title"><span class="wbc-hdr-ico">' + icone(16) + '</span>' +
             SCRIPT_NAME + ' <span class="wbc-hdr-v">v' + esc(VERSION) + '</span></span>' +
             '<span class="wbc-hdr-btns"><button type="button" class="wbc-hdr-btn" data-act="replier"></button>' +
+            // 0.21.01 — Petite fenêtre en UN clic (idée d'un éditeur, 08/11/2026) : « ⤢ » bascule, et depuis une taille
+            // mémorisée il fallait deux clics pour retrouver la fenêtre d'origine (le double-clic sur l'en-tête ne se voit pas).
+            '<button type="button" class="wbc-hdr-btn" data-act="petite" title="' + esc(t('smallTip')) + '" aria-label="' + esc(t('smallTip')) + '"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M4.5 1v3.5H1M7.5 1v3.5H11M4.5 11V7.5H1M7.5 11V7.5H11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
             '<button type="button" class="wbc-hdr-btn" data-act="taille" title="' + esc(t('sizeTip')) + '" aria-label="' + esc(t('sizeTip')) + '">&#x2922;</button>' +
             '<button type="button" class="wbc-hdr-btn" data-act="close" title="' + esc(t('close')) + '" aria-label="' + esc(t('close')) + '">&#x2715;</button></span></div>' +
             // Deux lignes au lieu de cinq : le périmètre et son choix, puis interrupteurs, état et Analyser.
@@ -7176,6 +7190,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             else if (a === 'replier') basculerRepli(!opts.replie);
             else if (a === 'copier') copierCouverture(act);
             else if (a === 'taille') basculerTaille();
+            else if (a === 'petite') petiteFenetre();
             else if (a === 'stop') arreter();
             else if (a === 'csv' && resultat) exporterCommune(resultat);
             else if (a === 'csvdep' && resDep) exporterDepartement(resDep);
@@ -8103,7 +8118,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
 
     // Aperçu à l'ouverture d'une voie (0.13.00) : combien de numéros et combien de RPP partiraient, lu sur les
     // segments déjà chargés, sans rien poser. Faute de segments chargés, le bouton garde le seul total.
-    // 🔴 0.20.02 (milkyway35, 06/11, rue de Trichet à Saint-Malo) : cette règle n'était PAS appliquée. L'aperçu part
+    // 🔴 0.20.02 (remontée d'un éditeur, 06/11, rue de Trichet à Saint-Malo) : cette règle n'était PAS appliquée. L'aperçu part
     // 1,2 s après le cadrage ; si WME n'a pas encore chargé les segments, le plan se faisait sur une voie vide et
     // l'aperçu valait 0 — « Ajouter les numéros (0) », « Aucun numéro à ajouter » — alors que la ligne d'en dessous
     // annonçait 5 numéros à ajouter. Voie incomplète ⇒ pas d'aperçu (le total reste affiché), nouvel essai plus tard.
@@ -8125,7 +8140,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         } catch (e) { log('aperçu ' + v.nom + ' : ' + e.message); }
     }
 
-    // 0.21.00 — Suivre la sélection de WME (idée de Glenan56, 08/11/2026) : un segment sélectionné sur la carte ouvre
+    // 0.21.00 — Suivre la sélection de WME (idée d'un éditeur, 08/11/2026) : un segment sélectionné sur la carte ouvre
     // la voie BAN qui le porte — segment rattaché à la voie par l'analyse, sinon même nom principal (normalisé) — sans
     // déplacer la carte (l'éditeur est déjà dessus). Rien pendant un ajout de numéros, ni fenêtre fermée ou sans commune.
     // Un filtre ou un texte qui cacherait la voie est levé, sinon elle s'ouvrirait hors de la liste affichée.
@@ -8353,6 +8368,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const z = bornesCarte(), r = ovEl.getBoundingClientRect();
         const pleine = r.width >= (z.droite - z.gauche) - 4;
         placerFenetre(pleine ? null : { x: z.gauche, y: z.haut, w: z.droite - z.gauche, h: z.bas - z.haut });
+        memoriserGeometrie();
+    }
+    // La taille d'origine (520 px contre le bord droit de la carte), comme le double-clic sur l'en-tête, et dépliée.
+    function petiteFenetre() {
+        basculerRepli(false);
+        placerFenetre(null);
         memoriserGeometrie();
     }
     function deplacable(el, poignee) {
