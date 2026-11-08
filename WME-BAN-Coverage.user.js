@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.02
+// @version      0.21.05
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -291,7 +291,9 @@
             articleTag: "article",
             tipArticle: "Only an article differs (de, la, du…)",
             orthoTag: "spelling",
+            ponctTag: "BAN spelling",
             tipOrtho: "Spelling differs by a letter or two",
+            tipPonct: "The BAN does not spell this name correctly (hyphen, full stop…): the WME name is kept and house numbers are still added",
             partielTag: "partial",
             tipPartiel: "One name is a shortened form of the other",
             absentTag: "missing from WME",
@@ -356,6 +358,7 @@
             ajHnNoName: 'The WME name of this street is not the BAN name: automatic adding needs a primary name identical to the BAN.',
             ajHnNone: 'No number can be added automatically on this street.',
             ajHnLoin: n => 'No number can be added automatically: ' + n + ' address(es) more than 80 m from the street as drawn in WME. Move the segment closer if it is misplaced.',
+            ajHnNomEcart: (w, b) => 'No number can be added automatically: the segments of this street are named “' + w + '” in WME, not “' + b + '” as in the BAN. Give them the BAN name.',
             ajHnQuota: h => 'Limit reached (500 numbers per hour): next adding possible at ' + h + '.',
             ajHnRunning: 'Adding the house numbers…',
             bgTab: 'Tab in the background: Chrome slows the work in progress down (up to 3 times longer). Keep this tab in front.',
@@ -499,7 +502,7 @@
             stCalc: 'Calcul…',
             stDep: (i, n, nom) => 'Commune ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Terminé en ' + s + '\u00a0s',
-            renomRelance: n => n + (n > 1 ? ' voies renommées dans WME depuis l’analyse : les chiffres de la commune sont à jour.' : ' voie renommée dans WME depuis l’analyse : les chiffres de la commune sont à jour.'),
+            renomRelance: n => n + (n > 1 ? '\u00a0voies renommées dans WME depuis l’analyse\u00a0: les chiffres de la commune sont à jour.' : '\u00a0voie renommée dans WME depuis l’analyse\u00a0: les chiffres de la commune sont à jour.'),
             stStopped: 'Arrêté',
             errNoCommune: 'Aucune commune française sous le centre de la carte.',
             errPick: 'Choisissez d\'abord une commune.',
@@ -627,7 +630,9 @@
             articleTag: "article",
             tipArticle: "Seul un article diffère (de, la, du…)",
             orthoTag: "orthographe",
+            ponctTag: "graphie BAN",
             tipOrtho: "L’orthographe diffère d’une ou deux lettres",
+            tipPonct: "La BAN n\u2019écrit pas ce nom correctement (trait d\u2019union, point\u2026)\u00a0: le nom WME est gardé, les numéros s\u2019ajoutent quand même",
             partielTag: "partiel",
             tipPartiel: "Un nom est la forme abrégée de l’autre",
             absentTag: "absente de WME",
@@ -644,9 +649,9 @@
             tipSuf: w => "WME porte " + w + "\u00a0: suffixe à vérifier",
             kFar: n => 'dont ' + n + ' loin de la BAN',
             kArret: n => n + ' point(s) d’arrivée éloigné(s)',
-            hovArret: d => 'Point d’arrivée à ' + d + ' m de trop',
-            arrT: (n, s) => 'Points d’arrivée éloignés (' + n + ', au-delà de ' + s + ' m)',
-            arrTip: d => 'Le point d’arrivée est ' + d + ' m plus loin que la rue voisine du numéro WME : le vérifier dans WME',
+            hovArret: d => 'Point d’arrivée à ' + d + '\u00a0m de trop',
+            arrT: (n, s) => 'Points d’arrivée éloignés (' + n + ', au-delà de ' + s + '\u00a0m)',
+            arrTip: d => 'Le point d’arrivée est ' + d + '\u00a0m plus loin que la rue voisine du numéro WME\u00a0: le vérifier dans WME',
             sbArret: 'Signaler un point d’arrivée éloigné au-delà de',
             sbArretHint: 'Distance entre le numéro WME et l’endroit où Waze conduit, moins sa distance à sa rue. Appliqué tout de suite, sans nouvelle analyse.',
             tipFar: d => 'Placé à ' + d + '\u00a0m de l’adresse BAN',
@@ -693,6 +698,7 @@
             ajHnNoName: 'Le nom WME de cette voie n’est pas celui de la BAN\xa0: l’ajout automatique exige un nom principal identique à la BAN.',
             ajHnNone: 'Aucun numéro à ajouter automatiquement sur cette voie.',
             ajHnLoin: n => 'Aucun numéro à ajouter automatiquement\u00a0: ' + n + ' adresse(s) à plus de 80\u00a0m de la voie tracée dans WME. Rapproche le segment s’il est mal placé.',
+            ajHnNomEcart: (w, b) => 'Aucun numéro à ajouter automatiquement\u00a0: dans WME, les segments de cette voie s’appellent «\u00a0' + w + '\u00a0», et non «\u00a0' + b + '\u00a0» comme dans la BAN. Donne-leur le nom de la BAN.',
             ajHnQuota: h => 'Quota atteint (500 numéros par heure)\xa0: prochain ajout possible à ' + h + '.',
             ajHnRunning: 'Ajout des numéros…',
             bgTab: 'Onglet passé en arrière-plan\xa0: Chrome ralentit le travail en cours (jusqu’à 3 fois plus long). Gardez cet onglet au premier plan.',
@@ -965,7 +971,9 @@
             articleTag: "Artikel",
             tipArticle: "Nur ein Artikel unterscheidet sich (de, la, du…)",
             orthoTag: "Schreibung",
+            ponctTag: "BAN-Schreibung",
             tipOrtho: "Die Schreibung weicht um ein, zwei Buchstaben ab",
+            tipPonct: "Die BAN schreibt diesen Namen nicht korrekt (Bindestrich, Punkt…): der WME-Name bleibt, Hausnummern werden trotzdem hinzugefügt",
             partielTag: "gekürzt",
             tipPartiel: "Ein Name ist die Kurzform des anderen",
             absentTag: "fehlt im WME",
@@ -1030,6 +1038,7 @@
             ajHnNoName: 'Der WME-Name dieser Straße ist nicht der BAN-Name: automatisches Hinzufügen erfordert einen mit der BAN identischen Hauptnamen.',
             ajHnNone: 'Auf dieser Straße kann keine Nummer automatisch hinzugefügt werden.',
             ajHnLoin: n => 'Keine Nummer automatisch hinzuzufügen: ' + n + ' Adresse(n) mehr als 80 m von der in WME gezeichneten Straße entfernt. Rücke das Segment näher, falls es falsch liegt.',
+            ajHnNomEcart: (w, b) => 'Keine Nummer automatisch hinzuzufügen: Die Segmente dieser Straße heißen im WME „' + w + '“, nicht „' + b + '“ wie in der BAN. Gib ihnen den BAN-Namen.',
             ajHnQuota: h => 'Kontingent erreicht (500 Nummern pro Stunde): nächstes Hinzufügen um ' + h + ' möglich.',
             ajHnRunning: 'Hausnummern werden hinzugefügt…',
             bgTab: 'Tab im Hintergrund: Chrome verlangsamt die laufende Arbeit (bis zu 3-mal länger). Diesen Tab im Vordergrund lassen.',
@@ -1302,7 +1311,9 @@
             articleTag: "artículo",
             tipArticle: "Solo difiere un artículo (de, la, du…)",
             orthoTag: "ortografía",
+            ponctTag: "grafía BAN",
             tipOrtho: "La ortografía difiere en una o dos letras",
+            tipPonct: "La BAN no escribe bien este nombre (guion, punto…): se conserva el nombre de WME y los números se añaden igualmente",
             partielTag: "parcial",
             tipPartiel: "Un nombre es la forma abreviada del otro",
             absentTag: "ausente de WME",
@@ -1367,6 +1378,7 @@
             ajHnNoName: 'El nombre WME de esta calle no es el de la BAN: la adición automática exige un nombre principal idéntico al de la BAN.',
             ajHnNone: 'Ningún número se puede añadir automáticamente en esta calle.',
             ajHnLoin: n => 'Ningún número se puede añadir automáticamente: ' + n + ' dirección(es) a más de 80 m de la calle dibujada en WME. Acerca el segmento si está mal colocado.',
+            ajHnNomEcart: (w, b) => 'Ningún número se puede añadir automáticamente: en WME los segmentos de esta calle se llaman «' + w + '», no «' + b + '» como en la BAN. Dales el nombre de la BAN.',
             ajHnQuota: h => 'Cuota alcanzada (500 números por hora): próxima adición posible a las ' + h + '.',
             ajHnRunning: 'Añadiendo los números…',
             bgTab: 'Pestaña en segundo plano: Chrome ralentiza el trabajo en curso (hasta 3 veces más largo). Mantenga esta pestaña en primer plano.',
@@ -1639,7 +1651,9 @@
             articleTag: "articolo",
             tipArticle: "Differisce solo un articolo (de, la, du…)",
             orthoTag: "ortografia",
+            ponctTag: "grafia BAN",
             tipOrtho: "L’ortografia differisce di una o due lettere",
+            tipPonct: "La BAN non scrive correttamente questo nome (trattino, punto…): il nome WME resta e i numeri si aggiungono comunque",
             partielTag: "parziale",
             tipPartiel: "Un nome è la forma abbreviata dell’altro",
             absentTag: "assente in WME",
@@ -1704,6 +1718,7 @@
             ajHnNoName: 'Il nome WME di questa via non è quello della BAN: l’aggiunta automatica richiede un nome principale identico a quello della BAN.',
             ajHnNone: 'Nessun numero può essere aggiunto automaticamente su questa via.',
             ajHnLoin: n => 'Nessun numero da aggiungere automaticamente: ' + n + ' indirizzo/i a più di 80 m dalla via disegnata in WME. Avvicina il segmento se è mal posizionato.',
+            ajHnNomEcart: (w, b) => 'Nessun numero da aggiungere automaticamente: in WME i segmenti di questa via si chiamano «' + w + '», non «' + b + '» come nella BAN. Dai loro il nome della BAN.',
             ajHnQuota: h => 'Quota raggiunta (500 numeri all’ora): prossima aggiunta possibile alle ' + h + '.',
             ajHnRunning: 'Aggiunta dei numeri…',
             bgTab: 'Scheda in secondo piano: Chrome rallenta il lavoro in corso (fino a 3 volte più lungo). Tieni questa scheda in primo piano.',
@@ -1976,7 +1991,9 @@
             articleTag: "artigo",
             tipArticle: "Só um artigo difere (de, la, du…)",
             orthoTag: "grafia",
+            ponctTag: "grafia BAN",
             tipOrtho: "A grafia difere em uma ou duas letras",
+            tipPonct: "A BAN não escreve este nome corretamente (hífen, ponto…): o nome do WME é mantido e os números são adicionados mesmo assim",
             partielTag: "parcial",
             tipPartiel: "Um nome é a forma abreviada do outro",
             absentTag: "ausente do WME",
@@ -2041,6 +2058,7 @@
             ajHnNoName: 'O nome WME desta rua não é o da BAN: a adição automática exige um nome principal idêntico ao da BAN.',
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
             ajHnLoin: n => 'Nenhum número a adicionar automaticamente: ' + n + ' endereço(s) a mais de 80 m da rua desenhada no WME. Aproxime o segmento se estiver mal colocado.',
+            ajHnNomEcart: (w, b) => 'Nenhum número a adicionar automaticamente: no WME, os segmentos desta rua chamam-se «' + w + '», e não «' + b + '» como na BAN. Dê-lhes o nome da BAN.',
             ajHnQuota: h => 'Cota atingida (500 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'Adicionando os números…',
             bgTab: 'Aba em segundo plano: o Chrome deixa o trabalho em andamento mais lento (até 3 vezes mais longo). Mantenha esta aba em primeiro plano.',
@@ -2313,7 +2331,9 @@
             articleTag: "artigo",
             tipArticle: "Só um artigo difere (de, la, du…)",
             orthoTag: "grafia",
+            ponctTag: "grafia BAN",
             tipOrtho: "A grafia difere numa ou duas letras",
+            tipPonct: "A BAN não escreve este nome corretamente (hífen, ponto…): o nome do WME é mantido e os números são adicionados mesmo assim",
             partielTag: "parcial",
             tipPartiel: "Um nome é a forma abreviada do outro",
             absentTag: "ausente do WME",
@@ -2378,6 +2398,7 @@
             ajHnNoName: 'O nome WME desta rua não é o da BAN: a adição automática exige um nome principal idêntico ao da BAN.',
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
             ajHnLoin: n => 'Nenhum número a adicionar automaticamente: ' + n + ' endereço(s) a mais de 80 m da rua desenhada no WME. Aproxime o segmento se estiver mal colocado.',
+            ajHnNomEcart: (w, b) => 'Nenhum número a adicionar automaticamente: no WME, os segmentos desta rua chamam-se «' + w + '», e não «' + b + '» como na BAN. Dê-lhes o nome da BAN.',
             ajHnQuota: h => 'Quota atingida (500 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'A adicionar os números…',
             bgTab: 'Separador em segundo plano: o Chrome abranda o trabalho em curso (até 3 vezes mais longo). Mantenha este separador em primeiro plano.',
@@ -2648,7 +2669,9 @@
             articleTag: "מילית",
             tipArticle: "רק מילית שונה (de, la, du…)",
             orthoTag: "כתיב",
+            ponctTag: "כתיב BAN",
             tipOrtho: "הכתיב שונה באות או שתיים",
+            tipPonct: "ה-BAN לא כותב את השם הזה נכון (מקף, נקודה…): שם ה-WME נשמר והמספרים נוספים בכל זאת",
             partielTag: "חלקי",
             tipPartiel: "שם אחד הוא קיצור של האחר",
             absentTag: "חסר ב-WME",
@@ -2715,6 +2738,7 @@
             ajHnNoName: 'שם הרחוב ב-WME אינו השם ב-BAN: הוספה אוטומטית דורשת שם ראשי זהה לשם ב-BAN.',
             ajHnNone: 'לא ניתן להוסיף אוטומטית אף מספר ברחוב זה.',
             ajHnLoin: n => 'לא ניתן להוסיף מספרים אוטומטית: ' + n + ' כתובות במרחק של יותר מ-80 מטר מהרחוב כפי שצויר ב-WME. קרבו את המקטע אם הוא ממוקם שלא כראוי.',
+            ajHnNomEcart: (w, b) => 'לא ניתן להוסיף מספרים אוטומטית: ב-WME המקטעים של רחוב זה נקראים "' + w + '" ולא "' + b + '" כמו ב-BAN. תנו להם את השם של ה-BAN.',
             ajHnQuota: h => 'המכסה נוצלה (500 מספרים בשעה): ההוספה הבאה אפשרית בשעה ' + h + '.',
             ajHnRunning: 'מוסיף את המספרים…',
             bgTab: 'הלשונית ברקע: Chrome מאט את העבודה הנוכחית (עד פי 3). כדאי להשאיר את הלשונית הזו בחזית.',
@@ -3320,6 +3344,12 @@
                     const cle = pn ? v.norm : normNom(pp.seg.nom);
                     const vote = votes.get(cle) || { n: 0, nom: pn ? v.nom : pp.seg.nom, enAlt: 0, principaux: new Map() };
                     vote.n++;
+                    // 0.21.03 — Le nom principal WME ne diffère de la BAN que par la ponctuation (« Rue Paul-Louis Courier »
+                    // pour « Rue Paul Louis Courier », Narbonne, 08/11/2026) : le nom vaut, un avertissement le dit.
+                    if (pn && pp.seg.principal === v.norm) {
+                        vote.prin = (vote.prin || 0) + 1;
+                        if (nomGraphie(pp.seg.nom) !== nomGraphie(v.nom)) { vote.ponct = (vote.ponct || 0) + 1; vote.brut = pp.seg.nom; }
+                    }
                     // Le nom de la BAN trouvé seulement en ALTERNATIF : on retient le nom principal
                     // qui le porte, pour pouvoir le dire (« D979 », nom BAN en alternatif).
                     if (pn && pp.seg.principal !== v.norm) {
@@ -3347,7 +3377,11 @@
                     if (g1.enAlt * 2 > g1.n) {
                         v.statutNom = 'alternatif';
                         v.nomPrincipal = [...g1.principaux.entries()].sort((x, y) => y[1] - x[1])[0][0];
-                    } else v.statutNom = 'identique';
+                    } else {
+                        v.statutNom = 'identique';
+                        // Avertissement seulement (la majorité des segments principaux porte la graphie WME).
+                        v.graphieBan = g1.ponct && g1.ponct * 2 >= g1.prin ? g1.brut : '';
+                    }
                 }
                 else if (gagnant[0] === '') v.statutNom = 'sansNom';
                 else if (ROUTE_RE.test(v.nomWme)) v.statutNom = 'numeroRoute';
@@ -3510,7 +3544,7 @@
                 const arretsHist = histoArret();
                 for (const a of gardees) if (a.ea != null) PALIERS_ARRET.forEach((p, i) => { if (a.ea >= p) arretsHist[i]++; });
                 liste.push({
-                    nom: v.nom, deleguee: v.deleguee, nomWme: v.nomWme, nomPrincipal: v.nomPrincipal, statutNom: v.statutNom, nomAbsent: v.nomAbsent,
+                    nom: v.nom, deleguee: v.deleguee, nomWme: v.nomWme, nomPrincipal: v.nomPrincipal, statutNom: v.statutNom, graphieBan: v.graphieBan || "", nomAbsent: v.nomAbsent,
                     ban: gardees.length, hn, rpp, presents: hn + rpp,
                     manquants: gardees.filter(a => !a.trouve).map(a => a.brut),
                     suffixes: gardees.filter(a => a.suffixe).length,
@@ -3604,11 +3638,16 @@
         }
 
         // ---- Ajout automatique de numéros (L6 seulement, 0.12.00, 29/09) --------
-        // Le nom « souple » : accents, casse, apostrophes et espaces tolérés, RIEN d'autre (ni abréviation,
-        // ni article, ni type de voie) — le nom principal du segment doit ÊTRE celui de la BAN.
-        function nomSouple(s) {
+        // Le nom « souple » : accents, casse, apostrophes, espaces et (0.21.03) PONCTUATION — traits d'union, points —
+        // tolérés, RIEN d'autre (ni abréviation, ni article, ni type de voie) : le nom principal du segment doit ÊTRE celui
+        // de la BAN. La ponctuation : la BAN écrit souvent « Rue Gay Lussac » ou « Rue Paul Louis Courier » ; décision de
+        // l'auteur (08/11/2026) : la graphie correcte de WME ne se renomme pas, elle ne bloque rien, on avertit.
+        function nomGraphie(s) {
             return String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[\u2018\u2019`\u00b4]/g, "'")
                 .replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+        function nomSouple(s) {
+            return nomGraphie(s).replace(/[-\u2010\u2011\u2012\u2013\u2014.]/g, ' ').replace(/\s+/g, ' ').trim();
         }
         // La ville du segment : la commune, ou « Village (Commune) ».
         function villeHnOk(ville, commune) {
@@ -3708,6 +3747,10 @@
                 // 0.15.01 : principal = numéro de route sans ville, segment probable d'une adresse manquante de la voie.
                 sansAltRoute: segs.filter(s => ROUTE_RE.test(s.nom || '') && !nomSouple(s.ville) && !horsAgglo(s) && probables.has(s.id)).length,
             };
+            // 0.21.03 — Les noms (WME) des segments de la voie refusés pour leur nom : quand aucun segment n'est admis, c'est
+            // la vraie raison, et l'aperçu la donne au lieu de « N adresses à plus de 80 m » (toutes sans segment admis).
+            const deLaVoie = new Set([...(voie.segs || [])].concat([...probables]));
+            const nomsVoie = [...new Set(segs.filter(s => deLaVoie.has(s.id) && !bonNom(s) && !horsAgglo(s) && s.nom).map(s => s.nom))];
             const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0, unitaire: 0 };
             const poses = [], unites = [];
             const vus = new Set((existants || []).map(n => normNum(n)));
@@ -3747,7 +3790,7 @@
                 vus.add(cle);
                 poses.push({ number, lon: a.lon, lat: a.lat, segmentId: best.id, adresse: a, rpp: alt ? { rue: alt.nom, ville: villeRpp(alt.ville) } : null });
             }
-            return { poses, ecartes, unites, admis: admis.length, hors: horsA.length, refus };
+            return { poses, ecartes, unites, admis: admis.length, hors: horsA.length, refus, nomsVoie };
         }
         // 0.20.03 — Les segments dont les numéros comptent comme « déjà dans WME » pour une voie : ceux que l'analyse a
         // rattachés à la voie (`voie` = segsVoie : nom BAN, variantes d'article, nom WME gagnant), et tout autre segment
@@ -5795,7 +5838,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     function celluleNom(v) {
         let h;
         const tag = (txt, tip) => ' <span class="wbc-tag" title="' + esc(tip) + '">' + esc(txt) + '</span>';
-        if (v.statutNom === 'identique') h = '<span class="wbc-nom-ok" title="' + esc(t('tipSame')) + '">&#x2713;</span>';
+        if (v.statutNom === 'identique' && v.graphieBan) h = '<span class="wbc-nom-ok">&#x2713;</span>' + tag(t('ponctTag'), t('tipPonct')) + ' <bdi class="wbc-principal">' + esc(v.graphieBan) + '</bdi>';
+        else if (v.statutNom === 'identique') h = '<span class="wbc-nom-ok" title="' + esc(t('tipSame')) + '">&#x2713;</span>';
         else if (v.statutNom === 'alternatif') h = '<span class="wbc-nom-ok">&#x2713;</span>' + tag(t('altTag'), t('tipAlt', v.nomPrincipal)) + ' <bdi class="wbc-principal">' + esc(v.nomPrincipal) + '</bdi>';
         else if (v.statutNom === 'numeroRoute') h = '<span class="wbc-nom-diff"><bdi>' + esc(v.nomWme) + '</bdi></span>' + tag(t('routeTag'), t('tipRoute'));
         else if (v.statutNom === 'autreType') h = '<span class="wbc-nom-diff"><bdi>' + esc(v.nomWme) + '</bdi></span>' + tag(t('typeTag'), t('tipType'));
@@ -5836,7 +5880,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (!liste.length) return '';
         return '<h4>' + esc(t('arrT', nb(liste.length), nb(seuilArret()))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) =>
             '<button type="button" class="wbc-num arret" data-arretgo="' + i + ':' + k + '" title="' + esc(t('arrTip', nb(a.ea))) + '">' +
-            esc(a.brut) + ' · +' + esc(nb(a.ea)) + ' m</button>').join('') + '</div>';
+            esc(a.brut) + ' · +' + esc(nb(a.ea)) + '\u00a0m</button>').join('') + '</div>';
     }
     // Les pastilles des numéros manquants d'une voie ouverte. Le « + » (0.15.00, L6) ajoute l'adresse SEULE : visible
     // au survol, au focus et sur la pastille courante, seulement si l'ajout peut la poser (pré-contrôle du bouton).
@@ -7657,7 +7701,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         // 0.19.00 : le bouton de la voie ne pose que des NUMÉROS ; les RPP (hors agglo, allées) se posent un par un, par le
         // « + » de leur pastille — l'aperçu lu à l'ouverture de la voie les compte à part.
         const k = ap ? Math.min(ap.hn, q.reste) : Math.min(n, q.reste);
-        const tip = !nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !k ? (ap && ap.rpp ? t('ajHnRppUnit', nb(ap.rpp)) : ap && ap.loin ? t('ajHnLoin', nb(ap.loin)) : t('ajHnNone')) : t('ajHnAddTip', nb(q.reste));
+        const tip = !nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !k ? (ap && ap.rpp ? t('ajHnRppUnit', nb(ap.rpp)) : ap && ap.nomEcart ? t('ajHnNomEcart', ap.nomEcart, v.nom) : ap && ap.loin ? t('ajHnLoin', nb(ap.loin)) : t('ajHnNone')) : t('ajHnAddTip', nb(q.reste));
         const lib = t('ajHnAdd', nb(k));
         return ' <button type="button" class="wbc-btn wbc-btn-neutral" data-act="hnvoie" title="' + esc(tip) + '"' + (nomOk && k && !hnEnCours ? '' : ' disabled') + '>' + esc(lib) + '</button>' +
             // Le bouton d'arrêt d'une passe de voie (0.19.00) : lu entre deux poses et entre deux zones.
@@ -8135,7 +8179,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 return;
             }
             const pl = Core.planHn(v, resultat.commune.nom, segs, existants, Infinity);
-            v.apercuHn = { hn: pl.poses.filter(p => !p.rpp).length, rpp: pl.poses.filter(p => p.rpp).length, loin: pl.ecartes.loin };
+            v.apercuHn = { hn: pl.poses.filter(p => !p.rpp).length, rpp: pl.poses.filter(p => p.rpp).length, loin: pl.ecartes.loin, nomEcart: !pl.admis && pl.nomsVoie.length ? pl.nomsVoie[0] : '' };
             if (vue.ouverte === i && !hnEnCours) rendre();
         } catch (e) { log('aperçu ' + v.nom + ' : ' + e.message); }
     }
@@ -8491,7 +8535,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         <label class="wbc-toggle"><input type="checkbox" id="wbc-survol"${opts.survol ? ' checked' : ''}><span class="wbc-toggle-slider"></span></label></div>
     <p class="wbc-sb-hint">${esc(t('sbHoverHint'))}</p>
     <p class="wbc-sb-lbl"><label for="wbc-arret">${esc(t('sbArret'))}</label></p>
-    <select class="wbc-champ wbc-sb-select" id="wbc-arret">${Core.PALIERS_ARRET.map(p => `<option value="${p}"${p === seuilArret() ? ' selected' : ''}>${esc(nb(p))} m</option>`).join('')}</select>
+    <select class="wbc-champ wbc-sb-select" id="wbc-arret">${Core.PALIERS_ARRET.map(p => `<option value="${p}"${p === seuilArret() ? ' selected' : ''}>${esc(nb(p))}\u00a0m</option>`).join('')}</select>
     <p class="wbc-sb-hint">${esc(t('sbArretHint'))}</p>
     <p class="wbc-sb-lbl">${esc(t('sbColors'))}</p>
     <div class="wbc-couleurs">
