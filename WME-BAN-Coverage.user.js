@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.20.03
+// @version      0.20.04
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -3873,7 +3873,11 @@
         // README du dépôt ne résout pas.
         const SIGNALEMENT_URL = 'https://signalement.adresse.data.gouv.fr';
         const CLE_RE = /^((?:\d{2}|2[AB])\d{3}_[0-9a-z]+)_\d{5}(?:_[0-9a-z]+)?$/i;
-        const idVoieBan = cle => { const m = CLE_RE.exec(String(cle || '').trim()); return m ? m[1] : ''; };
+        // 0.20.04 — Corse : la BAN écrit les clés d'adresse en minuscules (« 2b298_0037_00005 ») mais ses services
+        // n'acceptent la VOIE et la COMMUNE qu'en majuscules : /lookup/2b298_0037 ⇒ 404 « La voie n'existe pas »,
+        // /settings/commune-status/2b298 ⇒ « pas de Base Adresse Locale » (faux : 2B298 ⇒ FULL). Mesuré le 08/11/2026
+        // sur Saint-Florent (signalé par Glenan56). L'identifiant d'ADRESSE, lui, reste en minuscules (2B… ⇒ 404).
+        const idVoieBan = cle => { const m = CLE_RE.exec(String(cle || '').trim()); return m ? m[1].replace(/^2[ab]/i, s => s.toUpperCase()) : ''; };
         const inseeCle = cle => idVoieBan(cle).slice(0, 5);
         function lienSignalement(cle, voie) {
             const c = String(cle || '').trim(), id = idVoieBan(c);
