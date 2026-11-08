@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.20.04
+// @version      0.21.00
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -5069,6 +5069,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-cov > i { display: block; height: 100%; background: var(--wbc-blue); }
 .wbc-ligne { font-size: 11px; color: var(--wbc-text2); margin: 4px 0 8px; line-height: 1.5; }
 .wbc-outils { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 6px; }
+/* 0.21.00 — Les filtres et le champ « Filtrer les voies » restent en haut pendant qu'on fait défiler les voies
+   (Glenan56, 08/11/2026 : on ne savait pas « dans quels cas il s'affiche »). -10px = la marge haute de #wbc-corps. */
+#wbc-corps tr.wbc-l { scroll-margin-top: 52px; }
+#wbc-corps > .wbc-outils { position: sticky; top: -10px; z-index: 2; background: #fff; padding: 6px 0; margin: 2px 0 4px; box-shadow: 0 1px 0 var(--wbc-border); }
 .wbc-filtres { display: flex; flex-wrap: wrap; gap: 4px; }
 .wbc-outils input.wbc-champ { flex: 1 1 80px; width: auto !important; }
 .wbc-toggle-row { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
@@ -8121,6 +8125,42 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         } catch (e) { log('aperçu ' + v.nom + ' : ' + e.message); }
     }
 
+    // 0.21.00 — Suivre la sélection de WME (idée de Glenan56, 08/11/2026) : un segment sélectionné sur la carte ouvre
+    // la voie BAN qui le porte — segment rattaché à la voie par l'analyse, sinon même nom principal (normalisé) — sans
+    // déplacer la carte (l'éditeur est déjà dessus). Rien pendant un ajout de numéros, ni fenêtre fermée ou sans commune.
+    // Un filtre ou un texte qui cacherait la voie est levé, sinon elle s'ouvrirait hors de la liste affichée.
+    let suiviJeton = 0;
+    async function suivreSelection() {
+        if (!ovEl || !ovEl.classList.contains('open') || !resultat || hnEnCours) return;
+        const j = ++suiviJeton;
+        let sel = null;
+        try { sel = await sdk.Editing.getSelection(); } catch (e) { return; }
+        if (j !== suiviJeton || !resultat || !sel || sel.objectType !== 'segment' || !sel.ids || !sel.ids.length) return;
+        const id = String(sel.ids[0]);
+        let i = resultat.voies.findIndex(v => (v.segs || []).some(s => String(s) === id));
+        if (i < 0) {
+            let nom = '';
+            try {
+                const s = await sdk.DataModel.Segments.getById({ segmentId: Number(id) });
+                const st = s && s.primaryStreetId != null ? await sdk.DataModel.Streets.getById({ streetId: s.primaryStreetId }) : null;
+                nom = (st && st.name) || '';
+            } catch (e) { }
+            if (j !== suiviJeton || !resultat || !nom) return;
+            const k = Core.normNom(nom);
+            i = resultat.voies.findIndex(v => Core.normNom(v.nom) === k && (!vue.deleguee || v.deleguee === vue.deleguee));
+        }
+        if (i < 0 || vue.ouverte === i) return;
+        if (!voiesFiltrees(resultat).includes(resultat.voies[i])) { vue.texte = ''; vue.filtre = 'all'; }
+        vue.curseur = -1;
+        vue.ouverte = i;
+        rendre();
+        majCalque();
+        const tr = ovEl.querySelector('tr[data-voie="' + i + '"]');
+        // En haut de la liste, sous la barre des filtres collée (scroll-margin-top) : son détail se lit en dessous.
+        if (tr) tr.scrollIntoView({ block: 'start' });
+        setTimeout(() => { if (vue.ouverte === i) apercuHn(i); }, 300);
+    }
+
     function ouvrirVoie(i) {
         vue.curseur = -1;
         vue.ouverte = vue.ouverte === i ? null : i;
@@ -8685,6 +8725,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         });
         try { sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: () => { if (calqueSuitLaVue) majCalque(); } }); }
         catch (e) { log('événement de déplacement : ' + e.message); }
+        try { sdk.Events.on({ eventName: 'wme-selection-changed', eventHandler: () => { suivreSelection().catch(e => log('suivi de sélection : ' + e.message)); } }); }
+        catch (e) { log('événement de sélection : ' + e.message); }
         // 0.19.01 : voies renommées dans WME depuis l'analyse (pour tout éditeur, pas seulement les L6). La relecture
         // attend un peu après l'enregistrement : WME met son modèle à jour avec la réponse du serveur.
         try { sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: r => { if (r && r.success) setTimeout(() => { verifierRenommages().catch(e => log('renommage : ' + e.message)); }, 1500); } }); }
