@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.05
+// @version      0.21.06
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -189,6 +189,8 @@
             fName: 'Name to check',
             fDone: 'Complete',
             filterPh: 'Filter streets',
+            filterClear: 'Clear the filter',
+            filterCount: (n, m) => n + (un1(n) ? ' street of ' : ' streets of ') + m,
             layerSwitch: 'Gaps',
             exportCsv: 'Export CSV',
             thStreetBan: 'BAN street',
@@ -529,6 +531,8 @@
             fName: 'Nom à vérifier',
             fDone: 'Complètes',
             filterPh: 'Filtrer les voies',
+            filterClear: 'Effacer le filtre',
+            filterCount: (n, m) => n + (un(n) ? ' voie sur ' : ' voies sur ') + m,
             layerSwitch: 'Écarts',
             exportCsv: 'Export CSV',
             thStreetBan: 'Voie BAN',
@@ -869,6 +873,8 @@
             fName: 'Name prüfen',
             fDone: 'Vollständig',
             filterPh: 'Straßen filtern',
+            filterClear: 'Filter löschen',
+            filterCount: (n, m) => n + (un1(n) ? ' Straße von ' : ' Straßen von ') + m,
             layerSwitch: 'Abweichungen',
             exportCsv: 'CSV-Export',
             thStreetBan: 'BAN-Straße',
@@ -1209,6 +1215,8 @@
             fName: 'Nombre a revisar',
             fDone: 'Completas',
             filterPh: 'Filtrar calles',
+            filterClear: 'Borrar el filtro',
+            filterCount: (n, m) => n + (un1(n) ? ' calle de ' : ' calles de ') + m,
             layerSwitch: 'Diferencias',
             exportCsv: 'Exportar CSV',
             thStreetBan: 'Calle BAN',
@@ -1549,6 +1557,8 @@
             fName: 'Nome da verificare',
             fDone: 'Complete',
             filterPh: 'Filtra le vie',
+            filterClear: 'Cancella il filtro',
+            filterCount: (n, m) => n + (un1(n) ? ' via su ' : ' vie su ') + m,
             layerSwitch: 'Scarti',
             exportCsv: 'Esporta CSV',
             thStreetBan: 'Via BAN',
@@ -1889,6 +1899,8 @@
             fName: 'Nome a verificar',
             fDone: 'Completas',
             filterPh: 'Filtrar ruas',
+            filterClear: 'Limpar o filtro',
+            filterCount: (n, m) => n + (un1(n) ? ' rua de ' : ' ruas de ') + m,
             layerSwitch: 'Diferenças',
             exportCsv: 'Exportar CSV',
             thStreetBan: 'Rua BAN',
@@ -2229,6 +2241,8 @@
             fName: 'Nome a verificar',
             fDone: 'Completas',
             filterPh: 'Filtrar ruas',
+            filterClear: 'Limpar o filtro',
+            filterCount: (n, m) => n + (un1(n) ? ' rua de ' : ' ruas de ') + m,
             layerSwitch: 'Diferenças',
             exportCsv: 'Exportar CSV',
             thStreetBan: 'Rua BAN',
@@ -2569,6 +2583,8 @@
             fName: 'שם לבדיקה',
             fDone: 'מלאים',
             filterPh: 'סינון רחובות',
+            filterClear: 'ניקוי הסינון',
+            filterCount: (n, m) => n + ' מתוך ' + m,
             layerSwitch: 'פערים',
             exportCsv: 'ייצוא CSV',
             thStreetBan: 'רחוב BAN',
@@ -5122,10 +5138,16 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-outils { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 6px; }
 /* 0.21.00 — Les filtres et le champ « Filtrer les voies » restent en haut pendant qu'on fait défiler les voies
    (remontée d'un éditeur, 08/11/2026 : on ne savait pas « dans quels cas il s'affiche »). -10px = la marge haute de #wbc-corps. */
-#wbc-corps tr.wbc-l { scroll-margin-top: 52px; }
+#wbc-corps tr.wbc-l { scroll-margin-top: 86px; }
 #wbc-corps > .wbc-outils { position: sticky; top: -10px; z-index: 2; background: #fff; padding: 6px 0; margin: 2px 0 4px; box-shadow: 0 1px 0 var(--wbc-border); }
 .wbc-filtres { display: flex; flex-wrap: wrap; gap: 4px; }
-.wbc-outils input.wbc-champ { flex: 1 1 80px; width: auto !important; }
+.wbc-rech { flex: 1 1 100%; display: flex; align-items: center; gap: 6px; }
+.wbc-rech input.wbc-champ { flex: 1 1 auto; width: auto !important; }
+.wbc-rech.actif input.wbc-champ { border-color: var(--wbc-blue); background: #fff; }
+.wbc-loupe { flex: 0 0 auto; font-size: 13px; line-height: 1; }
+.wbc-rech-x { flex: 0 0 auto; height: 26px; padding: 0 9px; border: 1px solid var(--wbc-border); border-radius: 8px; background: #fff; color: var(--wbc-text); font-size: 12px; cursor: pointer; }
+.wbc-rech-x:hover, .wbc-rech-x:focus-visible { border-color: var(--wbc-blue); color: var(--wbc-blue); }
+.wbc-rech-n { flex: 0 0 auto; font-size: 11px; color: var(--wbc-text2); white-space: nowrap; }
 .wbc-toggle-row { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
 .wbc-toggle-lbl { font-size: 12px; font-weight: 600; cursor: pointer; }
 .wbc-toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
@@ -5978,8 +6000,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             '<p class="wbc-note" id="wbc-calque-note" hidden></p>' +
             '<div class="wbc-outils"><div class="wbc-filtres" role="radiogroup">' + filtre('todo', t('fTodo'), t('voiesLine', nb(T.voiesCompletes), nb(T.voies))) +
             filtre('name', t('fName'), detailNoms) + filtre('done', t('fDone'), t('tipFDone')) + filtre('all', t('fAll'), t('tipFAll')) + '</div>' +
-            '<input type="search" class="wbc-champ" id="wbc-filtre-txt" placeholder="' + esc(t('filterPh')) + '" autocomplete="off" spellcheck="false">' +
-            selectDeleguee(r) + '</div>';
+            selectDeleguee(r) +
+            // 0.21.06 — Le champ avait sa place au bout de la rangée des filtres, 88 px de large : « quasi invisible »
+            // (l'auteur, 09/11/2026), et une liste réduite à une voie ne disait pas qu'un texte la filtrait. Il passe sur sa
+            // propre ligne ; dès qu'un texte filtre, ✕ l'efface et le compte des voies retenues s'affiche.
+            '<div class="wbc-rech' + (vue.texte ? ' actif' : '') + '"><span class="wbc-loupe" aria-hidden="true">&#x1F50D;</span>' +
+            '<input type="search" class="wbc-champ" id="wbc-filtre-txt" placeholder="' + esc(t('filterPh')) + '" aria-label="' + esc(t('filterPh')) + '" autocomplete="off" spellcheck="false">' +
+            (vue.texte ? '<button type="button" class="wbc-rech-x" data-act="filtrex" title="' + esc(t('filterClear')) + '" aria-label="' + esc(t('filterClear')) + '">&#x2715;</button>' +
+                '<span class="wbc-rech-n">' + esc(t('filterCount', nb(voies.length), nb(nF[vue.filtre]))) + '</span>' : '') + '</div></div>';
         const cc = cmpCommune(r), dC = cc ? dateCourte(cc.date) : '', nCol = cc ? 6 : 5;
         if (!voies.length) h += '<p class="wbc-vide">' + esc(t('noStreet')) + '</p>';
         else {
@@ -7253,6 +7281,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             else if (a === 'nomsdep' && resDep) exporterEcarts([...resCommunes.values()], 'ban-wme_noms_dep' + resDep.dep.code);
             else if (a === 'cmp') { const f = $('#wbc-cmp-fichier'); f.value = ''; f.click(); }
             else if (a === 'cmpx') { cmp = null; rendre(); }
+            else if (a === 'filtrex') { vue.texte = ''; rendre(); const f = $('#wbc-filtre-txt'); if (f) f.focus(); }
             else if (a === 'memowme' || a === 'memorafr' || a === 'memoban') actionMemo(a);
             return;
         }
