@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.06
+// @version      0.21.08
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -163,6 +163,7 @@
             stDep: (i, n, nom) => 'Commune ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Done in ' + s + ' s',
             renomRelance: n => n + (n > 1 ? ' streets renamed in WME since the scan: the commune’s figures are up to date.' : ' street renamed in WME since the scan: the commune’s figures are up to date.'),
+            renomNeuf: n => 'New segment in WME near ' + n + (n > 1 ? ' streets that had none: the commune’s figures are up to date.' : ' street that had none: the commune’s figures are up to date.'),
             stStopped: 'Stopped',
             errNoCommune: 'No French commune under the centre of the map.',
             errPick: 'Choose a commune first.',
@@ -505,6 +506,7 @@
             stDep: (i, n, nom) => 'Commune ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Terminé en ' + s + '\u00a0s',
             renomRelance: n => n + (n > 1 ? '\u00a0voies renommées dans WME depuis l’analyse\u00a0: les chiffres de la commune sont à jour.' : '\u00a0voie renommée dans WME depuis l’analyse\u00a0: les chiffres de la commune sont à jour.'),
+            renomNeuf: n => 'Segment créé dans WME près de ' + n + (n > 1 ? '\u00a0voies qui n’en avaient aucun\u00a0: les chiffres de la commune sont à jour.' : '\u00a0voie qui n’en avait aucun\u00a0: les chiffres de la commune sont à jour.'),
             stStopped: 'Arrêté',
             errNoCommune: 'Aucune commune française sous le centre de la carte.',
             errPick: 'Choisissez d\'abord une commune.',
@@ -847,6 +849,7 @@
             stDep: (i, n, nom) => 'Gemeinde ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Fertig in ' + s + ' s',
             renomRelance: n => n + (n > 1 ? ' Straßen seit der Analyse in WME umbenannt: die Zahlen der Gemeinde sind aktualisiert.' : ' Straße seit der Analyse in WME umbenannt: die Zahlen der Gemeinde sind aktualisiert.'),
+            renomNeuf: n => 'Neues Segment in WME bei ' + n + (n > 1 ? ' Straßen ohne Segment: die Zahlen der Gemeinde sind aktualisiert.' : ' Straße ohne Segment: die Zahlen der Gemeinde sind aktualisiert.'),
             stStopped: 'Angehalten',
             errNoCommune: 'Keine französische Gemeinde unter der Kartenmitte.',
             errPick: 'Zuerst eine Gemeinde wählen.',
@@ -1189,6 +1192,7 @@
             stDep: (i, n, nom) => 'Municipio ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Terminado en ' + s + ' s',
             renomRelance: n => n + (n > 1 ? ' calles renombradas en WME desde el análisis: las cifras del municipio están al día.' : ' calle renombrada en WME desde el análisis: las cifras del municipio están al día.'),
+            renomNeuf: n => 'Segmento creado en WME cerca de ' + n + (n > 1 ? ' calles que no tenían ninguno: las cifras del municipio están al día.' : ' calle que no tenía ninguno: las cifras del municipio están al día.'),
             stStopped: 'Detenido',
             errNoCommune: 'Ningún municipio francés bajo el centro del mapa.',
             errPick: 'Elija primero un municipio.',
@@ -1531,6 +1535,7 @@
             stDep: (i, n, nom) => 'Comune ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Fatto in ' + s + ' s',
             renomRelance: n => n + (n > 1 ? ' strade rinominate in WME dopo l’analisi: i dati del comune sono aggiornati.' : ' strada rinominata in WME dopo l’analisi: i dati del comune sono aggiornati.'),
+            renomNeuf: n => 'Segmento creato in WME vicino a ' + n + (n > 1 ? ' strade che non ne avevano: i dati del comune sono aggiornati.' : ' strada che non ne aveva: i dati del comune sono aggiornati.'),
             stStopped: 'Fermato',
             errNoCommune: 'Nessun comune francese sotto il centro della mappa.',
             errPick: 'Scegli prima un comune.',
@@ -1873,6 +1878,7 @@
             stDep: (i, n, nom) => 'Município ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Concluído em ' + s + ' s',
             renomRelance: n => n + (n > 1 ? ' ruas renomeadas no WME desde a análise: os números do município estão atualizados.' : ' rua renomeada no WME desde a análise: os números do município estão atualizados.'),
+            renomNeuf: n => 'Segmento criado no WME perto de ' + n + (n > 1 ? ' ruas que não tinham nenhum: os números do município estão atualizados.' : ' rua que não tinha nenhum: os números do município estão atualizados.'),
             stStopped: 'Parado',
             errNoCommune: 'Nenhum município francês sob o centro do mapa.',
             errPick: 'Escolha primeiro um município.',
@@ -2215,6 +2221,7 @@
             stDep: (i, n, nom) => 'Município ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'Concluído em ' + s + ' s',
             renomRelance: n => n + (n > 1 ? ' ruas renomeadas no WME desde a análise: os números do município estão atualizados.' : ' rua renomeada no WME desde a análise: os números do município estão atualizados.'),
+            renomNeuf: n => 'Segmento criado no WME perto de ' + n + (n > 1 ? ' ruas que não tinham nenhum: os números do município estão atualizados.' : ' rua que não tinha nenhum: os números do município estão atualizados.'),
             stStopped: 'Parado',
             errNoCommune: 'Nenhum município francês sob o centro do mapa.',
             errPick: 'Escolha primeiro um município.',
@@ -2557,6 +2564,7 @@
             stDep: (i, n, nom) => 'רשות ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'הסתיים תוך ' + s + ' שנ\'',
             renomRelance: n => n + ' רחובות ששמם שונה ב-WME מאז הניתוח: נתוני היישוב עודכנו.',
+            renomNeuf: n => 'מקטע חדש ב-WME ליד ' + n + ' רחובות שלא היה להם מקטע: נתוני היישוב עודכנו.',
             stStopped: 'נעצר',
             errNoCommune: 'אין רשות צרפתית מתחת למרכז המפה.',
             errPick: 'בחרו קודם רשות.',
@@ -3856,6 +3864,29 @@
             }
             return best;
         }
+        // 0.21.07 — Un segment créé là où l'analyse n'en avait trouvé aucun (signalé par un éditeur le 10/11/2026 :
+        // « Coat Me », BAN 2, WME 0, « aucun segment »). Les adresses manquantes SANS segment à moins de SEG_MAX_M n'ont
+        // aucun segment à suivre (`seg` nul) : un segment neuf près d'elles n'était vu qu'à la relance manuelle. Rend
+        // les segments (`segs` : { id, coords }) passant à moins de SEG_MAX_M de l'une d'elles, et le nombre de voies
+        // touchées.
+        function segsPresDesOrphelines(voies, segs) {
+            const orph = [];
+            (voies || []).forEach((v, i) => { for (const a of v.adresses || []) if (!a.trouve && a.seg == null && typeof a.lon === 'number') orph.push({ a, i }); });
+            const ids = new Set(), touchees = new Set();
+            if (!orph.length) return { ids, voies: 0 };
+            for (const s of segs || []) {
+                const c = s && s.coords;
+                if (!c || c.length < 2) continue;
+                for (const { a, i } of orph) {
+                    const m = versMetres(a.lat), [px, py] = m(a.lon, a.lat);
+                    for (let k = 1; k < c.length; k++) {
+                        const [ax, ay] = m(c[k - 1][0], c[k - 1][1]), [bx, by] = m(c[k][0], c[k][1]);
+                        if (distSeg(px, py, ax, ay, bx, by) <= SEG_MAX_M) { ids.add(s.id); touchees.add(i); break; }
+                    }
+                }
+            }
+            return { ids, voies: touchees.size };
+        }
 
         // ---- RPP en agglomération → numéro (0.16.00) ----------------------------------------------------------
         // Doctrine reprise À L'IDENTIQUE de WNA (verdictRppAgglo) : en agglomération le numéro va sur le SEGMENT, mais
@@ -4031,7 +4062,7 @@
             return liste.filter(x => x.type === 'MISSING_ADDRESS' && Math.hypot((x.lon - lon) * kx, (x.lat - lat) * 110540) <= lim)
                 .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
         }
-        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, segsDesExistants, zonesHn, pointLePlusProche };
+        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, segsDesExistants, zonesHn, pointLePlusProche, segsPresDesOrphelines };
     })();
     // ==/WBC-CORE==
 
@@ -6220,6 +6251,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const r = resultat;
         if (!r || !r.voies) return;
         if (renom.res !== r) renom = { res: r, sig: new Map() };
+        // Référence des segments vus (0.21.07) : une seule fois par commune, sinon un segment créé puis enregistré
+        // pourrait y entrer avant d'être comparé.
+        if (!charges && (segsVus.code !== (r.commune && r.commune.code) || !segsVus.init)) await releverSegsVus(r);
         if (!charges) {
             let attente = 1;
             try { attente = await sdk.Editing.getUnsavedChangesCount(); } catch (e) { }
@@ -6228,6 +6262,40 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const m = await signaturesChargees(r, charges || null);
         if (renom.res !== r) return;
         for (const [id, sg] of m) if (!renom.sig.has(id)) renom.sig.set(id, sg);
+    }
+    // 0.21.07 — Une voie « aucun segment » n'a aucun segment à suivre : celui qu'on CRÉE pour elle n'a pas de signature
+    // à comparer. On garde, par commune, les identifiants des segments déjà vus ; après un enregistrement, un segment
+    // enregistré (identifiant positif) jamais vu, à moins de 80 m d'une adresse manquante sans segment, relance la
+    // commune comme un renommage. Les segments vus le restent : un segment que l'analyse n'aurait pas lu ne relance
+    // qu'une fois.
+    let segsVus = { code: null, ids: new Set() };
+    async function segsNeufsPresDesOrphelines(r) {
+        const code = r.commune && r.commune.code;
+        if (segsVus.code !== code) segsVus = { code, ids: new Set() };
+        let l = [];
+        try { l = (await sdk.DataModel.Segments.getAll()) || []; } catch (e) { log('segments neufs : ' + e.message); }
+        const neufs = [];
+        for (const s of l) {
+            if (!s || segsVus.ids.has(s.id)) continue;
+            if (!(s.id > 0)) continue; // pas encore enregistré
+            segsVus.ids.add(s.id);
+            const c = s.geometry && s.geometry.coordinates;
+            if (c && c.length >= 2) neufs.push({ id: s.id, coords: c });
+        }
+        // La première fois pour cette commune, rien ne distingue un segment neuf d'un ancien : ce qui est chargé devient
+        // la référence (relevée aussi à l'affichage, voir releverSegsVus).
+        if (!segsVus.init) { segsVus.init = true; return { ids: new Set(), voies: 0 }; }
+        return Core.segsPresDesOrphelines(r.voies, neufs);
+    }
+    // À l'affichage d'une commune, et quand des segments arrivent du serveur sans rien en attente : la référence.
+    async function releverSegsVus(r) {
+        const code = r && r.commune && r.commune.code;
+        if (!code) return;
+        if (segsVus.code !== code) segsVus = { code, ids: new Set() };
+        let l = [];
+        try { l = (await sdk.DataModel.Segments.getAll()) || []; } catch (e) { return; }
+        for (const s of l) if (s && s.id > 0) segsVus.ids.add(s.id);
+        segsVus.init = true;
     }
     async function verifierRenommages() {
         const r = resultat;
@@ -6241,8 +6309,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             // Juste après un enregistrement, l'état chargé EST l'état enregistré : il devient la référence.
             renom.sig.set(id, sg);
         }
+        // 0.21.07 — Les segments NEUFS (jamais vus dans cette commune) près d'une adresse qui n'avait aucun segment.
+        const neufs = await segsNeufsPresDesOrphelines(r);
+        if (resultat !== r || renom.res !== r || jeton) return;
+        for (const id of neufs.ids) changes.add(id);
         if (!changes.size) return;
-        const n = (r.voies || []).filter(v => (v.segs || []).some(id => changes.has(id)) ||
+        const n = neufs.voies + (r.voies || []).filter(v => (v.segs || []).some(id => changes.has(id)) ||
             (v.adresses || []).some(a => a.seg != null && changes.has(a.seg))).length;
         // Recalcul LOCAL (remarque du même Champ) : la BAN gardée n'est pas relue, et seuls les carreaux WME qui touchent
         // un segment changé sont retirés du cache, donc relus. Le calcul porte sur toute la commune (les numéros
@@ -6268,7 +6340,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         await lancer(null, j => lancerCommune(j, r.commune, g ? { adresses: g.adresses, cache: g.cache } : null), !!(r.memo && r.memo.cert));
         log('renommage : ' + (Date.now() - t0) + ' ms');
         // La commune a bien été réanalysée (sinon le résultat affiché est resté l'ancien, et le statut dit l'erreur).
-        if (resultat && resultat !== r && resultat.commune.code === r.commune.code) statut(t('renomRelance', Math.max(n, 1)));
+        if (resultat && resultat !== r && resultat.commune.code === r.commune.code)
+            statut(neufs.ids.size && neufs.ids.size === changes.size ? t('renomNeuf', Math.max(neufs.voies, 1)) : t('renomRelance', Math.max(n, 1)));
     }
 
     // Le calque montre la voie ouverte ; l'interrupteur y ajoute tous les manquants de la commune.
