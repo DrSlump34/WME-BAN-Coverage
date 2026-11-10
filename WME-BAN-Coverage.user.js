@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.08
+// @version      0.21.09
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -135,7 +135,7 @@
             hMatchT: 'When is a number found',
             hMatchB: '<p>A BAN address is found when WME has the same number (suffixes included: <i>bis</i>, <i>ter</i>, letters) less than 150 m away, and:</p><table class="wbc-help-table"><tr><td>1</td><td>on a street with the same name (main or alternate name), or one that differs only by an article (“Avenue Sembrancher” = “Avenue de Sembrancher”; the name gap is still reported);</td></tr><tr><td>2</td><td>or on a segment that carries this street\'s addresses, <b>named or not</b>;</td></tr><tr><td>3</td><td>or less than 30 m from the address.</td></tr></table><p>Rule 1 is tried first everywhere, then 2, then 3. A WME number is used only once.</p>',
             hNamesT: 'The «\u00a0WME street\u00a0» column',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>the segments near the addresses carry the BAN name.</td></tr><tr><td><i>name</i></td><td>they carry another name: the name to check.</td></tr><tr><td><i>no name</i></td><td>they carry no name.</td></tr><tr><td><i>no segment</i></td><td>no segment less than 80 m from the addresses.</td></tr><tr><td>&#x2713; alt</td><td>the BAN name is carried as an <b>alternate</b> name; the main name is shown next to it.</td></tr><tr><td>road no.</td><td>the main name is a road number and the BAN name is missing from the alternate names: add it.</td></tr><tr><td>type</td><td>only the street type differs (Rue / Chemin…).</td></tr><tr><td>article · spelling · partial</td><td>close names: an article, a letter or two, or a shortened form. <i>missing from WME</i>: the street is not in WME, the name shown is the neighbouring one.</td></tr></table><p>A missing number shown in orange with <b>≠</b> exists in WME with another suffix (12 b / 12bis): to check.</p><p>&#x26A0; marks a BAN name that no segment of the commune carries.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>the segments near the addresses carry the BAN name.</td></tr><tr><td><i>name</i></td><td>they carry another name: the name to check.</td></tr><tr><td><i>no name</i></td><td>they carry no name.</td></tr><tr><td><i>no segment</i></td><td>no segment less than 80 m from the addresses.</td></tr><tr><td>&#x2713; alt</td><td>the BAN name is carried as an <b>alternate</b> name; the main name is shown next to it.</td></tr><tr><td>road no.</td><td>the main name is a road number and the BAN name is missing from the alternate names: add it.</td></tr><tr><td>type</td><td>only the street type differs (Rue / Chemin…).</td></tr><tr><td>article · spelling · partial</td><td>close names: an article, a letter or two, or a shortened form. <i>missing from WME</i>: the street is not in WME, the name shown is the neighbouring one.</td></tr><tr><td>&#x2713; parking</td><td>no named segment, but a parking lot place nearby carries the BAN name: nothing to rename.</td></tr></table><p>A missing number shown in orange with <b>≠</b> exists in WME with another suffix (12 b / 12bis): to check.</p><p>&#x26A0; marks a BAN name that no segment of the commune carries.</p>',
             hLimitsT: 'Good to know',
             hLimitsB: "<p>A whole département takes a few minutes: the BAN is read commune by commune, WME in squares of about 5 km. The button Stop interrupts it; what is done stays displayed, and failed communes can be retried alone.</p><p>Paris, Marseille and Lyon are read district by district. Scans are kept in this browser only (IndexedDB), never elsewhere, with your preferences (area, switches, window position, point colours); they are flagged when the BAN or WME changed since.</p>",
             hSafeB: "The script changes the map only at the request of an L6 editor: “Add the house numbers” (street by street, numbers only), the “+” of one address (a number or an RPP) and “⇄” (one RPP replaced by a number), 500 per sliding hour at most; it never saves. Its results stay in this browser.",
@@ -301,6 +301,8 @@
             tipPartiel: "One name is a shortened form of the other",
             absentTag: "missing from WME",
             altTag: "alt",
+            parkTag: "parking",
+            tipPark: "No named segment: the BAN name is carried by the parking lot place nearby (parking lot roads stay unnamed).",
             tipAlt: p => "The BAN name is carried as an alternate name; main name: " + p,
             routeTag: "road no.",
             tipRoute: "The main name is a road number, and the BAN name is not among the alternate names",
@@ -478,7 +480,7 @@
             hMatchT: 'Quand un numéro est trouvé',
             hMatchB: '<p>Une adresse BAN est trouvée quand WME porte le même numéro (suffixes compris\u00a0: <i>bis</i>, <i>ter</i>, lettres) à moins de 150\u00a0m, et\u00a0:</p><table class="wbc-help-table"><tr><td>1</td><td>sur une voie du même nom (nom principal ou alternatif), ou qui n’en diffère que par un article («\u00a0Avenue Sembrancher\u00a0» = «\u00a0Avenue de Sembrancher\u00a0»\u00a0; l’écart de nom reste signalé)\u00a0;</td></tr><tr><td>2</td><td>ou sur un segment qui porte les adresses de cette voie, <b>nommé ou non</b>\u00a0;</td></tr><tr><td>3</td><td>ou à moins de 30\u00a0m de l\'adresse.</td></tr></table><p>La règle 1 est essayée partout d\'abord, puis la 2, puis la 3. Un numéro WME ne sert qu\'une fois.</p>',
             hNamesT: 'La colonne «\u00a0Voie WME\u00a0»',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>les segments proches des adresses portent le nom de la BAN.</td></tr><tr><td><i>nom</i></td><td>ils portent un autre nom\u00a0: le nom à vérifier.</td></tr><tr><td><i>sans nom</i></td><td>ils ne portent aucun nom.</td></tr><tr><td><i>aucun segment</i></td><td>aucun segment à moins de 80\u00a0m des adresses.</td></tr><tr><td>&#x2713; alt</td><td>le nom de la BAN est porté en nom <b>alternatif</b>\u00a0; le nom principal est affiché à côté.</td></tr><tr><td>n° de route</td><td>le nom principal est un numéro de route et le nom de la BAN manque aux noms alternatifs\u00a0: à ajouter.</td></tr><tr><td>type</td><td>seul le type de voie diffère (Rue / Chemin…).</td></tr><tr><td>article · orthographe · partiel</td><td>noms proches\u00a0: un article, une ou deux lettres, ou une forme abrégée. <i>absente de WME</i>\u00a0: la voie n’existe pas dans WME, le nom montré est celui de la voisine.</td></tr></table><p>Un numéro manquant en orange avec <b>≠</b> existe dans WME avec un autre suffixe (12 b / 12bis)\u00a0: à vérifier.</p><p>&#x26A0; signale un nom de la BAN qu\'aucun segment de la commune ne porte.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>les segments proches des adresses portent le nom de la BAN.</td></tr><tr><td><i>nom</i></td><td>ils portent un autre nom\u00a0: le nom à vérifier.</td></tr><tr><td><i>sans nom</i></td><td>ils ne portent aucun nom.</td></tr><tr><td><i>aucun segment</i></td><td>aucun segment à moins de 80\u00a0m des adresses.</td></tr><tr><td>&#x2713; alt</td><td>le nom de la BAN est porté en nom <b>alternatif</b>\u00a0; le nom principal est affiché à côté.</td></tr><tr><td>n° de route</td><td>le nom principal est un numéro de route et le nom de la BAN manque aux noms alternatifs\u00a0: à ajouter.</td></tr><tr><td>type</td><td>seul le type de voie diffère (Rue / Chemin…).</td></tr><tr><td>article · orthographe · partiel</td><td>noms proches\u00a0: un article, une ou deux lettres, ou une forme abrégée. <i>absente de WME</i>\u00a0: la voie n’existe pas dans WME, le nom montré est celui de la voisine.</td></tr><tr><td>&#x2713; parking</td><td>aucun segment nommé, mais un lieu Parking voisin porte le nom de la BAN\u00a0: rien à renommer.</td></tr></table><p>Un numéro manquant en orange avec <b>≠</b> existe dans WME avec un autre suffixe (12 b / 12bis)\u00a0: à vérifier.</p><p>&#x26A0; signale un nom de la BAN qu\'aucun segment de la commune ne porte.</p>',
             hLimitsT: 'Bon à savoir',
             hLimitsB: "<p>Un département entier prend quelques minutes\u00a0: la BAN se lit commune par commune, WME par carreaux d’environ 5\u00a0km. Le bouton Arrêter l’interrompt\u00a0; ce qui est fait reste affiché, et les communes en échec se reprennent seules.</p><p>Paris, Marseille et Lyon se lisent arrondissement par arrondissement. Les balayages sont gardés dans ce navigateur seulement (IndexedDB), jamais ailleurs, avec vos préférences (périmètre, interrupteurs, place de la fenêtre, couleurs des points)\u00a0; ils sont signalés quand la BAN ou WME a changé depuis.</p>",
             hSafeB: "Le script ne modifie la carte qu’à la demande d’un L6\u00a0: «\u00a0Ajouter les numéros\u00a0» (voie par voie, numéros seulement), le «\u00a0+\u00a0» d’une adresse (un numéro ou un RPP) et «\u00a0⇄\u00a0» (un RPP remplacé par un numéro), 500 par heure glissante au plus\u00a0; il n’enregistre jamais. Ses résultats restent dans ce navigateur.",
@@ -643,6 +645,8 @@
             tipPartiel: "Un nom est la forme abrégée de l’autre",
             absentTag: "absente de WME",
             altTag: "alt",
+            parkTag: "parking",
+            tipPark: "Aucun segment nommé\u00a0: le nom de la BAN est porté par le lieu Parking voisin (les voies de parking restent sans nom).",
             tipAlt: p => "Le nom de la BAN est porté en nom alternatif\u00a0; nom principal\u00a0: " + p,
             routeTag: "n° de route",
             tipRoute: "Le nom principal est un numéro de route, et le nom de la BAN n’est pas parmi les noms alternatifs",
@@ -821,7 +825,7 @@
             hMatchT: 'Wann eine Nummer gefunden ist',
             hMatchB: '<p>Eine BAN-Adresse gilt als gefunden, wenn das WME dieselbe Nummer (mit Zusätzen: <i>bis</i>, <i>ter</i>, Buchstaben) in weniger als 150 m trägt, und zwar:</p><table class="wbc-help-table"><tr><td>1</td><td>an einer Straße mit demselben Namen (Haupt- oder Alternativname) oder einem, der sich nur durch einen Artikel unterscheidet („Avenue Sembrancher“ = „Avenue de Sembrancher“; die Namensabweichung wird weiter gemeldet);</td></tr><tr><td>2</td><td>oder an einem Segment, das die Adressen dieser Straße trägt, <b>mit oder ohne Namen</b>;</td></tr><tr><td>3</td><td>oder weniger als 30 m von der Adresse entfernt.</td></tr></table><p>Regel 1 wird überall zuerst versucht, dann 2, dann 3. Eine WME-Nummer zählt nur einmal.</p>',
             hNamesT: 'Die Spalte „WME-Straße“',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>die Segmente bei den Adressen tragen den BAN-Namen.</td></tr><tr><td><i>Name</i></td><td>sie tragen einen anderen Namen: zu prüfen.</td></tr><tr><td><i>ohne Namen</i></td><td>sie tragen keinen Namen.</td></tr><tr><td><i>kein Segment</i></td><td>kein Segment näher als 80 m an den Adressen.</td></tr><tr><td>&#x2713; alt</td><td>der BAN-Name steht als <b>Alternativname</b>; der Hauptname steht daneben.</td></tr><tr><td>Straßennr.</td><td>der Hauptname ist eine Straßennummer und der BAN-Name fehlt bei den Alternativnamen: ergänzen.</td></tr><tr><td>Typ</td><td>nur der Straßentyp unterscheidet sich (Rue / Chemin…).</td></tr><tr><td>Artikel · Schreibung · gekürzt</td><td>ähnliche Namen: ein Artikel, ein, zwei Buchstaben oder eine Kurzform. <i>fehlt im WME</i>: die Straße fehlt, der gezeigte Name ist der der Nachbarstraße.</td></tr></table><p>Eine fehlende Nummer in Orange mit <b>≠</b> steht im WME mit anderem Zusatz (12 b / 12bis): prüfen.</p><p>&#x26A0; markiert einen BAN-Namen, den kein Segment der Gemeinde trägt.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>die Segmente bei den Adressen tragen den BAN-Namen.</td></tr><tr><td><i>Name</i></td><td>sie tragen einen anderen Namen: zu prüfen.</td></tr><tr><td><i>ohne Namen</i></td><td>sie tragen keinen Namen.</td></tr><tr><td><i>kein Segment</i></td><td>kein Segment näher als 80 m an den Adressen.</td></tr><tr><td>&#x2713; alt</td><td>der BAN-Name steht als <b>Alternativname</b>; der Hauptname steht daneben.</td></tr><tr><td>Straßennr.</td><td>der Hauptname ist eine Straßennummer und der BAN-Name fehlt bei den Alternativnamen: ergänzen.</td></tr><tr><td>Typ</td><td>nur der Straßentyp unterscheidet sich (Rue / Chemin…).</td></tr><tr><td>Artikel · Schreibung · gekürzt</td><td>ähnliche Namen: ein Artikel, ein, zwei Buchstaben oder eine Kurzform. <i>fehlt im WME</i>: die Straße fehlt, der gezeigte Name ist der der Nachbarstraße.</td></tr><tr><td>&#x2713; Parkplatz</td><td>kein benanntes Segment, aber ein naher Parkplatz-Ort trägt den BAN-Namen: nichts umzubenennen.</td></tr></table><p>Eine fehlende Nummer in Orange mit <b>≠</b> steht im WME mit anderem Zusatz (12 b / 12bis): prüfen.</p><p>&#x26A0; markiert einen BAN-Namen, den kein Segment der Gemeinde trägt.</p>',
             hLimitsT: 'Gut zu wissen',
             hLimitsB: "<p>Ein ganzes Département dauert einige Minuten: die BAN wird Gemeinde für Gemeinde gelesen, das WME in Kacheln von etwa 5 km. Die Schaltfläche Anhalten unterbricht; das Erledigte bleibt sichtbar, und fehlgeschlagene Gemeinden lassen sich einzeln wiederholen.</p><p>Paris, Marseille und Lyon werden Bezirk für Bezirk gelesen. Die Scans bleiben nur in diesem Browser (IndexedDB), nie anderswo, zusammen mit Ihren Einstellungen (Bereich, Schalter, Fensterposition, Punktfarben); sie werden markiert, wenn sich BAN oder WME seitdem geändert haben.</p>",
             hSafeB: "Das Skript ändert die Karte nur auf Anforderung eines L6-Editors: „Hausnummern hinzufügen“ (Straße für Straße, nur Nummern), das „+“ einer Adresse (eine Nummer oder ein RPP) und „⇄“ (ein RPP durch eine Nummer ersetzt), höchstens 500 pro gleitender Stunde; es speichert nie. Seine Ergebnisse bleiben in diesem Browser.",
@@ -987,6 +991,8 @@
             tipPartiel: "Ein Name ist die Kurzform des anderen",
             absentTag: "fehlt im WME",
             altTag: "alt",
+            parkTag: "Parkplatz",
+            tipPark: "Kein benanntes Segment: der BAN-Name steht am nahen Parkplatz-Ort (Parkplatzstraßen bleiben unbenannt).",
             tipAlt: p => "Der BAN-Name steht als Alternativname; Hauptname: " + p,
             routeTag: "Straßennr.",
             tipRoute: "Der Hauptname ist eine Straßennummer, und der BAN-Name ist nicht unter den Alternativnamen",
@@ -1164,7 +1170,7 @@
             hMatchT: 'Cuándo se encuentra un número',
             hMatchB: '<p>Una dirección BAN se encuentra cuando WME tiene el mismo número (sufijos incluidos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, y:</p><table class="wbc-help-table"><tr><td>1</td><td>en una calle con el mismo nombre (principal o alternativo), o que solo difiere en un artículo («Avenue Sembrancher» = «Avenue de Sembrancher»; la diferencia de nombre se sigue señalando);</td></tr><tr><td>2</td><td>o en un segmento que lleva las direcciones de esa calle, <b>con nombre o sin él</b>;</td></tr><tr><td>3</td><td>o a menos de 30 m de la dirección.</td></tr></table><p>La regla 1 se prueba primero en todas partes, luego la 2, luego la 3. Un número de WME solo sirve una vez.</p>',
             hNamesT: 'La columna «Calle WME»',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>los segmentos cercanos a las direcciones llevan el nombre de la BAN.</td></tr><tr><td><i>nombre</i></td><td>llevan otro nombre: el nombre a revisar.</td></tr><tr><td><i>sin nombre</i></td><td>no llevan ningún nombre.</td></tr><tr><td><i>ningún segmento</i></td><td>ningún segmento a menos de 80 m de las direcciones.</td></tr><tr><td>&#x2713; alt</td><td>el nombre de la BAN figura como nombre <b>alternativo</b>; el nombre principal aparece al lado.</td></tr><tr><td>n.º de carretera</td><td>el nombre principal es un número de carretera y el nombre de la BAN falta en los alternativos: añadirlo.</td></tr><tr><td>tipo</td><td>solo difiere el tipo de vía (Rue / Chemin…).</td></tr><tr><td>artículo · ortografía · parcial</td><td>nombres parecidos: un artículo, una o dos letras, o una forma abreviada. <i>ausente de WME</i>: la calle no existe en WME, el nombre mostrado es el de la vecina.</td></tr></table><p>Un número que falta en naranja con <b>≠</b> existe en WME con otro sufijo (12 b / 12bis): revisar.</p><p>&#x26A0; señala un nombre de la BAN que ningún segmento del municipio lleva.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>los segmentos cercanos a las direcciones llevan el nombre de la BAN.</td></tr><tr><td><i>nombre</i></td><td>llevan otro nombre: el nombre a revisar.</td></tr><tr><td><i>sin nombre</i></td><td>no llevan ningún nombre.</td></tr><tr><td><i>ningún segmento</i></td><td>ningún segmento a menos de 80 m de las direcciones.</td></tr><tr><td>&#x2713; alt</td><td>el nombre de la BAN figura como nombre <b>alternativo</b>; el nombre principal aparece al lado.</td></tr><tr><td>n.º de carretera</td><td>el nombre principal es un número de carretera y el nombre de la BAN falta en los alternativos: añadirlo.</td></tr><tr><td>tipo</td><td>solo difiere el tipo de vía (Rue / Chemin…).</td></tr><tr><td>artículo · ortografía · parcial</td><td>nombres parecidos: un artículo, una o dos letras, o una forma abreviada. <i>ausente de WME</i>: la calle no existe en WME, el nombre mostrado es el de la vecina.</td></tr><tr><td>&#x2713; aparcamiento</td><td>ningún segmento con nombre, pero un lugar Aparcamiento cercano lleva el nombre de la BAN: nada que renombrar.</td></tr></table><p>Un número que falta en naranja con <b>≠</b> existe en WME con otro sufijo (12 b / 12bis): revisar.</p><p>&#x26A0; señala un nombre de la BAN que ningún segmento del municipio lleva.</p>',
             hLimitsT: 'Conviene saber',
             hLimitsB: "<p>Un departamento entero tarda unos minutos: la BAN se lee municipio por municipio, WME en cuadros de unos 5 km. El botón Detener lo interrumpe; lo hecho sigue visible y los municipios con error se pueden reintentar solos.</p><p>París, Marsella y Lyon se leen distrito por distrito. Los barridos se guardan solo en este navegador (IndexedDB), nunca en otro sitio, con sus preferencias (ámbito, interruptores, posición de la ventana, colores de los puntos); se señalan cuando la BAN o WME han cambiado desde entonces.</p>",
             hSafeB: "El script solo modifica el mapa a petición de un editor L6: «Añadir los números» (calle por calle, solo números), el «+» de una dirección (un número o un RPP) y «⇄» (un RPP sustituido por un número), 500 por hora móvil como máximo; nunca guarda. Sus resultados se quedan en este navegador.",
@@ -1330,6 +1336,8 @@
             tipPartiel: "Un nombre es la forma abreviada del otro",
             absentTag: "ausente de WME",
             altTag: "alt",
+            parkTag: "aparcamiento",
+            tipPark: "Ningún segmento con nombre: el nombre de la BAN lo lleva el lugar Aparcamiento cercano (las vías de aparcamiento quedan sin nombre).",
             tipAlt: p => "El nombre de la BAN figura como nombre alternativo; nombre principal: " + p,
             routeTag: "n.º de carretera",
             tipRoute: "El nombre principal es un número de carretera, y el nombre de la BAN no está entre los alternativos",
@@ -1507,7 +1515,7 @@
             hMatchT: 'Quando un numero è trovato',
             hMatchB: '<p>Un indirizzo BAN è trovato quando WME ha lo stesso numero (suffissi compresi: <i>bis</i>, <i>ter</i>, lettere) a meno di 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>su una via con lo stesso nome (principale o alternativo), o che ne differisce solo per un articolo («Avenue Sembrancher» = «Avenue de Sembrancher»; la differenza di nome resta segnalata);</td></tr><tr><td>2</td><td>oppure su un segmento che porta gli indirizzi di questa via, <b>con o senza nome</b>;</td></tr><tr><td>3</td><td>oppure a meno di 30 m dall\'indirizzo.</td></tr></table><p>La regola 1 è provata ovunque per prima, poi la 2, poi la 3. Un numero WME serve una sola volta.</p>',
             hNamesT: 'La colonna «Via WME»',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>i segmenti vicini agli indirizzi portano il nome della BAN.</td></tr><tr><td><i>nome</i></td><td>portano un altro nome: il nome da verificare.</td></tr><tr><td><i>senza nome</i></td><td>non portano alcun nome.</td></tr><tr><td><i>nessun segmento</i></td><td>nessun segmento a meno di 80 m dagli indirizzi.</td></tr><tr><td>&#x2713; alt</td><td>il nome della BAN è un nome <b>alternativo</b>; il nome principale è mostrato accanto.</td></tr><tr><td>n. strada</td><td>il nome principale è un numero di strada e il nome della BAN manca tra gli alternativi: aggiungerlo.</td></tr><tr><td>tipo</td><td>differisce solo il tipo di via (Rue / Chemin…).</td></tr><tr><td>articolo · ortografia · parziale</td><td>nomi simili: un articolo, una o due lettere, o una forma abbreviata. <i>assente in WME</i>: la via non esiste in WME, il nome mostrato è quello della vicina.</td></tr></table><p>Un numero mancante in arancione con <b>≠</b> esiste in WME con un altro suffisso (12 b / 12bis): da verificare.</p><p>&#x26A0; segnala un nome della BAN che nessun segmento del comune porta.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>i segmenti vicini agli indirizzi portano il nome della BAN.</td></tr><tr><td><i>nome</i></td><td>portano un altro nome: il nome da verificare.</td></tr><tr><td><i>senza nome</i></td><td>non portano alcun nome.</td></tr><tr><td><i>nessun segmento</i></td><td>nessun segmento a meno di 80 m dagli indirizzi.</td></tr><tr><td>&#x2713; alt</td><td>il nome della BAN è un nome <b>alternativo</b>; il nome principale è mostrato accanto.</td></tr><tr><td>n. strada</td><td>il nome principale è un numero di strada e il nome della BAN manca tra gli alternativi: aggiungerlo.</td></tr><tr><td>tipo</td><td>differisce solo il tipo di via (Rue / Chemin…).</td></tr><tr><td>articolo · ortografia · parziale</td><td>nomi simili: un articolo, una o due lettere, o una forma abbreviata. <i>assente in WME</i>: la via non esiste in WME, il nome mostrato è quello della vicina.</td></tr><tr><td>&#x2713; parcheggio</td><td>nessun segmento con nome, ma un luogo Parcheggio vicino porta il nome della BAN: niente da rinominare.</td></tr></table><p>Un numero mancante in arancione con <b>≠</b> esiste in WME con un altro suffisso (12 b / 12bis): da verificare.</p><p>&#x26A0; segnala un nome della BAN che nessun segmento del comune porta.</p>',
             hLimitsT: 'Buono a sapersi',
             hLimitsB: "<p>Un intero dipartimento richiede qualche minuto: la BAN si legge comune per comune, WME a riquadri di circa 5 km. Il pulsante Ferma lo interrompe; quanto fatto resta visibile e i comuni in errore si possono riprovare da soli.</p><p>Parigi, Marsiglia e Lione si leggono arrondissement per arrondissement. Le scansioni restano solo in questo browser (IndexedDB), mai altrove, con le tue preferenze (ambito, interruttori, posizione della finestra, colori dei punti); sono segnalate quando la BAN o WME sono cambiati da allora.</p>",
             hSafeB: "Lo script modifica la mappa solo su richiesta di un editor L6: «Aggiungi i numeri» (via per via, solo numeri), il «+» di un indirizzo (un numero o un RPP) e «⇄» (un RPP sostituito da un numero), al massimo 500 per ora mobile; non salva mai. I risultati restano in questo browser.",
@@ -1673,6 +1681,8 @@
             tipPartiel: "Un nome è la forma abbreviata dell’altro",
             absentTag: "assente in WME",
             altTag: "alt",
+            parkTag: "parcheggio",
+            tipPark: "Nessun segmento con nome: il nome della BAN è sul luogo Parcheggio vicino (le strade di parcheggio restano senza nome).",
             tipAlt: p => "Il nome della BAN è un nome alternativo; nome principale: " + p,
             routeTag: "n. strada",
             tipRoute: "Il nome principale è un numero di strada, e il nome della BAN non è tra i nomi alternativi",
@@ -1850,7 +1860,7 @@
             hMatchT: 'Quando um número é encontrado',
             hMatchB: '<p>Um endereço da BAN é encontrado quando o WME tem o mesmo número (sufixos incluídos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>em uma rua com o mesmo nome (principal ou alternativo), ou que só difere por um artigo (“Avenue Sembrancher” = “Avenue de Sembrancher”; a diferença de nome continua sinalizada);</td></tr><tr><td>2</td><td>ou em um segmento que leva os endereços dessa rua, <b>com ou sem nome</b>;</td></tr><tr><td>3</td><td>ou a menos de 30 m do endereço.</td></tr></table><p>A regra 1 é tentada primeiro em todo lugar, depois a 2, depois a 3. Um número do WME só serve uma vez.</p>',
             hNamesT: 'A coluna «Rua WME»',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>os segmentos próximos dos endereços têm o nome da BAN.</td></tr><tr><td><i>nome</i></td><td>têm outro nome: o nome a verificar.</td></tr><tr><td><i>sem nome</i></td><td>não têm nome.</td></tr><tr><td><i>nenhum segmento</i></td><td>nenhum segmento a menos de 80 m dos endereços.</td></tr><tr><td>&#x2713; alt</td><td>o nome da BAN está como nome <b>alternativo</b>; o nome principal aparece ao lado.</td></tr><tr><td>nº de rodovia</td><td>o nome principal é um número de rodovia e o nome da BAN falta nos alternativos: adicionar.</td></tr><tr><td>tipo</td><td>só o tipo de via difere (Rue / Chemin…).</td></tr><tr><td>artigo · grafia · parcial</td><td>nomes parecidos: um artigo, uma ou duas letras, ou uma forma abreviada. <i>ausente do WME</i>: a rua não existe no WME, o nome mostrado é o da vizinha.</td></tr></table><p>Um número faltando em laranja com <b>≠</b> existe no WME com outro sufixo (12 b / 12bis): verificar.</p><p>&#x26A0; indica um nome da BAN que nenhum segmento do município tem.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>os segmentos próximos dos endereços têm o nome da BAN.</td></tr><tr><td><i>nome</i></td><td>têm outro nome: o nome a verificar.</td></tr><tr><td><i>sem nome</i></td><td>não têm nome.</td></tr><tr><td><i>nenhum segmento</i></td><td>nenhum segmento a menos de 80 m dos endereços.</td></tr><tr><td>&#x2713; alt</td><td>o nome da BAN está como nome <b>alternativo</b>; o nome principal aparece ao lado.</td></tr><tr><td>nº de rodovia</td><td>o nome principal é um número de rodovia e o nome da BAN falta nos alternativos: adicionar.</td></tr><tr><td>tipo</td><td>só o tipo de via difere (Rue / Chemin…).</td></tr><tr><td>artigo · grafia · parcial</td><td>nomes parecidos: um artigo, uma ou duas letras, ou uma forma abreviada. <i>ausente do WME</i>: a rua não existe no WME, o nome mostrado é o da vizinha.</td></tr><tr><td>&#x2713; estacionamento</td><td>nenhum segmento com nome, mas um local Estacionamento próximo tem o nome da BAN: nada a renomear.</td></tr></table><p>Um número faltando em laranja com <b>≠</b> existe no WME com outro sufixo (12 b / 12bis): verificar.</p><p>&#x26A0; indica um nome da BAN que nenhum segmento do município tem.</p>',
             hLimitsT: 'Bom saber',
             hLimitsB: "<p>Um departamento inteiro leva alguns minutos: a BAN é lida município por município, o WME em quadrados de cerca de 5 km. O botão Parar interrompe; o que foi feito continua visível e os municípios com erro podem ser refeitos sozinhos.</p><p>Paris, Marselha e Lyon são lidas distrito por distrito. As varreduras ficam somente neste navegador (IndexedDB), nunca em outro lugar, com as suas preferências (área, interruptores, posição da janela, cores dos pontos); são sinalizadas quando a BAN ou o WME mudaram desde então.</p>",
             hSafeB: "O script só altera o mapa a pedido de um editor L6: “Adicionar os números” (rua por rua, só números), o “+” de um endereço (um número ou um RPP) e “⇄” (um RPP substituído por um número), no máximo 500 por hora móvel; nunca salva. Os resultados ficam neste navegador.",
@@ -2016,6 +2026,8 @@
             tipPartiel: "Um nome é a forma abreviada do outro",
             absentTag: "ausente do WME",
             altTag: "alt",
+            parkTag: "estacionamento",
+            tipPark: "Nenhum segmento com nome: o nome da BAN está no local Estacionamento próximo (as vias de estacionamento ficam sem nome).",
             tipAlt: p => "O nome da BAN está como nome alternativo; nome principal: " + p,
             routeTag: "nº de rodovia",
             tipRoute: "O nome principal é um número de rodovia, e o nome da BAN não está entre os alternativos",
@@ -2193,7 +2205,7 @@
             hMatchT: 'Quando um número é encontrado',
             hMatchB: '<p>Uma morada da BAN é encontrada quando o WME tem o mesmo número (sufixos incluídos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>numa rua com o mesmo nome (principal ou alternativo), ou que só difere por um artigo («Avenue Sembrancher» = «Avenue de Sembrancher»; a diferença de nome continua assinalada);</td></tr><tr><td>2</td><td>ou num segmento que tem as moradas dessa rua, <b>com ou sem nome</b>;</td></tr><tr><td>3</td><td>ou a menos de 30 m da morada.</td></tr></table><p>A regra 1 é tentada primeiro em todo o lado, depois a 2, depois a 3. Um número do WME só serve uma vez.</p>',
             hNamesT: 'A coluna «Rua WME»',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>os segmentos perto das moradas têm o nome da BAN.</td></tr><tr><td><i>nome</i></td><td>têm outro nome: o nome a verificar.</td></tr><tr><td><i>sem nome</i></td><td>não têm nome.</td></tr><tr><td><i>nenhum segmento</i></td><td>nenhum segmento a menos de 80 m das moradas.</td></tr><tr><td>&#x2713; alt</td><td>o nome da BAN está como nome <b>alternativo</b>; o nome principal aparece ao lado.</td></tr><tr><td>n.º de estrada</td><td>o nome principal é um número de estrada e o nome da BAN falta nos alternativos: acrescentar.</td></tr><tr><td>tipo</td><td>só o tipo de via difere (Rue / Chemin…).</td></tr><tr><td>artigo · grafia · parcial</td><td>nomes parecidos: um artigo, uma ou duas letras, ou uma forma abreviada. <i>ausente do WME</i>: a rua não existe no WME, o nome mostrado é o da vizinha.</td></tr></table><p>Um número em falta a laranja com <b>≠</b> existe no WME com outro sufixo (12 b / 12bis): verificar.</p><p>&#x26A0; assinala um nome da BAN que nenhum segmento do município tem.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>os segmentos perto das moradas têm o nome da BAN.</td></tr><tr><td><i>nome</i></td><td>têm outro nome: o nome a verificar.</td></tr><tr><td><i>sem nome</i></td><td>não têm nome.</td></tr><tr><td><i>nenhum segmento</i></td><td>nenhum segmento a menos de 80 m das moradas.</td></tr><tr><td>&#x2713; alt</td><td>o nome da BAN está como nome <b>alternativo</b>; o nome principal aparece ao lado.</td></tr><tr><td>n.º de estrada</td><td>o nome principal é um número de estrada e o nome da BAN falta nos alternativos: acrescentar.</td></tr><tr><td>tipo</td><td>só o tipo de via difere (Rue / Chemin…).</td></tr><tr><td>artigo · grafia · parcial</td><td>nomes parecidos: um artigo, uma ou duas letras, ou uma forma abreviada. <i>ausente do WME</i>: a rua não existe no WME, o nome mostrado é o da vizinha.</td></tr><tr><td>&#x2713; parque</td><td>nenhum segmento com nome, mas um local Parque de estacionamento próximo tem o nome da BAN: nada a renomear.</td></tr></table><p>Um número em falta a laranja com <b>≠</b> existe no WME com outro sufixo (12 b / 12bis): verificar.</p><p>&#x26A0; assinala um nome da BAN que nenhum segmento do município tem.</p>',
             hLimitsT: 'Bom saber',
             hLimitsB: "<p>Um departamento inteiro demora alguns minutos: a BAN é lida município a município, o WME em quadrados de cerca de 5 km. O botão Parar interrompe; o que está feito continua visível e os municípios com erro podem ser repetidos sozinhos.</p><p>Paris, Marselha e Lyon são lidas distrito a distrito. Os varrimentos ficam apenas neste navegador (IndexedDB), nunca noutro lado, com as suas preferências (zona, interruptores, posição da janela, cores dos pontos); são assinalados quando a BAN ou o WME mudaram desde então.</p>",
             hSafeB: "O script só altera o mapa a pedido de um editor L6: «Adicionar os números» (rua a rua, só números), o «+» de uma morada (um número ou um RPP) e «⇄» (um RPP substituído por um número), no máximo 500 por hora móvel; nunca guarda. Os resultados ficam neste navegador.",
@@ -2359,6 +2371,8 @@
             tipPartiel: "Um nome é a forma abreviada do outro",
             absentTag: "ausente do WME",
             altTag: "alt",
+            parkTag: "parque",
+            tipPark: "Nenhum segmento com nome: o nome da BAN está no local Parque de estacionamento próximo (as vias de parque ficam sem nome).",
             tipAlt: p => "O nome da BAN está como nome alternativo; nome principal: " + p,
             routeTag: "n.º de estrada",
             tipRoute: "O nome principal é um número de estrada, e o nome da BAN não está entre os alternativos",
@@ -2536,7 +2550,7 @@
             hMatchT: 'מתי מספר נמצא',
             hMatchB: '<p>כתובת BAN נמצאת כאשר ב-WME יש אותו מספר (כולל סיומות: <i>bis</i>, <i>ter</i>, אותיות) במרחק של פחות מ-150 מ\', ו:</p><table class="wbc-help-table"><tr><td>1</td><td>על רחוב באותו שם (שם ראשי או חלופי), או ששונה ממנו רק במילית יידוע (\u2066«Avenue Sembrancher» = «Avenue de Sembrancher»\u2069; הפער בשם עדיין מדווח);</td></tr><tr><td>2</td><td>או על מקטע שנושא את הכתובות של הרחוב הזה, <b>עם שם או בלי</b>;</td></tr><tr><td>3</td><td>או במרחק של פחות מ-30 מ\' מהכתובת.</td></tr></table><p>כלל 1 נבדק ראשון בכל מקום, אחריו 2, אחריו 3. מספר ב-WME משמש פעם אחת בלבד.</p>',
             hNamesT: 'העמודה «רחוב WME»',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>המקטעים הקרובים לכתובות נושאים את השם של ה-BAN.</td></tr><tr><td><i>שם</i></td><td>הם נושאים שם אחר: השם שיש לבדוק.</td></tr><tr><td><i>ללא שם</i></td><td>הם אינם נושאים שם.</td></tr><tr><td><i>אין מקטע</i></td><td>אין מקטע במרחק של פחות מ-80 מ\' מהכתובות.</td></tr><tr><td>&#x2713; חלופי</td><td>השם מה-BAN מופיע כשם <b>חלופי</b>; השם הראשי מוצג לצידו.</td></tr><tr><td>מס׳ כביש</td><td>השם הראשי הוא מספר כביש ושם ה-BAN חסר בשמות החלופיים: יש להוסיף.</td></tr><tr><td>סוג</td><td>רק סוג הרחוב שונה (Rue / Chemin…).</td></tr><tr><td>מילית · כתיב · חלקי</td><td>שמות דומים: מילית, אות או שתיים, או צורה מקוצרת. <i>חסר ב-WME</i>: הרחוב אינו קיים ב-WME, והשם המוצג הוא של הרחוב השכן.</td></tr></table><p>מספר חסר בכתום עם <b>≠</b> קיים ב-WME עם סיומת אחרת (12 b / 12bis): יש לבדוק.</p><p>&#x26A0; מסמן שם ב-BAN שאף מקטע ברשות אינו נושא.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>המקטעים הקרובים לכתובות נושאים את השם של ה-BAN.</td></tr><tr><td><i>שם</i></td><td>הם נושאים שם אחר: השם שיש לבדוק.</td></tr><tr><td><i>ללא שם</i></td><td>הם אינם נושאים שם.</td></tr><tr><td><i>אין מקטע</i></td><td>אין מקטע במרחק של פחות מ-80 מ\' מהכתובות.</td></tr><tr><td>&#x2713; חלופי</td><td>השם מה-BAN מופיע כשם <b>חלופי</b>; השם הראשי מוצג לצידו.</td></tr><tr><td>מס׳ כביש</td><td>השם הראשי הוא מספר כביש ושם ה-BAN חסר בשמות החלופיים: יש להוסיף.</td></tr><tr><td>סוג</td><td>רק סוג הרחוב שונה (Rue / Chemin…).</td></tr><tr><td>מילית · כתיב · חלקי</td><td>שמות דומים: מילית, אות או שתיים, או צורה מקוצרת. <i>חסר ב-WME</i>: הרחוב אינו קיים ב-WME, והשם המוצג הוא של הרחוב השכן.</td></tr><tr><td>&#x2713; חניון</td><td>אין מקטע עם שם, אבל מקום חניון סמוך נושא את שם ה-BAN: אין מה לשנות.</td></tr></table><p>מספר חסר בכתום עם <b>≠</b> קיים ב-WME עם סיומת אחרת (12 b / 12bis): יש לבדוק.</p><p>&#x26A0; מסמן שם ב-BAN שאף מקטע ברשות אינו נושא.</p>',
             hLimitsT: 'כדאי לדעת',
             hLimitsB: "<p>מחוז שלם לוקח כמה דקות: ה-BAN נקרא רשות אחר רשות, ו-WME בריבועים של כ-5 ק\"מ. הכפתור עצירה מפסיק את הפעולה; מה שכבר נעשה נשאר מוצג, ואפשר לנסות שוב רק את הרשויות שנכשלו.</p><p>פריז, מרסיי וליון נקראות רובע אחר רובע. הסריקות נשמרות בדפדפן זה בלבד (IndexedDB), אף פעם לא במקום אחר, יחד עם ההעדפות (תחום, מתגים, מיקום החלון, צבעי הנקודות); הן מסומנות כאשר ה-BAN או WME השתנו מאז.</p>",
             hSafeB: "הסקריפט משנה את המפה רק לבקשת עורך L6: «הוספת המספרים» (רחוב אחר רחוב, מספרים בלבד), «+» של כתובת אחת (מספר או RPP) ו-«⇄» (RPP אחד שמוחלף במספר), לכל היותר 500 בשעה נעה; הוא לעולם אינו שומר. התוצאות נשארות בדפדפן זה.",
@@ -2700,6 +2714,8 @@
             tipPartiel: "שם אחד הוא קיצור של האחר",
             absentTag: "חסר ב-WME",
             altTag: "חלופי",
+            parkTag: "חניון",
+            tipPark: "אין מקטע עם שם: שם ה-BAN מופיע על מקום החניון הסמוך (דרכי חניון נשארות ללא שם).",
             tipAlt: p => "השם מה-BAN מופיע כשם חלופי; השם הראשי: " + p,
             routeTag: "מס׳ כביש",
             tipRoute: "השם הראשי הוא מספר כביש, ושם ה-BAN אינו בין השמות החלופיים",
@@ -3250,6 +3266,27 @@
 
             const rues = new Map();
             for (const s of d.streets || []) rues.set(s.id, { nom: s.name || '', norm: normNom(s.name) });
+            // Les parkings nommés (0.21.09), par nom normalisé : contour (Polygon) ou point.
+            const parkingsParNom = new Map();
+            for (const p of d.parkings || []) {
+                const g = p.geometry, n = normNom(p.name);
+                if (!n || !g) continue;
+                const anneau = g.type === 'Polygon' ? g.coordinates && g.coordinates[0] : g.type === 'Point' ? [g.coordinates] : null;
+                if (!anneau || !anneau.length) continue;
+                if (!parkingsParNom.has(n)) parkingsParNom.set(n, []);
+                parkingsParNom.get(n).push({ anneau, surface: g.type === 'Polygon' });
+            }
+            // L'adresse est dans le parking, ou à moins de SEG_MAX_M de son bord (ou de son point).
+            const procheDuLieu = (a, p) => {
+                if (p.surface && p.anneau.length >= 3 && dansAnneau(a.lon, a.lat, p.anneau)) return true;
+                const mm = versMetres(a.lat), [px, py] = mm(a.lon, a.lat);
+                if (p.anneau.length === 1) { const [x, y] = mm(p.anneau[0][0], p.anneau[0][1]); return Math.hypot(px - x, py - y) <= SEG_MAX_M; }
+                for (let k = 1; k < p.anneau.length; k++) {
+                    const [ax, ay] = mm(p.anneau[k - 1][0], p.anneau[k - 1][1]), [bx, by] = mm(p.anneau[k][0], p.anneau[k][1]);
+                    if (distSeg(px, py, ax, ay, bx, by) <= SEG_MAX_M) return true;
+                }
+                return false;
+            };
             const segs = [];
             const parId = new Map();
             // Les segments par nom : sans cet index, chaque voie parcourait tous les segments de la
@@ -3416,6 +3453,14 @@
                 // « Absente de WME » : aucun segment de ce nom DANS L'EMPRISE DE LA COMMUNE — les carreaux
                 // lus débordent de plusieurs km, un homonyme voisin ne compte pas (audit du 26/09, M3).
                 v.nomAbsent = !!v.norm && !(parNom.get(v.norm) || []).some(dansEmprise);
+                // 0.21.09 — Une place qui n'est qu'un parking (signalé par un éditeur le 10/11/2026, Quimperlé, « Place du
+                // Barzaz Breizh ») : ses segments ne sont pas nommés, c'est le lieu Parking qui porte le nom. Un parking du
+                // nom de la voie à moins de SEG_MAX_M d'une de ses adresses : le nom est porté, rien à vérifier.
+                if ((v.statutNom === 'sansNom' || v.statutNom === 'aucun') && v.norm && parkingsParNom.has(v.norm)
+                    && parkingsParNom.get(v.norm).some(p => v.adresses.some(a => procheDuLieu(a, p)))) {
+                    v.statutNom = 'parking';
+                    v.nomAbsent = false;
+                }
                 // Les segments RENDUS (« Sélectionner les segments », CSV, permalien) : ceux du nom BAN, d'une variante
                 // d'article ou du nom WME retenu par le vote, en principal ou en alternatif. v.segs garde aussi le
                 // segment le plus proche de chaque numéro, quel que soit son nom : juste pour le rapprochement
@@ -4376,6 +4421,10 @@
             const v = {
                 segments: ((r.segments && r.segments.objects) || []).map(x => ({ id: x.id, geometry: x.geometry, primaryStreetID: x.primaryStreetID, streetIDs: x.streetIDs, hasHNs: x.hasHNs, date: x.updatedOn || x.createdOn || 0 })),
                 streets: ((r.streets && r.streets.objects) || []).map(x => ({ id: x.id, name: x.name })),
+                // 0.21.09 — Les parkings NOMMÉS : une place de la BAN qui n'est qu'un parking porte son nom sur le lieu,
+                // pas sur ses segments (non nommés, comme le veut la règle des parkings).
+                parkings: ((r.venues && r.venues.objects) || []).filter(x => x.name && (x.categories || []).includes('PARKING_LOT') && x.geometry)
+                    .map(x => ({ id: x.id, name: x.name, geometry: x.geometry })),
                 rpps: ((r.venues && r.venues.objects) || []).filter(x => x.residential).map(x => ({ id: x.id, geometry: x.geometry, streetID: x.streetID, houseNumber: x.houseNumber, entryExitPoints: (x.entryExitPoints || []).filter(e => e && e.point).map(e => ({ point: e.point, primary: !!e.primary })), date: x.updatedOn || x.createdOn || 0 })),
             };
             cache.carreaux.set(k, v);
@@ -4385,13 +4434,14 @@
         // Avancement local : les carreaux jusqu'à 80 %, les numéros ensuite.
         prog(t('stWme', 0, taches.length), 0);
         const parts = await parPaquets(taches, PARALLELE, jeton, (f, tot) => prog(t('stWme', f, tot), 0.8 * f / tot));
-        const segments = new Map(), streets = new Map(), rpps = new Map();
+        const segments = new Map(), streets = new Map(), rpps = new Map(), parkings = new Map();
         for (const p of parts) {
+            (p.parkings || []).forEach(x => parkings.set(x.id, x));
             p.segments.forEach(x => segments.set(x.id, x));
             p.streets.forEach(x => streets.set(x.id, x));
             p.rpps.forEach(x => rpps.set(x.id, x));
         }
-        if (sansNumeros) return { segments: [...segments.values()], streets: [...streets.values()], rpps: [...rpps.values()], hns: [] };
+        if (sansNumeros) return { segments: [...segments.values()], streets: [...streets.values()], rpps: [...rpps.values()], parkings: [...parkings.values()], hns: [] };
         // Les numéros des segments qui en portent, par lots de 100 (le lot de l'éditeur).
         prog(t('stHn'), 0.8);
         const urlHn = cheminWme('houseNumbers', '/row-Descartes/app/HouseNumbers');
@@ -4410,7 +4460,7 @@
         }), PARALLELE, jeton, finLot);
         const hns = [];
         for (const x of segments.values()) if (x.hasHNs) hns.push(...(cache.hn.get(x.id) || []));
-        return { segments: [...segments.values()], streets: [...streets.values()], rpps: [...rpps.values()], hns };
+        return { segments: [...segments.values()], streets: [...streets.values()], rpps: [...rpps.values()], parkings: [...parkings.values()], hns };
     }
 
     // `prog(texte, fraction, enCours)` : la fraction couvre toute la commune — la BAN jusqu'à 30 %,
@@ -5873,7 +5923,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             if (vue.filtre === 'todo' && v.presents >= v.ban) return false;
             if (vue.filtre === 'done' && v.presents < v.ban) return false;
             // « Nom à vérifier » : tout sauf le nom BAN porté en principal ou en alternatif.
-            if (vue.filtre === 'name' && (v.statutNom === 'identique' || v.statutNom === 'alternatif')) return false;
+            if (vue.filtre === 'name' && (v.statutNom === 'identique' || v.statutNom === 'alternatif' || v.statutNom === 'parking')) return false;
             if (vue.deleguee && v.deleguee !== vue.deleguee) return false;
             return !q || Core.normNom(v.nom).includes(q) || Core.normNom(v.nomWme || '').includes(q);
         });
@@ -5902,6 +5952,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         // Autre nom ET nom BAN introuvable dans la commune : la voie manque dans WME, et le nom
         // montré n'est que celui de la rue voisine où tombent ses numéros.
         else if (v.statutNom === 'different' && v.nomAbsent) h = tag(t('absentTag'), t('tipAbsent')) + ' <bdi class="wbc-principal" title="' + esc(t('tipOther')) + '">' + esc(v.nomWme) + '</bdi>';
+        else if (v.statutNom === 'parking') h = '<span class="wbc-nom-ok">&#x2713;</span>' + tag(t('parkTag'), t('tipPark'));
         else if (v.statutNom === 'sansNom') h = '<span class="wbc-nom-vide">' + esc(t('nameNone')) + '</span>';
         else if (v.statutNom === 'aucun') h = '<span class="wbc-nom-aucun">' + esc(t('nameNoSeg')) + '</span>';
         else h = '<span class="wbc-nom-diff" title="' + esc(t('tipOther')) + '"><bdi>' + esc(v.nomWme) + '</bdi></span>';
@@ -6011,7 +6062,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         // Chaque filtre porte son nombre de voies (la ligne « N voies complètes sur M » disparaît) ; le détail
         // des noms à vérifier passe en infobulle du filtre.
         const vs = r.voies.filter(v => !vue.deleguee || v.deleguee === vue.deleguee);
-        const nF = { todo: vs.filter(v => v.presents < v.ban).length, name: vs.filter(v => v.statutNom !== 'identique' && v.statutNom !== 'alternatif').length,
+        const nF = { todo: vs.filter(v => v.presents < v.ban).length, name: vs.filter(v => v.statutNom !== 'identique' && v.statutNom !== 'alternatif' && v.statutNom !== 'parking').length,
             done: vs.filter(v => v.presents >= v.ban).length, all: vs.length };
         const detailNoms = [T.voiesAlt ? t('vAlt', nb(T.voiesAlt)) : '', T.voiesSansNom ? t('vNoName', nb(T.voiesSansNom)) : '', T.voiesAutreNom ? t('vOtherName', nb(T.voiesAutreNom)) : '',
             T.voiesRoute ? t('vRoute', nb(T.voiesRoute)) : '', T.voiesProche ? t('vType', nb(T.voiesProche)) : '', T.voiesSansSegment ? t('vNoSeg', nb(T.voiesSansSegment)) : ''].filter(x => x).join(' · ');
@@ -6448,7 +6499,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (v.segs && v.segs.length) u.searchParams.set('segments', v.segs.slice(0, PERMALIEN_SEGS).join(','));
         return u.toString();
     }
-    const ecartDeNom = v => !(v.statutNom === 'identique' || v.statutNom === 'alternatif') || v.nomAbsent;
+    const ecartDeNom = v => !(v.statutNom === 'identique' || v.statutNom === 'alternatif' || v.statutNom === 'parking') || v.nomAbsent;
     function exporterEcarts(resultats, nomFichier) {
         const l = [['commune_insee', 'commune', 'voie_ban', 'commune_deleguee', 'voie_wme', 'nom_principal_wme', 'statut_nom', 'adresses_ban', 'manquantes', 'segments_wme', 'lien_wme']];
         for (const r of resultats) for (const v of r.voies) {
