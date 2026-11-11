@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.09
+// @version      0.21.10
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -374,7 +374,7 @@
             ajRppCrit: l => '⚠️ To fix by hand: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' left without an address',
             ajHnRppN: n => n + ' RPP one by one (+)',
-            ajHnRppUnit: n => n + ' RPP to place one by one, with the “+” of each chip (out of town, or at the end of a driveway).',
+            ajHnRppUnit: n => n + ' RPP to place one by one, with the “+” of each chip (out of town).',
             ajHnStopTip: 'Stop the current adding after the placement in progress; what is placed stays, to be checked.',
             ajHnStopping: 'Stop requested…',
             ajHnStopped: 'Stopped at your request.',
@@ -403,6 +403,11 @@
             rhnFormat: n => 'The number “' + n + '” is not written like a segment number: to be checked by hand.',
             rhnErr: m => 'Replacement stopped: ' + m,
             rhnPoseTip: 'Replaced with a number (not saved yet).',
+            rhnVersRpp: 'Turn this number into an RPP',
+            rhnVersRppTip: 'L6 only: removes this number from the segment and creates an RPP in its place (same number, same street), entry point on the nearest unnamed segment or driveway (private road, parking lot road); the RPP is then selected so you can adjust its entry. Counts in the quota; nothing is saved.',
+            rhnVersRppDone: (n, q) => 'No. ' + n + ' turned into an RPP — adjust its entry point if needed (it is selected), then save in WME. Left in the quota: ' + q + '.',
+            rhnVersRppAbsent: n => 'Number ' + n + ' not found in WME (segment not loaded, or number already removed): nothing changed.',
+            rhnVersRppTipPose: 'Turned into an RPP (not saved yet).',
             ajHnSkip: n => n + (un1(n) ? ' address skipped' : ' addresses skipped') + ' (details in the console).',
             ajHnCut: (n, h) => n + (un1(n) ? ' address not placed' : ' addresses not placed') + ': quota reached, adding can resume at ' + h + '.',
             ajHnNoSeg: 'No loaded segment has exactly this name as primary name with the commune as city: nothing was placed.',
@@ -719,7 +724,7 @@
             ajRppCrit: l => '⚠️ À reprendre à la main\xa0: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' resté sans adresse',
             ajHnRppN: n => n + ' RPP un par un (+)',
-            ajHnRppUnit: n => n + ' RPP à poser un par un, par le «\u00a0+\u00a0» de chaque pastille (hors agglomération, ou au bout d’une allée).',
+            ajHnRppUnit: n => n + ' RPP à poser un par un, par le «\u00a0+\u00a0» de chaque pastille (hors agglomération).',
             ajHnStopTip: 'Arrêter l’ajout en cours après la pose en cours\u00a0; ce qui est posé reste, à relire.',
             ajHnStopping: 'Arrêt demandé…',
             ajHnStopped: 'Arrêté à votre demande.',
@@ -748,6 +753,11 @@
             rhnFormat: n => 'Le numéro «\xa0' + n + '\xa0» ne s’écrit pas comme un numéro de segment\xa0: à voir à la main.',
             rhnErr: m => 'Remplacement interrompu\xa0: ' + m,
             rhnPoseTip: 'Remplacé par un numéro (pas encore enregistré).',
+            rhnVersRpp: 'Transformer ce numéro en RPP',
+            rhnVersRppTip: 'Réservé aux L6\xa0: retire ce numéro du segment et crée à sa place un RPP (même numéro, même voie), point d’entrée sur le segment le plus proche sans nom ou sur une allée (chemin privé, voie de parking)\xa0; le RPP est ensuite sélectionné pour ajuster son entrée. Compte au quota\xa0; rien n’est enregistré.',
+            rhnVersRppDone: (n, q) => 'N°\xa0' + n + ' transformé en RPP — ajustez son point d’entrée si besoin (il est sélectionné), puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
+            rhnVersRppAbsent: n => 'Le numéro ' + n + ' est introuvable dans WME (segment non chargé, ou numéro déjà retiré)\xa0: rien n’est changé.',
+            rhnVersRppTipPose: 'Transformé en RPP (pas encore enregistré).',
             ajHnSkip: n => n + (un(n) ? ' adresse écartée' : ' adresses écartées') + ' (détail dans la console).',
             ajHnCut: (n, h) => n + (un(n) ? ' adresse non posée' : ' adresses non posées') + '\xa0: quota atteint, reprise possible à ' + h + '.',
             ajHnNoSeg: 'Aucun segment chargé ne porte exactement ce nom en nom principal avec la commune pour ville\xa0: rien n’a été posé.',
@@ -1064,7 +1074,7 @@
             ajRppCrit: l => '⚠️ Von Hand zu korrigieren: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' ohne Adresse geblieben',
             ajHnRppN: n => n + ' RPP einzeln (+)',
-            ajHnRppUnit: n => n + ' RPP einzeln zu setzen, mit dem „+“ jedes Chips (außerorts oder am Ende einer Zufahrt).',
+            ajHnRppUnit: n => n + ' RPP einzeln zu setzen, mit dem „+“ jedes Chips (außerorts).',
             ajHnStopTip: 'Das laufende Hinzufügen nach der aktuellen Setzung anhalten; Gesetztes bleibt und ist zu prüfen.',
             ajHnStopping: 'Anhalten angefordert…',
             ajHnStopped: 'Auf Ihren Wunsch angehalten.',
@@ -1093,6 +1103,11 @@
             rhnFormat: n => 'Die Nummer „' + n + '“ ist nicht wie eine Segmentnummer geschrieben: von Hand prüfen.',
             rhnErr: m => 'Ersetzen abgebrochen: ' + m,
             rhnPoseTip: 'Durch eine Nummer ersetzt (noch nicht gespeichert).',
+            rhnVersRpp: 'Diese Nummer in einen RPP umwandeln',
+            rhnVersRppTip: 'Nur L6: entfernt diese Nummer vom Segment und legt an ihrer Stelle einen RPP an (gleiche Nummer, gleiche Straße), Zugangspunkt am nächsten unbenannten Segment oder an einer Zufahrt (Privatweg, Parkplatzweg); der RPP wird danach ausgewählt, um den Zugang anzupassen. Zählt zum Kontingent; nichts wird gespeichert.',
+            rhnVersRppDone: (n, q) => 'Nr. ' + n + ' in einen RPP umgewandelt — Zugangspunkt bei Bedarf anpassen (er ist ausgewählt), dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
+            rhnVersRppAbsent: n => 'Nummer ' + n + ' in WME nicht gefunden (Segment nicht geladen oder Nummer schon entfernt): nichts geändert.',
+            rhnVersRppTipPose: 'In einen RPP umgewandelt (noch nicht gespeichert).',
             ajHnSkip: n => n + (un1(n) ? ' Adresse übersprungen' : ' Adressen übersprungen') + ' (Details in der Konsole).',
             ajHnCut: (n, h) => n + (un1(n) ? ' Adresse nicht gesetzt' : ' Adressen nicht gesetzt') + ': Kontingent erreicht, weiter ab ' + h + '.',
             ajHnNoSeg: 'Kein geladenes Segment trägt genau diesen Namen als Hauptnamen mit der Gemeinde als Stadt: nichts wurde gesetzt.',
@@ -1409,7 +1424,7 @@
             ajRppCrit: l => '⚠️ A corregir a mano: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' quedado sin dirección',
             ajHnRppN: n => n + ' RPP uno a uno (+)',
-            ajHnRppUnit: n => n + ' RPP que colocar uno a uno, con el «+» de cada pastilla (fuera de poblado, o al final de un acceso).',
+            ajHnRppUnit: n => n + ' RPP que colocar uno a uno, con el «+» de cada pastilla (fuera de poblado).',
             ajHnStopTip: 'Detener la adición en curso tras la colocación actual; lo colocado se queda, para revisar.',
             ajHnStopping: 'Detención solicitada…',
             ajHnStopped: 'Detenido a petición suya.',
@@ -1438,6 +1453,11 @@
             rhnFormat: n => 'El número «' + n + '» no se escribe como un número de segmento: a revisar a mano.',
             rhnErr: m => 'Sustitución interrumpida: ' + m,
             rhnPoseTip: 'Sustituido por un número (aún sin guardar).',
+            rhnVersRpp: 'Convertir este número en RPP',
+            rhnVersRppTip: 'Solo L6: quita este número del segmento y crea en su lugar un RPP (mismo número, misma calle), con el punto de entrada en el segmento sin nombre más cercano o en un acceso (camino privado, vía de aparcamiento); luego el RPP queda seleccionado para ajustar su entrada. Cuenta en la cuota; no se guarda nada.',
+            rhnVersRppDone: (n, q) => 'N.º ' + n + ' convertido en RPP — ajuste su punto de entrada si hace falta (está seleccionado) y luego guarde en WME. Cuota restante: ' + q + '.',
+            rhnVersRppAbsent: n => 'El número ' + n + ' no se encuentra en WME (segmento no cargado, o número ya quitado): no se cambia nada.',
+            rhnVersRppTipPose: 'Convertido en RPP (aún sin guardar).',
             ajHnSkip: n => n + (un1(n) ? ' dirección descartada' : ' direcciones descartadas') + ' (detalle en la consola).',
             ajHnCut: (n, h) => n + (un1(n) ? ' dirección no colocada' : ' direcciones no colocadas') + ': cuota alcanzada, se podrá seguir a las ' + h + '.',
             ajHnNoSeg: 'Ningún segmento cargado lleva exactamente este nombre como nombre principal con el municipio como ciudad: no se ha colocado nada.',
@@ -1754,7 +1774,7 @@
             ajRppCrit: l => '⚠️ Da sistemare a mano: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' rimasto senza indirizzo',
             ajHnRppN: n => n + ' RPP uno per uno (+)',
-            ajHnRppUnit: n => n + ' RPP da inserire uno per uno, con il «+» di ogni pastiglia (fuori centro abitato, o in fondo a un accesso).',
+            ajHnRppUnit: n => n + ' RPP da inserire uno per uno, con il «+» di ogni pastiglia (fuori centro abitato).',
             ajHnStopTip: 'Fermare l’aggiunta in corso dopo l’inserimento attuale; quanto inserito resta, da ricontrollare.',
             ajHnStopping: 'Arresto richiesto…',
             ajHnStopped: 'Fermato su tua richiesta.',
@@ -1783,6 +1803,11 @@
             rhnFormat: n => 'Il numero «' + n + '» non si scrive come un numero di segmento: da vedere a mano.',
             rhnErr: m => 'Sostituzione interrotta: ' + m,
             rhnPoseTip: 'Sostituito con un numero (non ancora salvato).',
+            rhnVersRpp: 'Trasforma questo numero in RPP',
+            rhnVersRppTip: 'Solo L6: toglie questo numero dal segmento e crea al suo posto un RPP (stesso numero, stessa via), con il punto di ingresso sul segmento senza nome più vicino o su un accesso (strada privata, viabilità di parcheggio); l’RPP viene poi selezionato per regolarne l’ingresso. Conta nella quota; niente viene salvato.',
+            rhnVersRppDone: (n, q) => 'N. ' + n + ' trasformato in RPP — regola il punto di ingresso se serve (è selezionato), poi salva in WME. Quota residua: ' + q + '.',
+            rhnVersRppAbsent: n => 'Il numero ' + n + ' non si trova in WME (segmento non caricato, o numero già tolto): nulla è cambiato.',
+            rhnVersRppTipPose: 'Trasformato in RPP (non ancora salvato).',
             ajHnSkip: n => n + (un1(n) ? ' indirizzo scartato' : ' indirizzi scartati') + ' (dettagli nella console).',
             ajHnCut: (n, h) => n + (un1(n) ? ' indirizzo non inserito' : ' indirizzi non inseriti') + ': quota raggiunta, si potrà riprendere alle ' + h + '.',
             ajHnNoSeg: 'Nessun segmento caricato porta esattamente questo nome come nome principale con il comune come città: non è stato inserito nulla.',
@@ -2099,7 +2124,7 @@
             ajRppCrit: l => '⚠️ A corrigir à mão: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' ficou sem endereço',
             ajHnRppN: n => n + ' RPP um a um (+)',
-            ajHnRppUnit: n => n + ' RPP a colocar um a um, com o “+” de cada pastilha (fora da área urbana, ou no fim de um acesso).',
+            ajHnRppUnit: n => n + ' RPP a colocar um a um, com o “+” de cada pastilha (fora da área urbana).',
             ajHnStopTip: 'Parar a adição em curso após a colocação atual; o que foi colocado fica, para revisar.',
             ajHnStopping: 'Parada solicitada…',
             ajHnStopped: 'Parado a seu pedido.',
@@ -2128,6 +2153,11 @@
             rhnFormat: n => 'O número “' + n + '” não se escreve como um número de segmento: verificar à mão.',
             rhnErr: m => 'Substituição interrompida: ' + m,
             rhnPoseTip: 'Substituído por um número (ainda não salvo).',
+            rhnVersRpp: 'Transformar este número em RPP',
+            rhnVersRppTip: 'Somente L6: retira este número do segmento e cria em seu lugar um RPP (mesmo número, mesma rua), com o ponto de entrada no segmento sem nome mais próximo ou num acesso (via particular, via de estacionamento); depois o RPP fica selecionado para ajustar a entrada. Conta na cota; nada é salvo.',
+            rhnVersRppDone: (n, q) => 'Nº ' + n + ' transformado em RPP — ajuste o ponto de entrada se preciso (ele está selecionado) e depois salve no WME. Cota restante: ' + q + '.',
+            rhnVersRppAbsent: n => 'O número ' + n + ' não foi encontrado no WME (segmento não carregado, ou número já retirado): nada mudou.',
+            rhnVersRppTipPose: 'Transformado em RPP (ainda não salvo).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes no console).',
             ajHnCut: (n, h) => n + (un1(n) ? ' endereço não colocado' : ' endereços não colocados') + ': cota atingida, retomada possível às ' + h + '.',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
@@ -2444,7 +2474,7 @@
             ajRppCrit: l => '⚠️ A corrigir à mão: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' ficou sem morada',
             ajHnRppN: n => n + ' RPP um a um (+)',
-            ajHnRppUnit: n => n + ' RPP a colocar um a um, com o «+» de cada pastilha (fora da localidade, ou no fim de um acesso).',
+            ajHnRppUnit: n => n + ' RPP a colocar um a um, com o «+» de cada pastilha (fora da localidade).',
             ajHnStopTip: 'Parar a adição em curso após a colocação atual; o que foi colocado fica, para rever.',
             ajHnStopping: 'Paragem pedida…',
             ajHnStopped: 'Parado a seu pedido.',
@@ -2473,6 +2503,11 @@
             rhnFormat: n => 'O número «' + n + '» não se escreve como um número de segmento: verificar à mão.',
             rhnErr: m => 'Substituição interrompida: ' + m,
             rhnPoseTip: 'Substituído por um número (ainda não guardado).',
+            rhnVersRpp: 'Transformar este número em RPP',
+            rhnVersRppTip: 'Só L6: retira este número do segmento e cria no seu lugar um RPP (mesmo número, mesma rua), com o ponto de entrada no segmento sem nome mais próximo ou num acesso (caminho privado, via de estacionamento); depois o RPP fica selecionado para ajustar a entrada. Conta na quota; nada é guardado.',
+            rhnVersRppDone: (n, q) => 'N.º ' + n + ' transformado em RPP — ajuste o ponto de entrada se necessário (está selecionado) e depois guarde no WME. Quota restante: ' + q + '.',
+            rhnVersRppAbsent: n => 'O número ' + n + ' não foi encontrado no WME (segmento não carregado, ou número já retirado): nada mudou.',
+            rhnVersRppTipPose: 'Transformado em RPP (ainda não guardado).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes na consola).',
             ajHnCut: (n, h) => n + (un1(n) ? ' morada não colocada' : ' moradas não colocadas') + ': quota atingida, retoma possível às ' + h + '.',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
@@ -2789,7 +2824,7 @@
             ajRppCrit: l => '⚠️ לתיקון ידני: ' + l + '.',
             ajRppCritPoi: n => 'RPP ' + n + ' נשאר ללא כתובת',
             ajHnRppN: n => n + ' RPP אחד אחד (+)',
-            ajHnRppUnit: n => n + ' RPP להצבה אחד אחד, בעזרת «+» של כל תג (מחוץ לשטח בנוי, או בקצה דרך גישה).',
+            ajHnRppUnit: n => n + ' RPP להצבה אחד אחד, בעזרת «+» של כל תג (מחוץ לשטח בנוי).',
             ajHnStopTip: 'עצירת ההוספה אחרי ההצבה הנוכחית; מה שהוצב נשאר, לבדיקה.',
             ajHnStopping: 'התבקשה עצירה…',
             ajHnStopped: 'נעצר לבקשתך.',
@@ -2818,6 +2853,11 @@
             rhnFormat: n => 'המספר „' + n + '” אינו כתוב כמו מספר על מקטע: לבדיקה ידנית.',
             rhnErr: m => 'ההחלפה הופסקה: ' + m,
             rhnPoseTip: 'הוחלף במספר (עדיין לא נשמר).',
+            rhnVersRpp: 'הפיכת המספר הזה ל־RPP',
+            rhnVersRppTip: 'ל־L6 בלבד: מסיר את המספר הזה מהמקטע ויוצר במקומו RPP (אותו מספר, אותו רחוב), עם נקודת כניסה על המקטע הקרוב ביותר ללא שם או על דרך גישה (דרך פרטית, דרך חניון); לאחר מכן ה־RPP נבחר כדי לכוונן את הכניסה. נספר במכסה; דבר אינו נשמר.',
+            rhnVersRppDone: (n, q) => 'מס׳ ' + n + ' הפך ל־RPP — יש לכוונן את נקודת הכניסה במידת הצורך (הוא נבחר) ואז לשמור ב-WME. יתרת המכסה: ' + q + '.',
+            rhnVersRppAbsent: n => 'המספר ' + n + ' לא נמצא ב-WME (המקטע לא נטען, או שהמספר כבר הוסר): דבר לא שונה.',
+            rhnVersRppTipPose: 'הפך ל־RPP (עדיין לא נשמר).',
             ajHnSkip: n => (un1(n) ? 'כתובת אחת דולגה' : n + ' כתובות דולגו') + ' (פרטים במסוף).',
             ajHnCut: (n, h) => n + (un1(n) ? ' כתובת לא הוצבה' : ' כתובות לא הוצבו') + ': המכסה נוצלה, ניתן להמשיך בשעה ' + h + '.',
             ajHnNoSeg: 'אף מקטע טעון אינו נושא בדיוק שם זה כשם ראשי עם הרשות כעיר: דבר לא הוצב.',
@@ -3793,9 +3833,9 @@
         // hors agglo dont le nommage n'est pas fait reste refusé (compté dans `refus.horsAgglo`).
         //
         // `opt.lot` (0.19.00, arbitrage du 11/10 rappelé par l'audit du 01/11/2026) : le bouton d'une VOIE ne pose que des
-        // numéros de segment. Une adresse qui deviendrait un RPP (hors agglomération, ou au bout d'une allée) n'est créée
-        // qu'adresse par adresse, par le « + » de sa pastille ou de son point : en lot, elle est seulement comptée
-        // (`ecartes.unitaire`) et ne prend pas de place au quota.
+        // numéros de segment. Une adresse qui deviendrait un RPP HORS AGGLOMÉRATION n'est créée qu'adresse par adresse, par
+        // le « + » de sa pastille ou de son point : en lot, elle est seulement comptée (`ecartes.unitaire`) et ne prend pas
+        // de place au quota. 0.21.10 : l'adresse au bout d'une allée, elle, devient un RPP en lot aussi (`direct`).
         function planHn(voie, commune, segs, existants, reste, opt) {
             const enLot = !!(opt && opt.lot);
             const nomBan = nomSouple(voie.nom);
@@ -3843,9 +3883,11 @@
                 }
                 if (!best) {
                     // 0.18.10 — seconde chance en RPP : l'adresse au bout d'une allée (cf. ALLEE_MAX_M).
+                    // 0.21.10 (décision de l'auteur, 11/11/2026, Narbonne, avenue de la Côte des Roses : 4 D, 6 F, 8 ter,
+                    // 10 bis, 12 à 18, 32 B-F, 38 A-G, avenue à 90-186 m, allée privée à 3-50 m) : l'allée est une règle
+                    // mesurée, le RPP qu'elle donne se crée aussi EN LOT. Le hors agglo reste au geste unitaire.
                     const r = rppAuBoutDeLAllee(a, admis, segs);
                     if (!r) { ecartes.loin++; continue; }
-                    if (enLot) { ecartes.unitaire++; unites.push(a); continue; }
                     if (poses.length >= reste) { ecartes.quota++; continue; }
                     vus.add(cle);
                     const altR = enAgglo.indexOf(r.rue) < 0 ? altBan(r.rue) : null;
@@ -3908,6 +3950,26 @@
                 if (d < bd) { bd = d; best = [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]; }
             }
             return best;
+        }
+        // 0.21.10 — Le point d'entrée d'un numéro TRANSFORMÉ EN RPP (demande de l'auteur, 11/11/2026 : Narbonne, 5, 5 bis et
+        // 7 avenue de la Côte des Roses, numéros posés sur l'avenue alors que les maisons donnent sur le rond-point, qu'on ne
+        // nomme pas). Le numéro est sur SA rue ; s'il faut un RPP, c'est qu'on arrive par AUTRE CHOSE : le segment le plus
+        // proche, autre que celui du numéro, qui soit SANS NOM (rond-point, bretelle, allée non nommée) ou une allée
+        // (chemin privé 17, voie de parking 20, nommée ou non), roulable, à moins de SEG_MAX_M. Une rue NOMMÉE d'un autre
+        // nom n'est pas retenue : l'adresse serait alors mal rattachée. Faute de candidat, rien (l'appelant garde l'entrée
+        // sur le segment du numéro). Le choix n'est qu'un point de départ : le RPP est sélectionné, l'éditeur ajuste.
+        // `segs` : [{ id, coords, noms, rt }] ; rend { seg, entree, d } ou null.
+        const NON_ROULABLES = new Set([5, 10, 15, 16, 18, 19]);
+        function entreeRpp(lon, lat, segs, segNum) {
+            let choisi = null, dMax = SEG_MAX_M;
+            for (const s of segs || []) {
+                if (!s || String(s.id) === String(segNum) || !s.coords || s.coords.length < 2 || NON_ROULABLES.has(s.rt)) continue;
+                const sansNom = !(s.noms || []).some(n => n && String(n).trim());
+                if (!sansNom && s.rt !== 17 && s.rt !== 20) continue;
+                const d = distTrace(lon, lat, s.coords);
+                if (d <= dMax) { dMax = d; choisi = s; }
+            }
+            return choisi ? { seg: choisi, entree: pointLePlusProche(lon, lat, choisi.coords), d: dMax } : null;
         }
         // 0.21.07 — Un segment créé là où l'analyse n'en avait trouvé aucun (signalé par un éditeur le 10/11/2026 :
         // « Coat Me », BAN 2, WME 0, « aucun segment »). Les adresses manquantes SANS segment à moins de SEG_MAX_M n'ont
@@ -4107,7 +4169,7 @@
             return liste.filter(x => x.type === 'MISSING_ADDRESS' && Math.hypot((x.lon - lon) * kx, (x.lat - lat) * 110540) <= lim)
                 .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
         }
-        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, segsDesExistants, zonesHn, pointLePlusProche, segsPresDesOrphelines };
+        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, segsPresDesOrphelines };
     })();
     // ==/WBC-CORE==
 
@@ -4699,7 +4761,7 @@
     // fenêtre fermée — on la ferme justement pour dégager la carte avant d'enregistrer (29/09) ; eux seuls.
     let calqueVisible = true;
     const fenetreOuverte = () => !!(ovEl && ovEl.classList.contains('open'));
-    const aDesPoses = () => !!resultat && resultat.voies.some(v => v.adresses.some(a => a.hnPose && (!a.trouve || a.rppHn)));
+    const aDesPoses = () => !!resultat && resultat.voies.some(v => v.adresses.some(a => a.hnPose && (!a.trouve || a.rppHn || a.hnVersRpp)));
     const calqueAffiche = () => calqueVisible && fenetreOuverte();
     function appliquerVisibilite() {
         const vis = calqueAffiche(), visAdr = calqueVisible && (fenetreOuverte() || aDesPoses());
@@ -4830,7 +4892,11 @@
         const v = p.voie, i = resultat ? resultat.voies.indexOf(v) : -1, k = i < 0 ? -1 : v.adresses.indexOf(p.ad);
         if (k < 0) return false;
         const q = Core.quotaHn(lireHorodatages(), Date.now()), rpp = rppConvertible(p.ad);
-        const raison = !(rpp ? v.statutNom === 'identique' : nomOkHn(v)) ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : '';
+        // 0.21.10 : un numéro (enregistré, ou posé par WBC et en attente) se transforme en RPP depuis sa bulle.
+        const versRpp = !rpp && !hnPosable(p.ad) && hnConvertible(p.ad);
+        if (!rpp && !versRpp && !hnPosable(p.ad)) return false;
+        const raison = versRpp ? (p.ad.trouve && q.reste < 2 ? t('ajHnQuota', heureCourte(q.libre)) : '') :
+            !(rpp ? v.statutNom === 'identique' : nomOkHn(v)) ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : '';
         if (!bulle) {
             bulle = document.createElement('div');
             bulle.id = 'wbc-bulle';
@@ -4838,20 +4904,21 @@
             document.body.appendChild(bulle);
             bulle.addEventListener('click', ev => {
                 if (ev.target.closest('[data-bulle-fermer]')) { fermerBulle(); return; }
-                const b = ev.target.closest('[data-hn1], [data-rpphn1]');
+                const b = ev.target.closest('[data-hn1], [data-rpphn1], [data-hnrpp1]');
                 if (!b || b.disabled || !resultat || !droitHn || hnEnCours) return;
-                const [bi, bk] = (b.dataset.hn1 || b.dataset.rpphn1).split(':').map(Number);
+                const [bi, bk] = (b.dataset.hn1 || b.dataset.rpphn1 || b.dataset.hnrpp1).split(':').map(Number);
                 fermerBulle();
+                if (b.dataset.hnrpp1) { convertirHnRpp(bi, bk); return; }
                 if (b.dataset.rpphn1) { vue.curseurRpp = bi + ':' + bk; convertirRppVoie(bi, bk); return; }
                 vue.curseur = bk;
                 ajouterHnVoie(bi, bk);
             });
         }
         bulle.dir = _lang === 'he' ? 'rtl' : 'ltr';
-        const lbl = rpp ? t('rhnConv') : t('ajHn1');
+        const lbl = rpp ? t('rhnConv') : versRpp ? t('rhnVersRpp') : t('ajHn1');
         bulle.setAttribute('aria-label', lbl + ' ' + p.ad.brut);
         bulle.innerHTML = '<button type="button" class="wbc-bulle-x" data-bulle-fermer title="' + esc(t('close')) + '" aria-label="' + esc(t('close')) + '">&#x2715;</button>' + htmlFiche(p) +
-            '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn' + (rpp ? ' rpp' : '') + '" ' + (rpp ? 'data-rpphn1' : 'data-hn1') + '="' + i + ':' + k + '" title="' + esc(raison || t(rpp ? 'rhnConvTip' : 'ajHn1Tip')) + '"' + (raison || hnEnCours ? ' disabled' : '') + '>' + (rpp ? '&#x21C4; ' : '+ ') + esc(lbl) + '</button>' +
+            '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn' + (rpp || versRpp ? ' rpp' : '') + '" ' + (rpp ? 'data-rpphn1' : versRpp ? 'data-hnrpp1' : 'data-hn1') + '="' + i + ':' + k + '" title="' + esc(raison || t(rpp ? 'rhnConvTip' : versRpp ? 'rhnVersRppTip' : 'ajHn1Tip')) + '"' + (raison || hnEnCours ? ' disabled' : '') + '>' + (rpp || versRpp ? '&#x21C4; ' : '+ ') + esc(lbl) + '</button>' +
             (raison ? '<div class="wbc-bulle-raison">' + esc(raison) + '</div>' : '') + '</div>';
         bulle.hidden = false;
         bulleAdr = [i, k];
@@ -4889,7 +4956,7 @@
             if (droitHn && resultat && pointsVus.length) {
                 let sous = null;
                 try { sous = await pointSous(ev.clientX, ev.clientY); } catch (e) { }
-                if (sous && sous.best && sous.best.ad && (hnPosable(sous.best.ad) || rppConvertible(sous.best.ad)) && ouvrirBulle(sous.best, ev.clientX, ev.clientY)) return;
+                if (sous && sous.best && sous.best.ad && (hnPosable(sous.best.ad) || rppConvertible(sous.best.ad) || hnConvertible(sous.best.ad)) && ouvrirBulle(sous.best, ev.clientX, ev.clientY)) return;
             }
             if (!communesVisibles()) return;
             let z = 99;
@@ -5993,7 +6060,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         return '<div class="wbc-nums">' + v.adresses.map((a, k) => {
             if (a.trouve) return '';
             const p = plus && hnPosable(a);
-            const tip = a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) : p ? t('tipGoAdd') : t('tipGo');
+            const tip = a.hnVersRpp ? t('rhnVersRppTipPose') : a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) : p ? t('tipGoAdd') : t('tipGo');
             const num = '<button type="button" class="wbc-num' + (a.hnPose ? ' pose' : a.hnEnregistre ? ' enregistre' : a.suffixe ? ' suffixe' : '') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '">' + (a.hnPose ? '&#x271A; ' : a.hnEnregistre ? '&#x2713; ' : '') + esc(a.brut) + (a.suffixe && !a.hnPose ? ' ≠ ' + esc(a.suffixe) : '') + '</button>';
             const plusB = p ? '<button type="button" class="wbc-num-plus" data-hn1="' + i + ':' + k + '" title="' + esc(t('ajHn1') + ' — ' + t('ajHn1Tip')) + '" aria-label="' + esc(t('ajHn1') + ' ' + a.brut) + '">+</button>' : '';
             const banB = boutonBanNum(a, i, k);
@@ -6450,7 +6517,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             }
             if (tropMontre) pts.push({ lon: tropMontre.lon, lat: tropMontre.lat, etat: 'trop', lbl: tropMontre.brut, trop: tropMontre });
             // Les numéros posés et pas encore relus : toujours dessinés, au-dessus du reste (au plus 500 par heure).
-            voies.forEach(w => w.adresses.forEach(a => { if (a.hnPose && (!a.trouve || a.rppHn)) pts.push({ lon: a.lon, lat: a.lat, etat: 'pose', lbl: a.brut, ad: a, voie: w }); }));
+            voies.forEach(w => w.adresses.forEach(a => { if (a.hnPose && (!a.trouve || a.rppHn || a.hnVersRpp)) pts.push({ lon: a.lon, lat: a.lat, etat: 'pose', lbl: a.brut, ad: a, voie: w }); }));
         }
         if (generation !== generationCalque) return;
         const n = ovEl && ovEl.querySelector('#wbc-calque-note');
@@ -7809,7 +7876,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 // Enregistré et relu sur le serveur : l'adresse est désormais DANS WME, sans relancer
                 // l'analyse (29/09) — la voie et les totaux de la commune suivent.
                 // 0.16.00 : un RPP remplacé par un numéro, enregistré — l'adresse passe de RPP à HN.
-                if (a.rppHn) {
+                // 0.21.10 : un numéro enregistré transformé en RPP, enregistré — l'adresse passe de HN à RPP.
+                if (a.hnVersRpp && a.trouve === 'HN') {
+                    a.hnVersRpp = false;
+                    Object.assign(a, { trouve: 'RPP', wlon: a.hnLon != null ? a.hnLon : a.wlon, wlat: a.hnLat != null ? a.hnLat : a.wlat });
+                    v.hn--; v.rpp++;
+                    resultat.totaux.hn--; resultat.totaux.rpp++;
+                }
+                else if (a.rppHn) {
                     a.rppHn = false;
                     Object.assign(a, { trouve: 'HN', wlon: a.lon, wlat: a.lat, dm: 0 });
                     v.rpp--; v.hn++;
@@ -7829,7 +7903,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                     if (v.presents === v.ban) T.voiesCompletes++;
                 }
             }
-            else if (rendu.has(c)) { a.hnPose = false; a.rppHn = false; modifs++; }
+            else if (rendu.has(c)) { a.hnPose = false; a.rppHn = false; a.hnVersRpp = false; modifs++; }
         }
         log('quota : ' + res.comptes.length + ' numéro(s) enregistré(s) compté(s), ' + res.rendus.length + ' rendu(s)');
         if (modifs && !apresEnregistrement) { rendre(); appliquerVisibilite(); }
@@ -7851,9 +7925,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         // 0.13.00 : le nom BAN en ALTERNATIF suffit aussi (segment hors agglomération : l'adresse y devient un RPP).
         const ap = v.apercuHn;
         const nomOk = nomOkHn(v);
-        // 0.19.00 : le bouton de la voie ne pose que des NUMÉROS ; les RPP (hors agglo, allées) se posent un par un, par le
-        // « + » de leur pastille — l'aperçu lu à l'ouverture de la voie les compte à part.
-        const k = ap ? Math.min(ap.hn, q.reste) : Math.min(n, q.reste);
+        // 0.19.00 : le bouton de la voie ne pose que des NUMÉROS ; les RPP hors agglo se posent un par un, par le « + » de
+        // leur pastille — l'aperçu lu à l'ouverture de la voie les compte à part. 0.21.10 : les RPP d'allée partent avec.
+        const k = ap ? Math.min(ap.hn + (ap.allee || 0), q.reste) : Math.min(n, q.reste);
         const tip = !nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !k ? (ap && ap.rpp ? t('ajHnRppUnit', nb(ap.rpp)) : ap && ap.nomEcart ? t('ajHnNomEcart', ap.nomEcart, v.nom) : ap && ap.loin ? t('ajHnLoin', nb(ap.loin)) : t('ajHnNone')) : t('ajHnAddTip', nb(q.reste));
         const lib = t('ajHnAdd', nb(k));
         return ' <button type="button" class="wbc-btn wbc-btn-neutral" data-act="hnvoie" title="' + esc(tip) + '"' + (nomOk && k && !hnEnCours ? '' : ' disabled') + '>' + esc(lib) + '</button>' +
@@ -7995,7 +8069,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // le point de l'allée le plus proche). Même résultat, 3 étapes au lieu de 5.
     // Verrou : celui que WME donne d'office (aucun lockRank posé). La table France ne fixe pas de verrou pour un RPP
     // (non établi) et ce geste est unitaire, jamais en série : rien n'est inventé ici — déclaré dans l'aide et le README.
-    // Rend { ok, erreur?, critique?, reste? } ; `reste` : quelque chose est resté sur la carte (compté au quota).
+    // Rend { ok, id?, erreur?, critique?, reste? } ; `reste` : quelque chose est resté sur la carte (compté au quota) ;
+    // `id` : le POI créé (0.21.10, pour le sélectionner).
     async function creerRppDirect(p, seg) {
         const DM = sdk.DataModel;
         const n0 = await enAttente();
@@ -8016,13 +8091,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             try { await DM.Venues.replaceNavigationPoints({ venueId: vid, navigationPoints: [{ point: { type: 'Point', coordinates: entree }, entry: true, exit: true }] }); }
             catch (e) { log('RPP ' + p.number + ' : point d\'entrée non posé — ' + e.message); }
         }
-        return { ok: true };
+        return { ok: true, id: vid };
     }
 
     // `k` (0.15.00) : l'adresse k SEULE — le « + » d'une pastille ou d'un point de la carte. Mêmes contrôles,
     // même quota ; la voie entière sert encore à lire les numéros existants.
     // 0.19.00 : sans `k` (bouton de la VOIE), seuls des numéros de segment sont posés ; une adresse qui deviendrait un RPP
-    // (hors agglo, allée) est laissée au geste unitaire et comptée dans le message (arbitrage : la conversion en RPP se
+    // hors agglo (et, jusqu'en 0.21.09, au bout d'une allée) est laissée au geste unitaire et comptée dans le message (arbitrage : la conversion en RPP se
     // fait adresse par adresse, jamais en lot). Une passe longue s'arrête au bouton « Arrêter » (hnStop).
     async function ajouterHnVoie(i, k) {
         if (hnEnCours) return;
@@ -8067,7 +8142,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 for (const p of plan.poses) {
                     if (hnStop) break;
                     if (p.rpp) {
-                        // Une adresse SEULE (planHn ne propose pas de RPP en lot) : RPP créé d'emblée.
+                        // RPP créé d'emblée : une adresse SEULE (hors agglo ou allée), ou en lot une adresse au bout d'une allée (0.21.10).
                         const r = await creerRppDirect(p, parSeg.get(p.segmentId));
                         if (r.critique) critiques.push(r.critique);
                         if (r.reste) inscrire(p, true);
@@ -8077,6 +8152,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                         p.adresse.hnRpp = true;
                         inscrire(p, true);
                     } else {
+                        const nA = hnAjout.n;
                         try { await sdk.DataModel.HouseNumbers.addHouseNumber({ number: p.number, point: { type: 'Point', coordinates: [p.lon, p.lat] }, segmentId: p.segmentId }); }
                         catch (e) {
                             err = e;
@@ -8087,6 +8163,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                         }
                         n++;
                         inscrire(p, false);
+                        // 0.21.10 : l'identifiant du numéro en attente, pour « Transformer en RPP » (null s'il n'est pas venu).
+                        p.adresse.hnId = hnAjout.n > nA ? hnAjout.id : null;
                     }
                     p.adresse.hnPose = true;
                     p.adresse.hnSeg = p.segmentId;
@@ -8165,6 +8243,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // exige donc qu'il n'y ait AUCUNE modification en attente (voir convertirRppVoie) — rien de supprimé ne traîne, et
     // le serveur dit seul les doublons. Les RPP que WBC vient de retirer sont gardés ici pour la session.
     const rppRetires = new Set();
+    // 0.21.10 — Les identifiants des numéros ajoutés dans WME (en attente : négatifs). addHouseNumber ne rend rien et
+    // fetchHouseNumbers ne lit que les enregistrés ; « wme-data-model-objects-added » (segmentHouseNumbers) donne
+    // l'identifiant AVANT que la promesse d'addHouseNumber se résolve (mesuré dans WME le 11/11/2026).
+    const hnAjout = { n: 0, id: null };
     async function trouverRpp(a) {
         let liste = [];
         try { liste = (await sdk.DataModel.Venues.getAll()) || []; } catch (e) { return null; }
@@ -8202,7 +8284,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 const ad = (await sdk.DataModel.Segments.getAddress({ segmentId: sg.id })) || {};
                 noms = [ad.street && ad.street.name].concat((ad.altStreets || []).map(x => x.street && x.street.name)).filter(Boolean);
             } catch (e) { }
-            out.push({ id: sg.id, coords: c, noms });
+            // rt (0.21.10) : le type de route, pour Core.entreeRpp (allée, segment non roulable).
+            out.push({ id: sg.id, coords: c, noms, rt: sg.roadType });
         }
         return out;
     }
@@ -8313,6 +8396,103 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         }
     }
 
+    // ---- Numéro → RPP (0.21.10, demande de l'auteur du 11/11/2026) ----------------------------------------------
+    // Narbonne, 5, 5 bis et 7 avenue de la Côte des Roses : numéros posés au bout de l'avenue, alors que les maisons
+    // donnent sur le rond-point, qu'on ne nomme pas ⇒ il faut un RPP qui pointe sur le rond-point. Un clic : le numéro
+    // est retiré, un RPP résidentiel créé à SA position (même numéro, même voie, même commune), point d'entrée par
+    // Core.entreeRpp (segment sans nom ou allée le plus proche ; à défaut, sur le segment du numéro), puis le RPP est
+    // SÉLECTIONNÉ dans WME : l'éditeur glisse l'entrée si le choix ne convient pas (décision de l'auteur).
+    // Le numéro : posé par WBC et encore EN ATTENTE (identifiant relevé à la pose, cf. hnAjout), ou ENREGISTRÉ (relu sur
+    // le serveur : même numéro, à moins de 10 m). Une étape refusée défait tout le geste (pile d'annulation de WME).
+    // Quota : un numéro de WBC en attente change seulement de nature (son entrée devient celle d'un RPP) ; un numéro
+    // enregistré compte 2 (numéro retiré, compté d'office, + RPP créé).
+    const hnConvertible = a => !!a && !a.hnVersRpp && !a.rppHn && !a.hnRpp && !!Core.numeroHn(a.brut) &&
+        ((a.trouve === 'HN' && a.wlon != null) || (!a.trouve && a.hnPose && a.hnId != null && a.hnSeg != null));
+    async function convertirHnRpp(i, k) {
+        if (hnEnCours) return;
+        const v = resultat.voies[i], a = v && v.adresses[k], commune = resultat.commune.nom, code = resultat.commune.code;
+        if (!hnConvertible(a)) return;
+        if (!(await lireDroitHn())) { droitHn = false; rendre(); statut(t('ajHnRights'), true); return; }
+        const enAtt = !a.trouve;
+        const q = Core.quotaHn(lireHorodatages(), Date.now());
+        if (!enAtt && q.reste < 2) { statut(t('ajHnQuota', heureCourte(Core.quotaHn(q.garder.concat([Date.now()]), Date.now()).libre)), true); return; }
+        hnEnCours = true;
+        majArrierePlan(true);
+        statut(t('ajHnRunning'));
+        let msg = null;
+        const n0 = await enAttente();
+        try {
+            const lon0 = enAtt ? a.lon : a.wlon, lat0 = enAtt ? a.lat : a.wlat;
+            let ext = null, zoom = 0;
+            try { ext = await sdk.Map.getMapExtent(); zoom = await sdk.Map.getZoomLevel(); } catch (e) { }
+            const dedans = ext && lon0 >= ext[0] && lon0 <= ext[2] && lat0 >= ext[1] && lat0 <= ext[3];
+            if (!dedans || zoom < 17) {
+                await sdk.Map.setMapCenter({ lonLat: { lon: lon0, lat: lat0 }, zoomLevel: Math.max(17, zoom) });
+                await new Promise(r => setTimeout(r, 2500));
+            }
+            const autour = await segmentsAutour(lon0, lat0);
+            let hn = null;
+            if (enAtt) hn = { id: String(a.hnId), seg: a.hnSeg, number: a.hnNum, pos: [a.lon, a.lat] };
+            else {
+                // Enregistré : relu sur le serveur, sur les segments chargés autour (le plus proche à moins de 10 m).
+                const kx = Math.cos(lat0 * Math.PI / 180) * 111320, m = Core.normNum(a.brut);
+                let bd = 10;
+                const ids = autour.map(s => s.id);
+                for (let n = 0; n < ids.length; n += 250) {
+                    const lot = await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: ids.slice(n, n + 250) });
+                    for (const h of lot || []) {
+                        if (!h || !h.geometry || Core.normNum(h.number) !== m) continue;
+                        const c = h.geometry.coordinates, d = Math.hypot((c[0] - lon0) * kx, (c[1] - lat0) * 110540);
+                        if (d <= bd) { bd = d; hn = { id: String(h.id), seg: h.segmentId, number: h.number, pos: c }; }
+                    }
+                }
+            }
+            if (!hn) { msg = [t('rhnVersRppAbsent', a.brut), true]; return; }
+            // L'adresse du RPP : la rue du segment du numéro qui porte le nom BAN (principal, sinon alternatif), sa ville.
+            let sad = null;
+            try { sad = (await sdk.DataModel.Segments.getAddress({ segmentId: Number(hn.seg) })) || null; } catch (e) { }
+            const rues = sad ? [sad.street ? { st: sad.street, ci: sad.city } : null].concat((sad.altStreets || []).map(x => ({ st: x.street, ci: x.city }))).filter(x => x && x.st && x.st.name) : [];
+            const rue = rues.find(x => Core.nomSouple(x.st.name) === Core.nomSouple(v.nom)) || rues[0];
+            if (!rue) { msg = [t('rhnVersRppAbsent', a.brut), true]; return; }
+            const ville = Core.villeRpp((rue.ci && rue.ci.name) || '') || commune;
+            const segNum = autour.find(s => String(s.id) === String(hn.seg));
+            const choix = Core.entreeRpp(hn.pos[0], hn.pos[1], autour, hn.seg);
+            const entree = choix ? choix.entree : segNum ? Core.pointLePlusProche(hn.pos[0], hn.pos[1], segNum.coords) : null;
+            log('numéro ' + hn.number + ' ' + v.nom + ' → RPP : entrée ' + (choix ? 'sur le segment ' + choix.seg.id + ' (' + (choix.seg.noms.join(' | ') || 'sans nom') + ', type ' + choix.seg.rt + ') à ' + Math.round(choix.d) + ' m' : 'sur le segment du numéro'));
+            const DM = sdk.DataModel;
+            // Le numéro d'abord : s'il est refusé, rien n'a changé.
+            await DM.HouseNumbers.deleteHouseNumber({ houseNumberId: hn.id });
+            const r = await creerRppDirect({ number: hn.number, lon: hn.pos[0], lat: hn.pos[1], entree, rpp: { rue: rue.st.name, ville } },
+                { stateId: sad && sad.state ? sad.state.id : null, countryId: sad && sad.country ? sad.country.id : null, coords: segNum ? segNum.coords : null });
+            if (!r.ok) {
+                const defait = await defaireJusqua(n0);
+                throw new Error(r.erreur + (defait ? ', numéro remis' : ''));
+            }
+            const horo = lireHorodatages().slice();
+            const entreeRppQ = { t: Date.now(), s: hn.seg, n: hn.number, e: 0, c: code, r: 1, lon: hn.pos[0], lat: hn.pos[1], p: SESSION_HN };
+            if (enAtt) {
+                // L'entrée du numéro posé devient celle du RPP (même place au quota).
+                const j = horo.findIndex(x => x && typeof x === 'object' && x.e === 0 && x.r !== 1 && x.s === hn.seg && Core.normNum(x.n) === Core.normNum(hn.number));
+                if (j >= 0) horo[j] = Object.assign(entreeRppQ, { t: horo[j].t }); else horo.push(entreeRppQ);
+            } else {
+                horo.push({ t: Date.now(), s: hn.seg, n: hn.number, e: 1, c: code });
+                horo.push(Object.assign(entreeRppQ, { t: Date.now() + 1 }));
+            }
+            ecrireHorodatages(horo);
+            Object.assign(a, { hnVersRpp: true, hnRpp: true, hnPose: true, hnSeg: hn.seg, hnNum: hn.number, hnId: null, hnLon: hn.pos[0], hnLat: hn.pos[1] });
+            try { await sdk.Editing.setSelection({ selection: { ids: [String(r.id)], objectType: 'venue' } }); } catch (e) { log('sélection du RPP : ' + e.message); }
+            msg = [t('rhnVersRppDone', hn.number, nb(Core.quotaHn(horo, Date.now()).reste)), false];
+        } catch (e) { log('numéro → RPP : ' + e.message); msg = [t('rhnErr', e.message), true]; }
+        finally {
+            hnEnCours = false;
+            majArrierePlan();
+            if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
+            rendre();
+            appliquerVisibilite();
+            if (msg) statut(msg[0], msg[1]);
+        }
+    }
+
     // Aperçu à l'ouverture d'une voie (0.13.00) : combien de numéros et combien de RPP partiraient, lu sur les
     // segments déjà chargés, sans rien poser. Faute de segments chargés, le bouton garde le seul total.
     // 🔴 0.20.02 (remontée d'un éditeur, 06/11, rue de Trichet à Saint-Malo) : cette règle n'était PAS appliquée. L'aperçu part
@@ -8332,7 +8512,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 return;
             }
             const pl = Core.planHn(v, resultat.commune.nom, segs, existants, Infinity);
-            v.apercuHn = { hn: pl.poses.filter(p => !p.rpp).length, rpp: pl.poses.filter(p => p.rpp).length, loin: pl.ecartes.loin, nomEcart: !pl.admis && pl.nomsVoie.length ? pl.nomsVoie[0] : '' };
+            // 0.21.10 : les RPP d'allée partent avec le bouton de la voie (allee) ; seuls les hors agglo restent au « + » (rpp).
+            v.apercuHn = { hn: pl.poses.filter(p => !p.rpp).length, allee: pl.poses.filter(p => p.rpp && p.direct).length, rpp: pl.poses.filter(p => p.rpp && !p.direct).length, loin: pl.ecartes.loin, nomEcart: !pl.admis && pl.nomsVoie.length ? pl.nomsVoie[0] : '' };
             if (vue.ouverte === i && !hnEnCours) rendre();
         } catch (e) { log('aperçu ' + v.nom + ' : ' + e.message); }
     }
@@ -8959,6 +9140,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 if (e && e.dataModelName === 'segments' && e.objectIds && e.objectIds.length) releverSignatures(e.objectIds).catch(x => log('renommage : ' + x.message));
             } });
         } catch (e) { log('chargement des segments (renommage) : ' + e.message); }
+        // 0.21.10 : les numéros ajoutés, pour retrouver un numéro posé par WBC et encore en attente (cf. hnAjout).
+        try {
+            await sdk.Events.trackDataModelEvents({ dataModelName: 'segmentHouseNumbers' });
+            sdk.Events.on({ eventName: 'wme-data-model-objects-added', eventHandler: e => {
+                if (e && e.dataModelName === 'segmentHouseNumbers' && e.objectIds && e.objectIds.length) { hnAjout.n += e.objectIds.length; hnAjout.id = e.objectIds[e.objectIds.length - 1]; }
+            } });
+        } catch (e) { log('numéros ajoutés : ' + e.message); }
         log('v' + VERSION + ' prêt — langue ' + _lang);
     };
 
