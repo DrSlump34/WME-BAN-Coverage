@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.10
+// @version      0.21.12
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -3777,6 +3777,13 @@
         // Le numéro écrit dans WME : « 12 », « 12bis », « 7quater », « 12b ». Un suffixe chiffré (« 5 3 »)
         // ou une forme inconnue n'est pas posé : il demande un humain.
         const SUFFIXES_HN = { qua: 'quater', qui: 'quinquies' };
+        // 0.21.11 — Le suffixe à vérifier ne BLOQUE plus quand la BAN porte un suffixe et que WME n'a que le numéro NU
+        // (demande de l'auteur, 11/11/2026 : 32 B avenue de la Côte des Roses à Narbonne, WME n'a qu'un « 32 » à 18 m, et la
+        // BAN n'a pas de 32 sans suffixe) : ce sont deux numéros, le 32 B se pose en « 32b », l'avertissement reste. Bloquent
+        // encore : BAN nue / WME suffixée (« 5 » contre « 5bis ») et deux suffixes différents (« 12 b » contre « 12bis ») —
+        // peut-être la même adresse écrite autrement.
+        const nu = s => /^\s*0*\d+\s*$/.test(String(s || ''));
+        const suffixeBloque = a => !!(a && a.suffixe) && !(nu(a.suffixe) && !nu(a.brut));
         function numeroHn(brut) {
             const m = /^0*(\d+)(?:\s+([a-z]+))?$/i.exec(String(brut || '').trim());
             if (!m || m[1] === '0') return null;
@@ -3869,7 +3876,7 @@
             for (const a of ordre) {
                 if (a.trouve) continue;
                 if (a.hnPose || a.hnEnregistre) { ecartes.dejaPose++; continue; }
-                if (a.suffixe) { ecartes.suffixe++; continue; }
+                if (suffixeBloque(a)) { ecartes.suffixe++; continue; }
                 const number = numeroHn(a.brut);
                 if (!number) { ecartes.format++; continue; }
                 const cle = normNum(number);
@@ -4169,7 +4176,7 @@
             return liste.filter(x => x.type === 'MISSING_ADDRESS' && Math.hypot((x.lon - lon) * kx, (x.lat - lat) * 110540) <= lim)
                 .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
         }
-        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, segsPresDesOrphelines };
+        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, rapprocherHn, planHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, suffixeBloque, segsPresDesOrphelines };
     })();
     // ==/WBC-CORE==
 
@@ -6060,7 +6067,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         return '<div class="wbc-nums">' + v.adresses.map((a, k) => {
             if (a.trouve) return '';
             const p = plus && hnPosable(a);
-            const tip = a.hnVersRpp ? t('rhnVersRppTipPose') : a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) : p ? t('tipGoAdd') : t('tipGo');
+            const tip = a.hnVersRpp ? t('rhnVersRppTipPose') : a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) + (p ? ' — ' + t('tipGoAdd') : '') : p ? t('tipGoAdd') : t('tipGo');
             const num = '<button type="button" class="wbc-num' + (a.hnPose ? ' pose' : a.hnEnregistre ? ' enregistre' : a.suffixe ? ' suffixe' : '') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '">' + (a.hnPose ? '&#x271A; ' : a.hnEnregistre ? '&#x2713; ' : '') + esc(a.brut) + (a.suffixe && !a.hnPose ? ' ≠ ' + esc(a.suffixe) : '') + '</button>';
             const plusB = p ? '<button type="button" class="wbc-num-plus" data-hn1="' + i + ':' + k + '" title="' + esc(t('ajHn1') + ' — ' + t('ajHn1Tip')) + '" aria-label="' + esc(t('ajHn1') + ' ' + a.brut) + '">+</button>' : '';
             const banB = boutonBanNum(a, i, k);
@@ -7585,7 +7592,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // incomplète qui suit dans le tableau tel qu'il est trié et filtré — la saisie s'enchaîne sans
     // revenir au tableau.
     // Les numéros manquants qu'« Ajouter » peut poser sur cette voie (même pré-contrôle que son bouton).
-    const hnPosable = a => !!a && !a.trouve && !a.hnPose && !a.hnEnregistre && !a.suffixe && !!Core.numeroHn(a.brut);
+    const hnPosable = a => !!a && !a.trouve && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && !!Core.numeroHn(a.brut);
     // Une adresse trouvée en RPP que le « ⇄ » peut tenter de remplacer (le verdict se décide au clic, dans WME).
     const rppConvertible = a => !!a && a.trouve === 'RPP' && !a.rppHn && a.wlon != null;
     const posablesHn = v => v.adresses.filter(hnPosable).length;
@@ -8027,7 +8034,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         }
         try {
             const dans = new Set(tous);
-            for (const x of lireHorodatages()) if (x && typeof x === 'object' && x.e !== 1 && dans.has(x.s) && x.n != null) existants.push(String(x.n));
+            // 0.21.11 (signalé par l'auteur le 11/11/2026 : 4 D, 6 F, 8 ter avenue de la Côte des Roses refusés « déjà dans WME »)
+            // : seules les poses de CETTE page comptent. Une pose non enregistrée d'une autre page (onglet rechargé, essai annulé
+            // ailleurs) n'existe plus dans WME, mais sa réservation au quota, gardée par le navigateur, la faisait passer pour
+            // un numéro présent pendant une heure. Les entrées antérieures, sans marque de page, gardent l'ancienne règle.
+            for (const x of lireHorodatages()) if (x && typeof x === 'object' && x.e !== 1 && (x.p == null || x.p === SESSION_HN) && dans.has(x.s) && x.n != null) existants.push(String(x.n));
         } catch (e) { log('numéros en attente : ' + e.message); }
         // Les RPP de cette voie chargés dans WME, en attente compris : un RPP posé depuis le balayage (ici,
         // à la main ou par WNA) n'est pas dans l'analyse, et le reposer ferait un doublon.
@@ -8123,7 +8134,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             // Une pose restée sur la carte est inscrite au quota, même quand l'étape suivante a échoué.
             const inscrire = (p, rpp) => {
                 horo.push(Object.assign({ t: Date.now(), s: p.segmentId, n: p.number, e: 0, c: resultat.commune.code },
-                    rpp ? { r: 1, lon: p.lon, lat: p.lat, p: SESSION_HN } : {}));
+                    rpp ? { r: 1, lon: p.lon, lat: p.lat, p: SESSION_HN } : { p: SESSION_HN }));
                 ecrireHorodatages(horo);
             };
             // Une passe : lire ce qui est chargé, planifier, poser. Rend le plan (ses écartés servent au message).
@@ -8197,7 +8208,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             // groupe d'adresses restées « trop loin » (segment non chargé), on relit, on pose. Une zone sans progrès
             // n'est pas retentée ; le quota arrête tout, le bouton « Arrêter » aussi (0.19.00).
             if (!seule && plan.ecartes.loin && Core.quotaHn(horo, Date.now()).reste && !hnStop) {
-                const restantes = () => v.adresses.filter(a => !a.trouve && !a.hnPose && !a.hnEnregistre && !a.suffixe && !unites.has(a) && Core.numeroHn(a.brut));
+                const restantes = () => v.adresses.filter(a => !a.trouve && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && !unites.has(a) && Core.numeroHn(a.brut));
                 const zones = Core.zonesHn(restantes(), 400, 220);
                 for (const z of zones) {
                     if (hnStop || !Core.quotaHn(horo, Date.now()).reste || err && err.name === 'InvalidStateError') break;
@@ -8372,15 +8383,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 catch (e) {
                     const defait = await defaireJusqua(n0);
                     // RPP retiré et pas remis : la carte a changé, le quota le compte.
-                    if (!defait) { const hz = q.garder.slice(); hz.push({ t: Date.now(), s: cible.id, n: number, e: 0, c: resultat.commune.code }); ecrireHorodatages(hz); }
+                    if (!defait) { const hz = q.garder.slice(); hz.push({ t: Date.now(), s: cible.id, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN }); ecrireHorodatages(hz); }
                     throw new Error('numéro non posé (' + e.message + ')' + (defait ? ', RPP remis' : ' — ' + t('rhnCritRpp', number)));
                 }
             }
             rppRetires.add(rpp.id);
             const horo = q.garder.slice();
             // Une entrée par objet changé : le RPP retiré (relu comme le numéro, sur son segment) et le numéro posé.
-            horo.push({ t: Date.now(), s: seg, n: number, e: 0, c: resultat.commune.code });
-            if (!doublon) horo.push({ t: Date.now() + 1, s: seg, n: number, e: 0, c: resultat.commune.code });
+            horo.push({ t: Date.now(), s: seg, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN });
+            if (!doublon) horo.push({ t: Date.now() + 1, s: seg, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN });
             ecrireHorodatages(horo);
             Object.assign(a, { rppHn: true, hnPose: true, hnSeg: seg, hnNum: number });
             const reste = nb(Core.quotaHn(horo, Date.now()).reste);
