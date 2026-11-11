@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.13
+// @version      0.21.14
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4875,7 +4875,8 @@
             if (a.trouve && arretLoin(a)) lignes.push('<span class="wbc-f-etat arret">' + esc(t('hovArret', nb(a.ea))) + '</span>');
             else if (a.hnPose) lignes.push('<span class="wbc-f-etat pose">' + esc(t('ajHnPoseTip')) + '</span>');
             else if (a.suffixe) lignes.push(etiq('suffixe', t('tipSuf', a.suffixe)));
-            else lignes.push(etiq('manquant', t('hovMissing')));
+            // 0.21.14 : une adresse TROUVÉE n'est pas aussi « manquante » (la fiche disait les deux, vu le 11/11/2026).
+            else if (!a.trouve) lignes.push(etiq('manquant', t('hovMissing')));
             if (!a.trouve && a.seg != null) lignes.push(esc(t('hovProbSeg', a.seg, nb(a.pd))));
             lignes.push(esc(t(a.cert ? 'hovCert' : 'hovNotCert')));
             if (v.statutNom !== 'identique' && v.nomWme) lignes.push(esc(t('hovWmeStreet', v.nomWme)));
@@ -8598,7 +8599,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const j = ++suiviJeton;
         let sel = null;
         try { sel = await sdk.Editing.getSelection(); } catch (e) { return; }
-        if (j !== suiviJeton || !resultat || !sel || sel.objectType !== 'segment' || !sel.ids || !sel.ids.length) return;
+        if (j !== suiviJeton || !resultat || !sel || !sel.ids || !sel.ids.length) return;
+        if (sel.objectType === 'venue') { if (sel.ids.length === 1) await bulleDuRpp(String(sel.ids[0]), j); return; }
+        if (sel.objectType !== 'segment') return;
         const id = String(sel.ids[0]);
         let i = resultat.voies.findIndex(v => (v.segs || []).some(s => String(s) === id));
         if (i < 0) {
@@ -8622,6 +8625,33 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         // En haut de la liste, sous la barre des filtres collée (scroll-margin-top) : son détail se lit en dessous.
         if (tr) tr.scrollIntoView({ block: 'start' });
         setTimeout(() => { if (vue.ouverte === i) apercuHn(i); }, 300);
+    }
+
+    // 0.21.14 — Le TRIANGLE d'un RPP (demande de l'auteur, 11/11/2026 : 20 rue Xavier Ruel, il cliquait le RPP et rien ne
+    // venait ; la bulle « ⇄ » ne s'ouvrait que sur le point BAN, ici à 20 m). Un lieu résidentiel sélectionné dans WME
+    // ouvre la bulle de l'adresse BAN que l'analyse a trouvée en RPP à sa position (≤ 10 m, même numéro), posée au triangle.
+    // Mêmes contrôles qu'au clic sur le point BAN (droit, nom, quota, verdict au clic). Rien sinon : WME garde la main.
+    async function bulleDuRpp(id, j) {
+        if (!droitHn) return;
+        let v = null, ad = null;
+        try { v = await sdk.DataModel.Venues.getById({ venueId: id }); ad = await sdk.DataModel.Venues.getAddress({ venueId: id }); } catch (e) { return; }
+        if (j !== suiviJeton || !resultat || !v || !v.isResidential || !v.geometry || v.geometry.type !== 'Point' || !ad || !ad.houseNumber) return;
+        const [lon, lat] = v.geometry.coordinates, kx = Math.cos(lat * Math.PI / 180) * 111320, m = Core.normNum(ad.houseNumber);
+        let cible = null, dmin = 10;
+        for (const voie of resultat.voies) for (const a of voie.adresses) {
+            if (!rppConvertible(a) || Core.normNum(a.brut) !== m) continue;
+            const d = Math.hypot((a.wlon - lon) * kx, (a.wlat - lat) * 110540);
+            if (d <= dmin) { dmin = d; cible = { voie, ad: a }; }
+        }
+        if (!cible) return;
+        // Le panneau de sélection de WME décale la carte en s'ouvrant : on attend qu'il soit posé, puis la bulle suit le
+        // triangle (bulleBougee).
+        await new Promise(r => setTimeout(r, 600));
+        if (j !== suiviJeton) return;
+        let px = null, rc = null;
+        try { px = await sdk.Map.getPixelFromLonLat({ lonLat: { lon, lat } }); rc = (await sdk.Map.getMapViewportElement()).getBoundingClientRect(); } catch (e) { return; }
+        if (!px || !rc) return;
+        ouvrirBulle({ voie: cible.voie, ad: cible.ad, lon, lat }, rc.left + px.x, rc.top + px.y);
     }
 
     function ouvrirVoie(i) {
