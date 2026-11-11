@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.21.12
+// @version      0.21.13
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -221,6 +221,8 @@
             sbMap: "Map",
             sbHover: "Details on hover",
             sbHoverHint: "Rest the pointer on a point of the map: its address, its state and its certification appear.",
+            sbRppNum: "RPP numbers",
+            sbRppNumHint: "Writes its house number under the triangle of each residential place (RPP) loaded in WME, from zoom 17: no need to click it to know which one it is. Display only.",
             sbColors: "Colours",
             sbColorsReset: "Default colours",
             legColMap: "Municipality map",
@@ -571,6 +573,8 @@
             sbMap: "Carte",
             sbHover: "Fiche au survol",
             sbHoverHint: "Arrêtez le pointeur sur un point de la carte\u00a0: son adresse, son état et sa certification s’affichent.",
+            sbRppNum: "Numéro des RPP",
+            sbRppNumHint: "Écrit son numéro sous le triangle de chaque lieu résidentiel (RPP) chargé dans WME, à partir du zoom 17\u00a0: plus besoin de cliquer dessus pour savoir lequel c’est. Affichage seulement.",
             sbColors: "Couleurs",
             sbColorsReset: "Couleurs par défaut",
             legColMap: "Carte des communes",
@@ -921,6 +925,8 @@
             sbMap: "Karte",
             sbHover: "Details beim Überfahren",
             sbHoverHint: "Den Zeiger auf einem Kartenpunkt ruhen lassen: Adresse, Zustand und Zertifizierung erscheinen.",
+            sbRppNum: "RPP-Hausnummern",
+            sbRppNumHint: "Schreibt die Hausnummer unter das Dreieck jedes in WME geladenen Wohnorts (RPP), ab Zoom 17: kein Klick mehr nötig, um zu wissen, welcher es ist. Nur Anzeige.",
             sbColors: "Farben",
             sbColorsReset: "Standardfarben",
             legColMap: "Gemeindekarte",
@@ -1271,6 +1277,8 @@
             sbMap: "Mapa",
             sbHover: "Ficha al pasar el puntero",
             sbHoverHint: "Detenga el puntero sobre un punto del mapa: aparecen su dirección, su estado y su certificación.",
+            sbRppNum: "Número de los RPP",
+            sbRppNumHint: "Escribe su número bajo el triángulo de cada lugar residencial (RPP) cargado en WME, desde el zoom 17: ya no hace falta hacer clic para saber cuál es. Solo visualización.",
             sbColors: "Colores",
             sbColorsReset: "Colores por defecto",
             legColMap: "Mapa de municipios",
@@ -1621,6 +1629,8 @@
             sbMap: "Mappa",
             sbHover: "Scheda al passaggio",
             sbHoverHint: "Ferma il puntatore su un punto della mappa: compaiono indirizzo, stato e certificazione.",
+            sbRppNum: "Numero degli RPP",
+            sbRppNumHint: "Scrive il numero civico sotto il triangolo di ogni luogo residenziale (RPP) caricato in WME, dallo zoom 17: non serve più cliccarlo per sapere quale sia. Solo visualizzazione.",
             sbColors: "Colori",
             sbColorsReset: "Colori predefiniti",
             legColMap: "Mappa dei comuni",
@@ -1971,6 +1981,8 @@
             sbMap: "Mapa",
             sbHover: "Detalhes ao passar o mouse",
             sbHoverHint: "Pare o ponteiro sobre um ponto do mapa: aparecem o endereço, o estado e a certificação.",
+            sbRppNum: "Número dos RPP",
+            sbRppNumHint: "Escreve o número sob o triângulo de cada lugar residencial (RPP) carregado no WME, a partir do zoom 17: não é mais preciso clicar para saber qual é. Só exibição.",
             sbColors: "Cores",
             sbColorsReset: "Cores padrão",
             legColMap: "Mapa dos municípios",
@@ -2321,6 +2333,8 @@
             sbMap: "Mapa",
             sbHover: "Detalhes ao passar o rato",
             sbHoverHint: "Pare o ponteiro sobre um ponto do mapa: aparecem a morada, o estado e a certificação.",
+            sbRppNum: "Número dos RPP",
+            sbRppNumHint: "Escreve o número sob o triângulo de cada lugar residencial (RPP) carregado no WME, a partir do zoom 17: já não é preciso clicar para saber qual é. Só apresentação.",
             sbColors: "Cores",
             sbColorsReset: "Cores predefinidas",
             legColMap: "Mapa dos municípios",
@@ -2671,6 +2685,8 @@
             sbMap: "מפה",
             sbHover: "פרטים במעבר עכבר",
             sbHoverHint: "עצרו את הסמן על נקודה במפה: הכתובת, המצב והאישור שלה יופיעו.",
+            sbRppNum: "מספרי RPP",
+            sbRppNumHint: "כותב את מספר הבית מתחת למשולש של כל מקום מגורים (RPP) שנטען ב-WME, מזום 17: אין צורך ללחוץ כדי לדעת איזה הוא. תצוגה בלבד.",
             sbColors: "צבעים",
             sbColorsReset: "צבעי ברירת מחדל",
             legColMap: "מפת הרשויות",
@@ -4724,6 +4740,49 @@
         const c = k => Math.round(((n >> k) & 255) * f).toString(16).padStart(2, '0');
         return '#' + c(16) + c(8) + c(0);
     }
+    // ---- Numéro des RPP sur la carte (0.21.13, demande de l'auteur du 11/11/2026) -------------------------------
+    // WME dessine un RPP par un triangle, sans son numéro : il fallait cliquer chaque triangle pour savoir lequel est
+    // lequel. Un calque d'ÉTIQUETTES seules (aucun point dessiné) écrit le numéro de chaque lieu résidentiel chargé, juste
+    // sous son triangle. Affichage seulement : rien n'est lu ailleurs que dans le modèle de WME, rien n'est écrit. Les RPP
+    // ne se chargent qu'à partir du zoom 17 (mesuré le 14/10) ; en attente compris (identifiant négatif). Réglage de
+    // l'onglet « Numéro des RPP », coché par défaut ; indépendant de la fenêtre de WBC, ouverte ou non.
+    const LAYER_RPP = 'wbc-rpp-numeros';
+    let calqueRppOk = false, majRppPrevue = null;
+    async function poserCalqueRpp() {
+        try {
+            await sdk.Map.addLayer({
+                layerName: LAYER_RPP,
+                styleContext: { lbl: ({ feature }) => (feature && feature.properties && feature.properties.lbl) || '' },
+                styleRules: [{ style: { pointRadius: 1, fillOpacity: 0, strokeOpacity: 0, label: '${lbl}', fontSize: '11px', fontWeight: 'bold',
+                    fontColor: '#4a148c', labelOutlineColor: '#ffffff', labelOutlineWidth: 3, labelYOffset: -16 } }],
+            });
+            calqueRppOk = true;
+        } catch (e) { log('calque des RPP : ' + e.message); }
+    }
+    // Relu au plus toutes les 400 ms (déplacement, chargement, modification, annulation, enregistrement).
+    function majRpp() {
+        if (majRppPrevue) return;
+        majRppPrevue = setTimeout(() => { majRppPrevue = null; enFile(dessinerRpp); }, 400);
+    }
+    async function dessinerRpp() {
+        if (!calqueRppOk) return;
+        try {
+            await sdk.Map.removeAllFeaturesFromLayer({ layerName: LAYER_RPP });
+            if (!opts.numRpp || (await sdk.Map.getZoomLevel()) < 17) return;
+            const ext = await sdk.Map.getMapExtent();
+            const features = [];
+            for (const v of (await sdk.DataModel.Venues.getAll()) || []) {
+                if (!v || !v.isResidential || !v.geometry || v.geometry.type !== 'Point') continue;
+                const [lon, lat] = v.geometry.coordinates;
+                if (ext && (lon < ext[0] || lon > ext[2] || lat < ext[1] || lat > ext[3])) continue;
+                let num = '';
+                try { num = String(((await sdk.DataModel.Venues.getAddress({ venueId: String(v.id) })) || {}).houseNumber || '').trim(); } catch (e) { }
+                if (num) features.push({ type: 'Feature', id: 'wbc-rpp-' + v.id, geometry: { type: 'Point', coordinates: [lon, lat] }, properties: { lbl: num } });
+            }
+            if (features.length) await sdk.Map.addFeaturesToLayer({ layerName: LAYER_RPP, features });
+        } catch (e) { log('numéros des RPP : ' + e.message); }
+    }
+
     async function poserCalque() {
         try {
             const texte = { fontSize: '11px', fontWeight: 'bold', labelYOffset: -13, labelOutlineColor: '#ffffff', labelOutlineWidth: 3, label: '${lbl}' };
@@ -5477,7 +5536,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     // =====================================================================
 
     let ovEl = null;
-    const OPTS_DEF = () => ({ mode: 'here', carte: false, trouves: false, certSeules: false, survol: true, couleurs: {}, carteDep: true, replie: false, seuilArret: 80 });
+    const OPTS_DEF = () => ({ mode: 'here', carte: false, trouves: false, certSeules: false, survol: true, couleurs: {}, carteDep: true, replie: false, seuilArret: 80, numRpp: true });
     let opts = OPTS_DEF();
     let choixCommune = null;          // {code, nom, dep} choisi dans la recherche
     let choixDep = '';
@@ -8879,6 +8938,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     <div class="wbc-toggle-row wbc-sb-ligne"><label class="wbc-toggle-lbl" for="wbc-survol">${esc(t('sbHover'))}</label>
         <label class="wbc-toggle"><input type="checkbox" id="wbc-survol"${opts.survol ? ' checked' : ''}><span class="wbc-toggle-slider"></span></label></div>
     <p class="wbc-sb-hint">${esc(t('sbHoverHint'))}</p>
+    <div class="wbc-toggle-row wbc-sb-ligne"><label class="wbc-toggle-lbl" for="wbc-numrpp">${esc(t('sbRppNum'))}</label>
+        <label class="wbc-toggle"><input type="checkbox" id="wbc-numrpp"${opts.numRpp ? ' checked' : ''}><span class="wbc-toggle-slider"></span></label></div>
+    <p class="wbc-sb-hint">${esc(t('sbRppNumHint'))}</p>
     <p class="wbc-sb-lbl"><label for="wbc-arret">${esc(t('sbArret'))}</label></p>
     <select class="wbc-champ wbc-sb-select" id="wbc-arret">${Core.PALIERS_ARRET.map(p => `<option value="${p}"${p === seuilArret() ? ' selected' : ''}>${esc(nb(p))}\u00a0m</option>`).join('')}</select>
     <p class="wbc-sb-hint">${esc(t('sbArretHint'))}</p>
@@ -8913,6 +8975,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             const appliquerCouleurs = () => { ecrireOpts(); majCalque(); majCommunes(); if (resultat || resDep) rendre(); };
             res.tabPane.addEventListener('change', ev => {
                 if (ev.target.id === 'wbc-survol') { opts.survol = ev.target.checked; ecrireOpts(); if (!opts.survol) cacherFiche(); }
+                if (ev.target.id === 'wbc-numrpp') { opts.numRpp = ev.target.checked; ecrireOpts(); majRpp(); }
                 // Seuil du point d'arrivée éloigné (0.20.00) : appliqué à l'affichage, aucune analyse relancée.
                 if (ev.target.id === 'wbc-arret') { opts.seuilArret = Number(ev.target.value) || 80; ecrireOpts(); majCalque(); if (resultat || resDep) rendre(); }
             });
@@ -9103,6 +9166,16 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
 
         await poserCalqueCommunes();
         await poserCalque();
+        await poserCalqueRpp();
+        // 0.21.13 : les numéros des RPP suivent la carte et les modifications de lieux (annulation comprise).
+        try {
+            sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: majRpp });
+            sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: majRpp });
+            await sdk.Events.trackDataModelEvents({ dataModelName: 'venues' });
+            for (const ev of ['wme-data-model-objects-added', 'wme-data-model-objects-changed', 'wme-data-model-objects-removed'])
+                sdk.Events.on({ eventName: ev, eventHandler: e => { if (e && e.dataModelName === 'venues') majRpp(); } });
+        } catch (e) { log('événements des RPP : ' + e.message); }
+        majRpp();
         await poserCaseCalque();
         await brancherSurvol();
         construireFenetre();
