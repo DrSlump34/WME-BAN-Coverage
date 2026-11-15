@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.25.00
+// @version      0.26.00
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -95,7 +95,7 @@
             sbOpen: 'Open the window',
             sbHelp: 'Help',
             hWhatT: 'What is compared',
-            hWhatB: "<p>The <b>BAN</b> is the reference: every address it lists should exist in WME, either as a house number on a segment (HN) or as a residential place (RPP).</p><p><b>Sources</b>, read live: the <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, French State; Licence Ouverte Etalab 2.0; the revision date of each commune is shown); the commune boundaries and lists of <b>geo.api.gouv.fr</b> (Découpage administratif API, INSEE and IGN data, Licence Ouverte Etalab 2.0); the public <b>BAN reports API</b> (signalement.adresse.data.gouv.fr) for the state of reports; and WME from the same servers as the editor. The area does not need to be displayed or loaded. Since 12/11/2026, Waze accredits the BAN for France (display and assisted creation of house numbers, Map Data Attribution page); adding a whole street stays an L6 gesture; one number at a time is open to all ranks; all under quota.</p><p><b>What leaves the browser</b>: to geo.api.gouv.fr, in “Map centre” mode, the map centre ROUNDED to 3 decimals (about 100 m), and your commune searches — no identity, no cookie; to the BAN and the reports API, the municipality code; at startup, GitHub (version-min.json, the minimum version: a withdrawn version does not start) and GreasyFork (new version) are only read. To data.geopf.fr (IGN Géoplateforme), with the WBC box of the Layers menu ticked: the extent of the view, from zoom 18, without cookie. Nothing else; your user name goes to no third party (only to Waze’s own Discuss, for the Copy button).</p><p><b>Report to the BAN</b>: opens the official tool (signalement.adresse.data.gouv.fr) in a new tab, on the street or the number; WBC sends nothing, you fill in and send the form. For a WME number the BAN lacks, the prefilled comment carries the address read in Waze (“Address present in Waze: …”): check, change or clear it before sending.</p><p><b>BAN of the view</b>: with the WBC box of the Layers menu ticked and no analysis shown there, the BAN addresses of the view appear from zoom 18, in grey (read only: nothing is compared with WME). <b>Ctrl+click</b> (Cmd+click on Mac) on the map button: the commune at the centre is analysed, or its recent scan reopened, and shown on the map without opening the window.</p>",
+            hWhatB: "<p>The <b>BAN</b> is the reference: every address it lists should exist in WME, either as a house number on a segment (HN) or as a residential place (RPP).</p><p><b>Sources</b>, read live: the <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, French State; Licence Ouverte Etalab 2.0; the revision date of each commune is shown); the commune boundaries and lists of <b>geo.api.gouv.fr</b> (Découpage administratif API, INSEE and IGN data, Licence Ouverte Etalab 2.0); the public <b>BAN reports API</b> (signalement.adresse.data.gouv.fr) for the state of reports; and WME from the same servers as the editor. The area does not need to be displayed or loaded. Since 12/11/2026, Waze accredits the BAN for France (display and assisted creation of house numbers, Map Data Attribution page); adding a whole street stays an L6 gesture; one number at a time is open to all ranks; all under quota.</p><p><b>What leaves the browser</b>: to geo.api.gouv.fr, in “Map centre” mode, the map centre ROUNDED to 3 decimals (about 100 m), and your commune searches — no identity, no cookie; to the BAN and the reports API, the municipality code; at startup, GitHub (version-min.json, the minimum version: a withdrawn version does not start) and GreasyFork (new version) are only read. To data.geopf.fr (IGN Géoplateforme), with the WBC box of the Layers menu ticked: the extent of the view, from zoom 18, without cookie. Nothing else; your user name goes to no third party (only to Waze’s own Discuss, for the Copy button).</p><p><b>Report to the BAN</b>: opens the official tool (signalement.adresse.data.gouv.fr) in a new tab, on the street or the number; WBC sends nothing, you fill in and send the form. For a WME number the BAN lacks, the prefilled comment carries the address read in Waze (“Address present in Waze: …”): check, change or clear it before sending.</p><p><b>BAN of the view</b>: with the WBC box of the Layers menu ticked and no analysis shown there, the BAN addresses of the view appear from zoom 18, in grey (read only); circled in green when WME already has the same number on the same street or within 30 m (saved house numbers, residential places). <b>Ctrl+click</b> (Cmd+click on Mac) on the map button: the commune at the centre is analysed, or its recent scan reopened, and shown on the map without opening the window.</p>",
             hMatchT: 'When is a number found',
             hMatchB: '<p>A BAN address is found when WME has the same number (suffixes included: <i>bis</i>, <i>ter</i>, letters) less than 150 m away, and:</p><table class="wbc-help-table"><tr><td>1</td><td>on a street with the same name (main or alternate name), or one that differs only by an article (“Avenue Sembrancher” = “Avenue de Sembrancher”; the name gap is still reported);</td></tr><tr><td>2</td><td>or on a segment that carries this street\'s addresses, <b>named or not</b>;</td></tr><tr><td>3</td><td>or less than 30 m from the address.</td></tr></table><p>Rule 1 is tried first everywhere, then 2, then 3. A WME number is used only once.</p>',
             hNamesT: 'The «\u00a0WME street\u00a0» column',
@@ -236,8 +236,11 @@
             dirCap: (n, m) => n + ' BAN addresses shown out of ' + m + ': zoom in to see them all',
             dirErr: m => 'BAN addresses: reading failed — ' + m,
             dirEdition: d => 'edition of ' + d,
-            dirSource: 'Source: Base Adresse Nationale (adresse.data.gouv.fr), served by the IGN Géoplateforme — Licence Ouverte Etalab 2.0. Read only: nothing is compared or written; untick WBC in the Layers menu to hide them.',
+            dirSource: 'Source: Base Adresse Nationale (adresse.data.gouv.fr), served by the IGN Géoplateforme — Licence Ouverte Etalab 2.0. Read only: nothing is written; untick WBC in the Layers menu to hide them.',
             dirFiche: 'BAN, view without analysis',
+            dirWme: p => p + ' already in WME',
+            dirFicheWme: 'Already in WME (same number, same street or within 30 m)',
+            dirFicheAbs: 'Not among the numbers loaded in WME',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Ctrl') + '+click: show the BAN of the commune at the centre',
             fabBusy: 'Analysing the commune at the centre…',
             fabErr: m => 'Failed: ' + m,
@@ -470,7 +473,7 @@
             sbOpen: 'Ouvrir la fenêtre',
             sbHelp: 'Aide',
             hWhatT: 'Ce qui est comparé',
-            hWhatB: "<p>La <b>BAN</b> est le référentiel\u00a0: chaque adresse qu’elle recense devrait exister dans WME, en numéro sur un segment (HN) ou en point résidentiel (RPP).</p><p><b>Sources</b>, lues en direct\u00a0: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, État français\u00a0; Licence Ouverte Etalab 2.0\u00a0; la date de révision de chaque commune est affichée)\u00a0; les contours et listes de communes de <b>geo.api.gouv.fr</b> (API Découpage administratif, données INSEE et IGN, Licence Ouverte Etalab 2.0)\u00a0; l’<b>API publique des signalements BAN</b> (signalement.adresse.data.gouv.fr) pour l’état des signalements\u00a0; et WME sur les mêmes serveurs que l’éditeur. La zone n’a pas besoin d’être affichée ni chargée. Depuis le 12/11/2026, Waze accrédite la BAN pour la France (affichage et création assistée des numéros de rue, page Map Data Attribution)\u00a0; l’ajout d’une voie entière reste un geste de L6\u00a0; un numéro à la fois est ouvert à tous les rangs\u00a0; le tout sous quota.</p><p><b>Ce qui part du navigateur</b>\u00a0: vers geo.api.gouv.fr, en mode «\u00a0Centre de la carte\u00a0», le centre de la carte ARRONDI à 3 décimales (environ 100\u00a0m), et vos recherches de commune — sans identité ni cookie\u00a0; vers la BAN et l’API des signalements, le code INSEE de la commune\u00a0; au démarrage, GitHub (version-min.json, la version minimale\u00a0: une version retirée ne démarre pas) et GreasyFork (nouvelle version) sont seulement lus. Vers data.geopf.fr (Géoplateforme de l’IGN), case WBC du menu Calques cochée\u00a0: l’emprise de la vue, à partir du zoom 18, sans cookie. Rien d’autre\u00a0; votre pseudo ne part vers aucun tiers (seulement vers le Discuss de Waze, pour le bouton Copier).</p><p><b>Signaler à la BAN</b>\u00a0: ouvre l’outil officiel (signalement.adresse.data.gouv.fr) dans un nouvel onglet, sur la voie ou le numéro\u00a0; WBC n’envoie rien, c’est vous qui remplissez et envoyez le formulaire. Pour un numéro de WME absent de la BAN, le commentaire prérempli porte l’adresse lue dans Waze («\u00a0Adresse présente dans Waze\u00a0: …\u00a0»)\u00a0: relisez-le, modifiez-le ou effacez-le avant d’envoyer.</p><p><b>BAN de la vue</b>\u00a0: case WBC du menu Calques cochée et aucune analyse affichée à cet endroit, les adresses BAN de la vue s’affichent à partir du zoom 18, en gris (lecture seule\u00a0: rien n’est comparé à WME). <b>Ctrl+clic</b> (Cmd+clic sur Mac) sur le bouton de la carte\u00a0: la commune au centre est analysée, ou son balayage récent rouvert, et montrée sur la carte sans ouvrir la fenêtre.</p>",
+            hWhatB: "<p>La <b>BAN</b> est le référentiel\u00a0: chaque adresse qu’elle recense devrait exister dans WME, en numéro sur un segment (HN) ou en point résidentiel (RPP).</p><p><b>Sources</b>, lues en direct\u00a0: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, État français\u00a0; Licence Ouverte Etalab 2.0\u00a0; la date de révision de chaque commune est affichée)\u00a0; les contours et listes de communes de <b>geo.api.gouv.fr</b> (API Découpage administratif, données INSEE et IGN, Licence Ouverte Etalab 2.0)\u00a0; l’<b>API publique des signalements BAN</b> (signalement.adresse.data.gouv.fr) pour l’état des signalements\u00a0; et WME sur les mêmes serveurs que l’éditeur. La zone n’a pas besoin d’être affichée ni chargée. Depuis le 12/11/2026, Waze accrédite la BAN pour la France (affichage et création assistée des numéros de rue, page Map Data Attribution)\u00a0; l’ajout d’une voie entière reste un geste de L6\u00a0; un numéro à la fois est ouvert à tous les rangs\u00a0; le tout sous quota.</p><p><b>Ce qui part du navigateur</b>\u00a0: vers geo.api.gouv.fr, en mode «\u00a0Centre de la carte\u00a0», le centre de la carte ARRONDI à 3 décimales (environ 100\u00a0m), et vos recherches de commune — sans identité ni cookie\u00a0; vers la BAN et l’API des signalements, le code INSEE de la commune\u00a0; au démarrage, GitHub (version-min.json, la version minimale\u00a0: une version retirée ne démarre pas) et GreasyFork (nouvelle version) sont seulement lus. Vers data.geopf.fr (Géoplateforme de l’IGN), case WBC du menu Calques cochée\u00a0: l’emprise de la vue, à partir du zoom 18, sans cookie. Rien d’autre\u00a0; votre pseudo ne part vers aucun tiers (seulement vers le Discuss de Waze, pour le bouton Copier).</p><p><b>Signaler à la BAN</b>\u00a0: ouvre l’outil officiel (signalement.adresse.data.gouv.fr) dans un nouvel onglet, sur la voie ou le numéro\u00a0; WBC n’envoie rien, c’est vous qui remplissez et envoyez le formulaire. Pour un numéro de WME absent de la BAN, le commentaire prérempli porte l’adresse lue dans Waze («\u00a0Adresse présente dans Waze\u00a0: …\u00a0»)\u00a0: relisez-le, modifiez-le ou effacez-le avant d’envoyer.</p><p><b>BAN de la vue</b>\u00a0: case WBC du menu Calques cochée et aucune analyse affichée à cet endroit, les adresses BAN de la vue s’affichent à partir du zoom 18, en gris (lecture seule)\u00a0; cerclées de vert quand WME a déjà le même numéro sur la même voie ou à moins de 30\u00a0m (numéros enregistrés, lieux résidentiels). <b>Ctrl+clic</b> (Cmd+clic sur Mac) sur le bouton de la carte\u00a0: la commune au centre est analysée, ou son balayage récent rouvert, et montrée sur la carte sans ouvrir la fenêtre.</p>",
             hMatchT: 'Quand un numéro est trouvé',
             hMatchB: '<p>Une adresse BAN est trouvée quand WME porte le même numéro (suffixes compris\u00a0: <i>bis</i>, <i>ter</i>, lettres) à moins de 150\u00a0m, et\u00a0:</p><table class="wbc-help-table"><tr><td>1</td><td>sur une voie du même nom (nom principal ou alternatif), ou qui n’en diffère que par un article («\u00a0Avenue Sembrancher\u00a0» = «\u00a0Avenue de Sembrancher\u00a0»\u00a0; l’écart de nom reste signalé)\u00a0;</td></tr><tr><td>2</td><td>ou sur un segment qui porte les adresses de cette voie, <b>nommé ou non</b>\u00a0;</td></tr><tr><td>3</td><td>ou à moins de 30\u00a0m de l\'adresse.</td></tr></table><p>La règle 1 est essayée partout d\'abord, puis la 2, puis la 3. Un numéro WME ne sert qu\'une fois.</p>',
             hNamesT: 'La colonne «\u00a0Voie WME\u00a0»',
@@ -611,8 +614,11 @@
             dirCap: (n, m) => n + ' adresses BAN affichées sur ' + m + '\u00a0: zoomez pour toutes les voir',
             dirErr: m => 'Adresses BAN\u00a0: lecture impossible — ' + m,
             dirEdition: d => 'édition du ' + d,
-            dirSource: 'Source\u00a0: Base Adresse Nationale (adresse.data.gouv.fr), diffusée par la Géoplateforme de l’IGN — Licence Ouverte Etalab 2.0. Lecture seule\u00a0: rien n’est comparé ni écrit\u00a0; décochez WBC dans le menu Calques pour les masquer.',
+            dirSource: 'Source\u00a0: Base Adresse Nationale (adresse.data.gouv.fr), diffusée par la Géoplateforme de l’IGN — Licence Ouverte Etalab 2.0. Lecture seule\u00a0: rien n’est écrit\u00a0; décochez WBC dans le menu Calques pour les masquer.',
             dirFiche: 'BAN, vue sans analyse',
+            dirWme: p => 'dont ' + p + ' déjà dans WME',
+            dirFicheWme: 'Déjà dans WME (même numéro, même voie ou à moins de 30\u00a0m)',
+            dirFicheAbs: 'Absent des numéros chargés dans WME',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Ctrl') + '+clic\u00a0: afficher la BAN de la commune au centre',
             fabBusy: 'Analyse de la commune au centre…',
             fabErr: m => 'Échec\u00a0: ' + m,
@@ -845,7 +851,7 @@
             sbOpen: 'Fenster öffnen',
             sbHelp: 'Hilfe',
             hWhatT: 'Was verglichen wird',
-            hWhatB: "<p>Die <b>BAN</b> ist die Referenz: jede Adresse, die sie aufführt, sollte im WME vorhanden sein, als Hausnummer an einem Segment (HN) oder als Wohnort (RPP).</p><p><b>Quellen</b>, live gelesen: die <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, französischer Staat; Licence Ouverte Etalab 2.0; das Revisionsdatum jeder Gemeinde wird angezeigt); Gemeindegrenzen und -listen von <b>geo.api.gouv.fr</b> (API Découpage administratif, Daten von INSEE und IGN, Licence Ouverte Etalab 2.0); die öffentliche <b>API der BAN-Meldungen</b> (signalement.adresse.data.gouv.fr) für den Stand der Meldungen; und das WME von denselben Servern wie der Editor. Der Bereich muss weder angezeigt noch geladen sein. Seit dem 12.11.2026 erkennt Waze die BAN für Frankreich an (Anzeige und unterstützte Erstellung von Hausnummern, Seite Map Data Attribution); das Hinzufügen einer ganzen Straße bleibt eine Geste von L6; eine Nummer nach der anderen steht allen Rängen offen; alles im Kontingent.</p><p><b>Was den Browser verlässt</b>: an geo.api.gouv.fr im Modus „Kartenmitte“ die auf 3 Dezimalstellen GERUNDETE Kartenmitte (etwa 100 m) und Ihre Gemeindesuchen — ohne Identität, ohne Cookie; an die BAN und die Meldungs-API der Gemeindecode; beim Start werden GitHub (version-min.json, Mindestversion: eine zurückgezogene Version startet nicht) und GreasyFork (neue Version) nur gelesen. An data.geopf.fr (Géoplateforme des IGN), bei angehakter WBC-Box im Menü Ebenen: der Ausschnitt der Ansicht, ab Zoom 18, ohne Cookie. Sonst nichts; Ihr Benutzername geht an keinen Dritten (nur an das Discuss von Waze, für die Schaltfläche Kopieren).</p><p><b>An die BAN melden</b>: öffnet das offizielle Werkzeug (signalement.adresse.data.gouv.fr) in einem neuen Tab, für die Straße oder die Nummer; WBC sendet nichts, Sie füllen das Formular aus und senden es. Für eine WME-Nummer, die der BAN fehlt, enthält der vorausgefüllte Kommentar die in Waze gelesene Adresse („Adresse présente dans Waze: …“): vor dem Senden prüfen, ändern oder löschen.</p><p><b>BAN der Ansicht</b>: Ist die WBC-Box im Menü Ebenen angehakt und dort keine Analyse angezeigt, erscheinen die BAN-Adressen der Ansicht ab Zoom 18 in Grau (nur lesend: nichts wird mit dem WME verglichen). <b>Strg+Klick</b> (Cmd+Klick auf dem Mac) auf die Kartenschaltfläche: die Gemeinde in der Kartenmitte wird analysiert oder ihr neuer Scan wieder geöffnet und auf der Karte gezeigt, ohne das Fenster zu öffnen.</p>",
+            hWhatB: "<p>Die <b>BAN</b> ist die Referenz: jede Adresse, die sie aufführt, sollte im WME vorhanden sein, als Hausnummer an einem Segment (HN) oder als Wohnort (RPP).</p><p><b>Quellen</b>, live gelesen: die <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, französischer Staat; Licence Ouverte Etalab 2.0; das Revisionsdatum jeder Gemeinde wird angezeigt); Gemeindegrenzen und -listen von <b>geo.api.gouv.fr</b> (API Découpage administratif, Daten von INSEE und IGN, Licence Ouverte Etalab 2.0); die öffentliche <b>API der BAN-Meldungen</b> (signalement.adresse.data.gouv.fr) für den Stand der Meldungen; und das WME von denselben Servern wie der Editor. Der Bereich muss weder angezeigt noch geladen sein. Seit dem 12.11.2026 erkennt Waze die BAN für Frankreich an (Anzeige und unterstützte Erstellung von Hausnummern, Seite Map Data Attribution); das Hinzufügen einer ganzen Straße bleibt eine Geste von L6; eine Nummer nach der anderen steht allen Rängen offen; alles im Kontingent.</p><p><b>Was den Browser verlässt</b>: an geo.api.gouv.fr im Modus „Kartenmitte“ die auf 3 Dezimalstellen GERUNDETE Kartenmitte (etwa 100 m) und Ihre Gemeindesuchen — ohne Identität, ohne Cookie; an die BAN und die Meldungs-API der Gemeindecode; beim Start werden GitHub (version-min.json, Mindestversion: eine zurückgezogene Version startet nicht) und GreasyFork (neue Version) nur gelesen. An data.geopf.fr (Géoplateforme des IGN), bei angehakter WBC-Box im Menü Ebenen: der Ausschnitt der Ansicht, ab Zoom 18, ohne Cookie. Sonst nichts; Ihr Benutzername geht an keinen Dritten (nur an das Discuss von Waze, für die Schaltfläche Kopieren).</p><p><b>An die BAN melden</b>: öffnet das offizielle Werkzeug (signalement.adresse.data.gouv.fr) in einem neuen Tab, für die Straße oder die Nummer; WBC sendet nichts, Sie füllen das Formular aus und senden es. Für eine WME-Nummer, die der BAN fehlt, enthält der vorausgefüllte Kommentar die in Waze gelesene Adresse („Adresse présente dans Waze: …“): vor dem Senden prüfen, ändern oder löschen.</p><p><b>BAN der Ansicht</b>: Ist die WBC-Box im Menü Ebenen angehakt und dort keine Analyse angezeigt, erscheinen die BAN-Adressen der Ansicht ab Zoom 18 in Grau (nur lesend); grün umrandet, wenn das WME dieselbe Nummer schon an derselben Straße oder im Umkreis von 30 m hat (gespeicherte Hausnummern, Wohnorte). <b>Strg+Klick</b> (Cmd+Klick auf dem Mac) auf die Kartenschaltfläche: die Gemeinde in der Kartenmitte wird analysiert oder ihr neuer Scan wieder geöffnet und auf der Karte gezeigt, ohne das Fenster zu öffnen.</p>",
             hMatchT: 'Wann eine Nummer gefunden ist',
             hMatchB: '<p>Eine BAN-Adresse gilt als gefunden, wenn das WME dieselbe Nummer (mit Zusätzen: <i>bis</i>, <i>ter</i>, Buchstaben) in weniger als 150 m trägt, und zwar:</p><table class="wbc-help-table"><tr><td>1</td><td>an einer Straße mit demselben Namen (Haupt- oder Alternativname) oder einem, der sich nur durch einen Artikel unterscheidet („Avenue Sembrancher“ = „Avenue de Sembrancher“; die Namensabweichung wird weiter gemeldet);</td></tr><tr><td>2</td><td>oder an einem Segment, das die Adressen dieser Straße trägt, <b>mit oder ohne Namen</b>;</td></tr><tr><td>3</td><td>oder weniger als 30 m von der Adresse entfernt.</td></tr></table><p>Regel 1 wird überall zuerst versucht, dann 2, dann 3. Eine WME-Nummer zählt nur einmal.</p>',
             hNamesT: 'Die Spalte „WME-Straße“',
@@ -986,8 +992,11 @@
             dirCap: (n, m) => n + ' von ' + m + ' BAN-Adressen angezeigt: hineinzoomen, um alle zu sehen',
             dirErr: m => 'BAN-Adressen: Lesen fehlgeschlagen — ' + m,
             dirEdition: d => 'Ausgabe vom ' + d,
-            dirSource: 'Quelle: Base Adresse Nationale (adresse.data.gouv.fr), bereitgestellt von der Géoplateforme des IGN — Licence Ouverte Etalab 2.0. Nur lesend: nichts wird verglichen oder geschrieben; WBC im Menü Ebenen abwählen, um sie auszublenden.',
+            dirSource: 'Quelle: Base Adresse Nationale (adresse.data.gouv.fr), bereitgestellt von der Géoplateforme des IGN — Licence Ouverte Etalab 2.0. Nur lesend: nichts wird geschrieben; WBC im Menü Ebenen abwählen, um sie auszublenden.',
             dirFiche: 'BAN, Ansicht ohne Analyse',
+            dirWme: p => 'davon ' + p + ' schon im WME',
+            dirFicheWme: 'Schon im WME (gleiche Nummer, gleiche Straße oder im Umkreis von 30 m)',
+            dirFicheAbs: 'Nicht unter den im WME geladenen Nummern',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Strg') + '+Klick: die BAN der Gemeinde in der Kartenmitte anzeigen',
             fabBusy: 'Gemeinde in der Kartenmitte wird analysiert…',
             fabErr: m => 'Fehlgeschlagen: ' + m,
@@ -1220,7 +1229,7 @@
             sbOpen: 'Abrir la ventana',
             sbHelp: 'Ayuda',
             hWhatT: 'Qué se compara',
-            hWhatB: "<p>La <b>BAN</b> es la referencia: cada dirección que recoge debería existir en WME, como número en un segmento (HN) o como punto residencial (RPP).</p><p><b>Fuentes</b>, leídas en directo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francés; Licence Ouverte Etalab 2.0; se muestra la fecha de revisión de cada municipio); los límites y listas de municipios de <b>geo.api.gouv.fr</b> (API Découpage administratif, datos del INSEE y del IGN, Licence Ouverte Etalab 2.0); la <b>API pública de señalamientos de la BAN</b> (signalement.adresse.data.gouv.fr) para el estado de los señalamientos; y WME en los mismos servidores que el editor. No hace falta mostrar ni cargar la zona. Desde el 12/11/2026, Waze acredita la BAN para Francia (visualización y creación asistida de números de portal, página Map Data Attribution); añadir una calle entera sigue siendo un gesto de L6; un número cada vez está abierto a todos los rangos; todo con cuota.</p><p><b>Lo que sale del navegador</b>: a geo.api.gouv.fr, en modo «Centro del mapa», el centro del mapa REDONDEADO a 3 decimales (unos 100 m) y sus búsquedas de municipio — sin identidad ni cookie; a la BAN y a la API de señalamientos, el código del municipio; al arrancar, GitHub (version-min.json, versión mínima: una versión retirada no arranca) y GreasyFork (versión nueva) solo se leen. A data.geopf.fr (Géoplateforme del IGN), con la casilla WBC del menú Capas marcada: la extensión de la vista, a partir del zoom 18, sin cookie. Nada más; su nombre de usuario no va a ningún tercero (solo al Discuss de Waze, para el botón Copiar).</p><p><b>Señalar a la BAN</b>: abre la herramienta oficial (signalement.adresse.data.gouv.fr) en una pestaña nueva, en la calle o el número; WBC no envía nada, usted rellena y envía el formulario. Para un número de WME que falta en la BAN, el comentario prellenado lleva la dirección leída en Waze («Adresse présente dans Waze: …»): revíselo, cámbielo o bórrelo antes de enviar.</p><p><b>BAN de la vista</b>: con la casilla WBC del menú Capas marcada y ningún análisis mostrado en ese lugar, las direcciones BAN de la vista aparecen a partir del zoom 18, en gris (solo lectura: nada se compara con WME). <b>Ctrl+clic</b> (Cmd+clic en Mac) en el botón del mapa: el municipio del centro se analiza, o se reabre su barrido reciente, y se muestra en el mapa sin abrir la ventana.</p>",
+            hWhatB: "<p>La <b>BAN</b> es la referencia: cada dirección que recoge debería existir en WME, como número en un segmento (HN) o como punto residencial (RPP).</p><p><b>Fuentes</b>, leídas en directo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francés; Licence Ouverte Etalab 2.0; se muestra la fecha de revisión de cada municipio); los límites y listas de municipios de <b>geo.api.gouv.fr</b> (API Découpage administratif, datos del INSEE y del IGN, Licence Ouverte Etalab 2.0); la <b>API pública de señalamientos de la BAN</b> (signalement.adresse.data.gouv.fr) para el estado de los señalamientos; y WME en los mismos servidores que el editor. No hace falta mostrar ni cargar la zona. Desde el 12/11/2026, Waze acredita la BAN para Francia (visualización y creación asistida de números de portal, página Map Data Attribution); añadir una calle entera sigue siendo un gesto de L6; un número cada vez está abierto a todos los rangos; todo con cuota.</p><p><b>Lo que sale del navegador</b>: a geo.api.gouv.fr, en modo «Centro del mapa», el centro del mapa REDONDEADO a 3 decimales (unos 100 m) y sus búsquedas de municipio — sin identidad ni cookie; a la BAN y a la API de señalamientos, el código del municipio; al arrancar, GitHub (version-min.json, versión mínima: una versión retirada no arranca) y GreasyFork (versión nueva) solo se leen. A data.geopf.fr (Géoplateforme del IGN), con la casilla WBC del menú Capas marcada: la extensión de la vista, a partir del zoom 18, sin cookie. Nada más; su nombre de usuario no va a ningún tercero (solo al Discuss de Waze, para el botón Copiar).</p><p><b>Señalar a la BAN</b>: abre la herramienta oficial (signalement.adresse.data.gouv.fr) en una pestaña nueva, en la calle o el número; WBC no envía nada, usted rellena y envía el formulario. Para un número de WME que falta en la BAN, el comentario prellenado lleva la dirección leída en Waze («Adresse présente dans Waze: …»): revíselo, cámbielo o bórrelo antes de enviar.</p><p><b>BAN de la vista</b>: con la casilla WBC del menú Capas marcada y ningún análisis mostrado en ese lugar, las direcciones BAN de la vista aparecen a partir del zoom 18, en gris (solo lectura); rodeadas de verde cuando WME ya tiene el mismo número en la misma calle o a menos de 30 m (números guardados, puntos residenciales). <b>Ctrl+clic</b> (Cmd+clic en Mac) en el botón del mapa: el municipio del centro se analiza, o se reabre su barrido reciente, y se muestra en el mapa sin abrir la ventana.</p>",
             hMatchT: 'Cuándo se encuentra un número',
             hMatchB: '<p>Una dirección BAN se encuentra cuando WME tiene el mismo número (sufijos incluidos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, y:</p><table class="wbc-help-table"><tr><td>1</td><td>en una calle con el mismo nombre (principal o alternativo), o que solo difiere en un artículo («Avenue Sembrancher» = «Avenue de Sembrancher»; la diferencia de nombre se sigue señalando);</td></tr><tr><td>2</td><td>o en un segmento que lleva las direcciones de esa calle, <b>con nombre o sin él</b>;</td></tr><tr><td>3</td><td>o a menos de 30 m de la dirección.</td></tr></table><p>La regla 1 se prueba primero en todas partes, luego la 2, luego la 3. Un número de WME solo sirve una vez.</p>',
             hNamesT: 'La columna «Calle WME»',
@@ -1361,8 +1370,11 @@
             dirCap: (n, m) => n + ' direcciones BAN mostradas de ' + m + ': acerque para verlas todas',
             dirErr: m => 'Direcciones BAN: lectura imposible — ' + m,
             dirEdition: d => 'edición del ' + d,
-            dirSource: 'Fuente: Base Adresse Nationale (adresse.data.gouv.fr), difundida por la Géoplateforme del IGN — Licence Ouverte Etalab 2.0. Solo lectura: nada se compara ni se escribe; desmarque WBC en el menú Capas para ocultarlas.',
+            dirSource: 'Fuente: Base Adresse Nationale (adresse.data.gouv.fr), difundida por la Géoplateforme del IGN — Licence Ouverte Etalab 2.0. Solo lectura: nada se escribe; desmarque WBC en el menú Capas para ocultarlas.',
             dirFiche: 'BAN, vista sin análisis',
+            dirWme: p => p + ' ya en WME',
+            dirFicheWme: 'Ya en WME (mismo número, misma calle o a menos de 30 m)',
+            dirFicheAbs: 'No está entre los números cargados en WME',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Ctrl') + '+clic: mostrar la BAN del municipio del centro',
             fabBusy: 'Analizando el municipio del centro…',
             fabErr: m => 'Error: ' + m,
@@ -1595,7 +1607,7 @@
             sbOpen: 'Apri la finestra',
             sbHelp: 'Aiuto',
             hWhatT: 'Cosa viene confrontato',
-            hWhatB: "<p>La <b>BAN</b> è il riferimento: ogni indirizzo che elenca dovrebbe esistere in WME, come numero su un segmento (HN) o come punto residenziale (RPP).</p><p><b>Fonti</b>, lette dal vivo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Stato francese; Licence Ouverte Etalab 2.0; è mostrata la data di revisione di ogni comune); i confini e gli elenchi dei comuni di <b>geo.api.gouv.fr</b> (API Découpage administratif, dati INSEE e IGN, Licence Ouverte Etalab 2.0); l’<b>API pubblica delle segnalazioni BAN</b> (signalement.adresse.data.gouv.fr) per lo stato delle segnalazioni; e WME dagli stessi server dell’editor. La zona non deve essere visualizzata né caricata. Dal 12/11/2026 Waze accredita la BAN per la Francia (visualizzazione e creazione assistita dei numeri civici, pagina Map Data Attribution); l’aggiunta di un’intera via resta un gesto da L6; un numero alla volta è aperto a tutti i livelli; il tutto con quota.</p><p><b>Ciò che esce dal browser</b>: verso geo.api.gouv.fr, in modalità «Centro della mappa», il centro della mappa ARROTONDATO a 3 decimali (circa 100 m) e le tue ricerche di comune — senza identità né cookie; verso la BAN e l’API delle segnalazioni, il codice del comune; all’avvio, GitHub (version-min.json, versione minima: una versione ritirata non si avvia) e GreasyFork (nuova versione) sono solo letti. Verso data.geopf.fr (Géoplateforme dell’IGN), con la casella WBC del menu Livelli spuntata: l’estensione della vista, dallo zoom 18, senza cookie. Nient’altro; il tuo nome utente non va a nessun terzo (solo al Discuss di Waze, per il pulsante Copia).</p><p><b>Segnala alla BAN</b>: apre lo strumento ufficiale (signalement.adresse.data.gouv.fr) in una nuova scheda, sulla via o sul numero; WBC non invia nulla, sei tu a compilare e inviare il modulo. Per un numero di WME assente dalla BAN, il commento precompilato porta l’indirizzo letto in Waze («Adresse présente dans Waze: …»): rileggilo, modificalo o cancellalo prima di inviare.</p><p><b>BAN della vista</b>: con la casella WBC del menu Livelli spuntata e nessuna analisi mostrata in quel punto, gli indirizzi BAN della vista compaiono dallo zoom 18, in grigio (sola lettura: nulla viene confrontato con WME). <b>Ctrl+clic</b> (Cmd+clic su Mac) sul pulsante della mappa: il comune al centro viene analizzato, o la sua scansione recente riaperta, e mostrato sulla mappa senza aprire la finestra.</p>",
+            hWhatB: "<p>La <b>BAN</b> è il riferimento: ogni indirizzo che elenca dovrebbe esistere in WME, come numero su un segmento (HN) o come punto residenziale (RPP).</p><p><b>Fonti</b>, lette dal vivo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Stato francese; Licence Ouverte Etalab 2.0; è mostrata la data di revisione di ogni comune); i confini e gli elenchi dei comuni di <b>geo.api.gouv.fr</b> (API Découpage administratif, dati INSEE e IGN, Licence Ouverte Etalab 2.0); l’<b>API pubblica delle segnalazioni BAN</b> (signalement.adresse.data.gouv.fr) per lo stato delle segnalazioni; e WME dagli stessi server dell’editor. La zona non deve essere visualizzata né caricata. Dal 12/11/2026 Waze accredita la BAN per la Francia (visualizzazione e creazione assistita dei numeri civici, pagina Map Data Attribution); l’aggiunta di un’intera via resta un gesto da L6; un numero alla volta è aperto a tutti i livelli; il tutto con quota.</p><p><b>Ciò che esce dal browser</b>: verso geo.api.gouv.fr, in modalità «Centro della mappa», il centro della mappa ARROTONDATO a 3 decimali (circa 100 m) e le tue ricerche di comune — senza identità né cookie; verso la BAN e l’API delle segnalazioni, il codice del comune; all’avvio, GitHub (version-min.json, versione minima: una versione ritirata non si avvia) e GreasyFork (nuova versione) sono solo letti. Verso data.geopf.fr (Géoplateforme dell’IGN), con la casella WBC del menu Livelli spuntata: l’estensione della vista, dallo zoom 18, senza cookie. Nient’altro; il tuo nome utente non va a nessun terzo (solo al Discuss di Waze, per il pulsante Copia).</p><p><b>Segnala alla BAN</b>: apre lo strumento ufficiale (signalement.adresse.data.gouv.fr) in una nuova scheda, sulla via o sul numero; WBC non invia nulla, sei tu a compilare e inviare il modulo. Per un numero di WME assente dalla BAN, il commento precompilato porta l’indirizzo letto in Waze («Adresse présente dans Waze: …»): rileggilo, modificalo o cancellalo prima di inviare.</p><p><b>BAN della vista</b>: con la casella WBC del menu Livelli spuntata e nessuna analisi mostrata in quel punto, gli indirizzi BAN della vista compaiono dallo zoom 18, in grigio (sola lettura); cerchiati di verde quando WME ha già lo stesso numero sulla stessa via o entro 30 m (numeri salvati, punti residenziali). <b>Ctrl+clic</b> (Cmd+clic su Mac) sul pulsante della mappa: il comune al centro viene analizzato, o la sua scansione recente riaperta, e mostrato sulla mappa senza aprire la finestra.</p>",
             hMatchT: 'Quando un numero è trovato',
             hMatchB: '<p>Un indirizzo BAN è trovato quando WME ha lo stesso numero (suffissi compresi: <i>bis</i>, <i>ter</i>, lettere) a meno di 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>su una via con lo stesso nome (principale o alternativo), o che ne differisce solo per un articolo («Avenue Sembrancher» = «Avenue de Sembrancher»; la differenza di nome resta segnalata);</td></tr><tr><td>2</td><td>oppure su un segmento che porta gli indirizzi di questa via, <b>con o senza nome</b>;</td></tr><tr><td>3</td><td>oppure a meno di 30 m dall\'indirizzo.</td></tr></table><p>La regola 1 è provata ovunque per prima, poi la 2, poi la 3. Un numero WME serve una sola volta.</p>',
             hNamesT: 'La colonna «Via WME»',
@@ -1736,8 +1748,11 @@
             dirCap: (n, m) => n + ' indirizzi BAN mostrati su ' + m + ': ingrandisci per vederli tutti',
             dirErr: m => 'Indirizzi BAN: lettura impossibile — ' + m,
             dirEdition: d => 'edizione del ' + d,
-            dirSource: 'Fonte: Base Adresse Nationale (adresse.data.gouv.fr), diffusa dalla Géoplateforme dell’IGN — Licence Ouverte Etalab 2.0. Sola lettura: nulla viene confrontato né scritto; deseleziona WBC nel menu Livelli per nasconderli.',
+            dirSource: 'Fonte: Base Adresse Nationale (adresse.data.gouv.fr), diffusa dalla Géoplateforme dell’IGN — Licence Ouverte Etalab 2.0. Sola lettura: nulla viene scritto; deseleziona WBC nel menu Livelli per nasconderli.',
             dirFiche: 'BAN, vista senza analisi',
+            dirWme: p => 'di cui ' + p + ' già in WME',
+            dirFicheWme: 'Già in WME (stesso numero, stessa via o entro 30 m)',
+            dirFicheAbs: 'Non presente tra i numeri caricati in WME',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Ctrl') + '+clic: mostra la BAN del comune al centro',
             fabBusy: 'Analisi del comune al centro…',
             fabErr: m => 'Non riuscito: ' + m,
@@ -1970,7 +1985,7 @@
             sbOpen: 'Abrir a janela',
             sbHelp: 'Ajuda',
             hWhatT: 'O que é comparado',
-            hWhatB: "<p>A <b>BAN</b> é a referência: cada endereço que ela lista deveria existir no WME, como número em um segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas ao vivo: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; a data de revisão de cada município é exibida); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de reportes da BAN</b> (signalement.adresse.data.gouv.fr) para o estado dos reportes; e o WME nos mesmos servidores do editor. A área não precisa estar exibida nem carregada. Desde 12/11/2026, o Waze credencia a BAN para a França (exibição e criação assistida de números de casa, página Map Data Attribution); adicionar uma rua inteira continua um gesto de L6; um número por vez está aberto a todos os níveis; tudo com cota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo “Centro do mapa”, o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas buscas de município — sem identidade nem cookie; para a BAN e a API de reportes, o código do município; na inicialização, o GitHub (version-min.json, versão mínima: uma versão retirada não inicia) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas marcada: a extensão da vista, a partir do zoom 18, sem cookie. Nada mais; o seu nome de usuário não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Reportar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) em uma nova aba, na rua ou no número; o WBC não envia nada, é você quem preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido traz o endereço lido no Waze (“Adresse présente dans Waze: …”): revise, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas marcada e nenhuma análise exibida nesse lugar, os endereços BAN da vista aparecem a partir do zoom 18, em cinza (somente leitura: nada é comparado com o WME). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município no centro é analisado, ou a sua varredura recente reaberta, e mostrado no mapa sem abrir a janela.</p>",
+            hWhatB: "<p>A <b>BAN</b> é a referência: cada endereço que ela lista deveria existir no WME, como número em um segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas ao vivo: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; a data de revisão de cada município é exibida); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de reportes da BAN</b> (signalement.adresse.data.gouv.fr) para o estado dos reportes; e o WME nos mesmos servidores do editor. A área não precisa estar exibida nem carregada. Desde 12/11/2026, o Waze credencia a BAN para a França (exibição e criação assistida de números de casa, página Map Data Attribution); adicionar uma rua inteira continua um gesto de L6; um número por vez está aberto a todos os níveis; tudo com cota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo “Centro do mapa”, o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas buscas de município — sem identidade nem cookie; para a BAN e a API de reportes, o código do município; na inicialização, o GitHub (version-min.json, versão mínima: uma versão retirada não inicia) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas marcada: a extensão da vista, a partir do zoom 18, sem cookie. Nada mais; o seu nome de usuário não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Reportar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) em uma nova aba, na rua ou no número; o WBC não envia nada, é você quem preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido traz o endereço lido no Waze (“Adresse présente dans Waze: …”): revise, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas marcada e nenhuma análise exibida nesse lugar, os endereços BAN da vista aparecem a partir do zoom 18, em cinza (somente leitura); circulados de verde quando o WME já tem o mesmo número na mesma rua ou a menos de 30 m (números salvos, pontos residenciais). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município no centro é analisado, ou a sua varredura recente reaberta, e mostrado no mapa sem abrir a janela.</p>",
             hMatchT: 'Quando um número é encontrado',
             hMatchB: '<p>Um endereço da BAN é encontrado quando o WME tem o mesmo número (sufixos incluídos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>em uma rua com o mesmo nome (principal ou alternativo), ou que só difere por um artigo (“Avenue Sembrancher” = “Avenue de Sembrancher”; a diferença de nome continua sinalizada);</td></tr><tr><td>2</td><td>ou em um segmento que leva os endereços dessa rua, <b>com ou sem nome</b>;</td></tr><tr><td>3</td><td>ou a menos de 30 m do endereço.</td></tr></table><p>A regra 1 é tentada primeiro em todo lugar, depois a 2, depois a 3. Um número do WME só serve uma vez.</p>',
             hNamesT: 'A coluna «Rua WME»',
@@ -2111,8 +2126,11 @@
             dirCap: (n, m) => n + ' endereços BAN exibidos de ' + m + ': aproxime para ver todos',
             dirErr: m => 'Endereços BAN: leitura impossível — ' + m,
             dirEdition: d => 'edição de ' + d,
-            dirSource: 'Fonte: Base Adresse Nationale (adresse.data.gouv.fr), difundida pela Géoplateforme do IGN — Licence Ouverte Etalab 2.0. Somente leitura: nada é comparado nem escrito; desmarque WBC no menu Camadas para ocultá-los.',
+            dirSource: 'Fonte: Base Adresse Nationale (adresse.data.gouv.fr), difundida pela Géoplateforme do IGN — Licence Ouverte Etalab 2.0. Somente leitura: nada é escrito; desmarque WBC no menu Camadas para ocultá-los.',
             dirFiche: 'BAN, vista sem análise',
+            dirWme: p => p + ' já no WME',
+            dirFicheWme: 'Já no WME (mesmo número, mesma rua ou a menos de 30 m)',
+            dirFicheAbs: 'Não está entre os números carregados no WME',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Ctrl') + '+clique: mostrar a BAN do município no centro',
             fabBusy: 'Analisando o município no centro…',
             fabErr: m => 'Falhou: ' + m,
@@ -2345,7 +2363,7 @@
             sbOpen: 'Abrir a janela',
             sbHelp: 'Ajuda',
             hWhatT: 'O que é comparado',
-            hWhatB: "<p>A <b>BAN</b> é a referência: cada morada que lista deveria existir no WME, como número num segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas em direto: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; é mostrada a data de revisão de cada município); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de comunicações da BAN</b> (signalement.adresse.data.gouv.fr) para o estado das comunicações; e o WME nos mesmos servidores do editor. A zona não precisa de estar visível nem carregada. Desde 12/11/2026, o Waze acredita a BAN para França (apresentação e criação assistida de números de porta, página Map Data Attribution); adicionar uma rua inteira continua a ser um gesto de L6; um número de cada vez está aberto a todos os níveis; tudo com quota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo «Centro do mapa», o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas pesquisas de município — sem identidade nem cookie; para a BAN e a API de comunicações, o código do município; no arranque, o GitHub (version-min.json, versão mínima: uma versão retirada não arranca) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas assinalada: a extensão da vista, a partir do zoom 18, sem cookie. Mais nada; o seu nome de utilizador não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Comunicar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) num novo separador, na rua ou no número; o WBC não envia nada, é o próprio que preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido leva a morada lida no Waze («Adresse présente dans Waze: …»): reveja, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas assinalada e nenhuma análise mostrada nesse sítio, as moradas BAN da vista aparecem a partir do zoom 18, a cinzento (só leitura: nada é comparado com o WME). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município ao centro é analisado, ou o seu varrimento recente reaberto, e mostrado no mapa sem abrir a janela.</p>",
+            hWhatB: "<p>A <b>BAN</b> é a referência: cada morada que lista deveria existir no WME, como número num segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas em direto: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; é mostrada a data de revisão de cada município); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de comunicações da BAN</b> (signalement.adresse.data.gouv.fr) para o estado das comunicações; e o WME nos mesmos servidores do editor. A zona não precisa de estar visível nem carregada. Desde 12/11/2026, o Waze acredita a BAN para França (apresentação e criação assistida de números de porta, página Map Data Attribution); adicionar uma rua inteira continua a ser um gesto de L6; um número de cada vez está aberto a todos os níveis; tudo com quota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo «Centro do mapa», o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas pesquisas de município — sem identidade nem cookie; para a BAN e a API de comunicações, o código do município; no arranque, o GitHub (version-min.json, versão mínima: uma versão retirada não arranca) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas assinalada: a extensão da vista, a partir do zoom 18, sem cookie. Mais nada; o seu nome de utilizador não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Comunicar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) num novo separador, na rua ou no número; o WBC não envia nada, é o próprio que preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido leva a morada lida no Waze («Adresse présente dans Waze: …»): reveja, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas assinalada e nenhuma análise mostrada nesse sítio, as moradas BAN da vista aparecem a partir do zoom 18, a cinzento (só leitura); rodeadas de verde quando o WME já tem o mesmo número na mesma rua ou a menos de 30 m (números guardados, pontos residenciais). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município ao centro é analisado, ou o seu varrimento recente reaberto, e mostrado no mapa sem abrir a janela.</p>",
             hMatchT: 'Quando um número é encontrado',
             hMatchB: '<p>Uma morada da BAN é encontrada quando o WME tem o mesmo número (sufixos incluídos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>numa rua com o mesmo nome (principal ou alternativo), ou que só difere por um artigo («Avenue Sembrancher» = «Avenue de Sembrancher»; a diferença de nome continua assinalada);</td></tr><tr><td>2</td><td>ou num segmento que tem as moradas dessa rua, <b>com ou sem nome</b>;</td></tr><tr><td>3</td><td>ou a menos de 30 m da morada.</td></tr></table><p>A regra 1 é tentada primeiro em todo o lado, depois a 2, depois a 3. Um número do WME só serve uma vez.</p>',
             hNamesT: 'A coluna «Rua WME»',
@@ -2486,8 +2504,11 @@
             dirCap: (n, m) => n + ' moradas BAN mostradas de ' + m + ': aproxime para ver todas',
             dirErr: m => 'Moradas BAN: leitura impossível — ' + m,
             dirEdition: d => 'edição de ' + d,
-            dirSource: 'Fonte: Base Adresse Nationale (adresse.data.gouv.fr), difundida pela Géoplateforme do IGN — Licence Ouverte Etalab 2.0. Só leitura: nada é comparado nem escrito; desmarque WBC no menu Camadas para as ocultar.',
+            dirSource: 'Fonte: Base Adresse Nationale (adresse.data.gouv.fr), difundida pela Géoplateforme do IGN — Licence Ouverte Etalab 2.0. Só leitura: nada é escrito; desmarque WBC no menu Camadas para as ocultar.',
             dirFiche: 'BAN, vista sem análise',
+            dirWme: p => p + ' já no WME',
+            dirFicheWme: 'Já no WME (mesmo número, mesma rua ou a menos de 30 m)',
+            dirFicheAbs: 'Não está entre os números carregados no WME',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Ctrl') + '+clique: mostrar a BAN do município ao centro',
             fabBusy: 'A analisar o município ao centro…',
             fabErr: m => 'Falhou: ' + m,
@@ -2720,7 +2741,7 @@
             sbOpen: 'פתיחת החלון',
             sbHelp: 'עזרה',
             hWhatT: 'מה משווים',
-            hWhatB: "<p>ה-<b>BAN</b> הוא המקור הקובע: כל כתובת שהוא מונה אמורה להופיע ב-WME, כמספר בית על מקטע (HN) או כנקודת מגורים (RPP).</p><p><b>מקורות</b>, נקראים בזמן אמת: <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, מדינת צרפת; Licence Ouverte Etalab 2.0; תאריך העדכון של כל רשות מוצג); גבולות ורשימות הרשויות של <b>geo.api.gouv.fr</b> (API Découpage administratif, נתוני INSEE ו-IGN, Licence Ouverte Etalab 2.0); <b>ה-API הציבורי של דיווחי ה-BAN</b> (signalement.adresse.data.gouv.fr) למצב הדיווחים; ו-WME מאותם שרתים של העורך. אין צורך להציג או לטעון את האזור. מאז 12/11/2026 Waze מאשר את ה-BAN עבור צרפת (הצגה ויצירה בסיוע של מספרי בתים, דף Map Data Attribution); הוספת רחוב שלם נשארת פעולה של L6; מספר אחד בכל פעם פתוח לכל הדרגות; הכול במסגרת המכסה.</p><p><b>מה יוצא מהדפדפן</b>: אל geo.api.gouv.fr, במצב «מרכז המפה», מרכז המפה מעוגל ל-3 ספרות אחרי הנקודה (כ-100 מ') ואת חיפושי הרשויות — בלי זהות ובלי עוגייה; אל ה-BAN ואל API הדיווחים, קוד הרשות; בהפעלה, GitHub (version-min.json, הגרסה המינימלית: גרסה שהוסרה אינה עולה) ו-GreasyFork (גרסה חדשה) נקראים בלבד. אל data.geopf.fr (Géoplateforme של IGN), כשתיבת WBC בתפריט השכבות מסומנת: גבולות התצוגה, מזום 18, בלי עוגייה. שום דבר אחר; שם המשתמש שלך אינו נשלח לשום צד שלישי (רק ל-Discuss של Waze, עבור כפתור ההעתקה).</p><p><b>דיווח ל-BAN</b>: פותח את הכלי הרשמי (signalement.adresse.data.gouv.fr) בלשונית חדשה, על הרחוב או המספר; WBC אינו שולח דבר, אתה ממלא ושולח את הטופס. למספר ב-WME שחסר ב-BAN, ההערה הממולאת מראש כוללת את הכתובת שנקראה ב-Waze («Adresse présente dans Waze: …»): יש לבדוק, לשנות או למחוק אותה לפני השליחה.</p><p><b>BAN של התצוגה</b>: כשתיבת WBC בתפריט השכבות מסומנת ואין ניתוח מוצג במקום, כתובות ה-BAN של התצוגה מופיעות מזום 18, באפור (קריאה בלבד: דבר אינו מושווה ל-WME). <b>Ctrl+לחיצה</b> (Cmd+לחיצה ב-Mac) על כפתור המפה: הרשות שבמרכז מנותחת, או שהסריקה האחרונה שלה נפתחת מחדש, ומוצגת במפה בלי לפתוח את החלון.</p>",
+            hWhatB: "<p>ה-<b>BAN</b> הוא המקור הקובע: כל כתובת שהוא מונה אמורה להופיע ב-WME, כמספר בית על מקטע (HN) או כנקודת מגורים (RPP).</p><p><b>מקורות</b>, נקראים בזמן אמת: <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, מדינת צרפת; Licence Ouverte Etalab 2.0; תאריך העדכון של כל רשות מוצג); גבולות ורשימות הרשויות של <b>geo.api.gouv.fr</b> (API Découpage administratif, נתוני INSEE ו-IGN, Licence Ouverte Etalab 2.0); <b>ה-API הציבורי של דיווחי ה-BAN</b> (signalement.adresse.data.gouv.fr) למצב הדיווחים; ו-WME מאותם שרתים של העורך. אין צורך להציג או לטעון את האזור. מאז 12/11/2026 Waze מאשר את ה-BAN עבור צרפת (הצגה ויצירה בסיוע של מספרי בתים, דף Map Data Attribution); הוספת רחוב שלם נשארת פעולה של L6; מספר אחד בכל פעם פתוח לכל הדרגות; הכול במסגרת המכסה.</p><p><b>מה יוצא מהדפדפן</b>: אל geo.api.gouv.fr, במצב «מרכז המפה», מרכז המפה מעוגל ל-3 ספרות אחרי הנקודה (כ-100 מ') ואת חיפושי הרשויות — בלי זהות ובלי עוגייה; אל ה-BAN ואל API הדיווחים, קוד הרשות; בהפעלה, GitHub (version-min.json, הגרסה המינימלית: גרסה שהוסרה אינה עולה) ו-GreasyFork (גרסה חדשה) נקראים בלבד. אל data.geopf.fr (Géoplateforme של IGN), כשתיבת WBC בתפריט השכבות מסומנת: גבולות התצוגה, מזום 18, בלי עוגייה. שום דבר אחר; שם המשתמש שלך אינו נשלח לשום צד שלישי (רק ל-Discuss של Waze, עבור כפתור ההעתקה).</p><p><b>דיווח ל-BAN</b>: פותח את הכלי הרשמי (signalement.adresse.data.gouv.fr) בלשונית חדשה, על הרחוב או המספר; WBC אינו שולח דבר, אתה ממלא ושולח את הטופס. למספר ב-WME שחסר ב-BAN, ההערה הממולאת מראש כוללת את הכתובת שנקראה ב-Waze («Adresse présente dans Waze: …»): יש לבדוק, לשנות או למחוק אותה לפני השליחה.</p><p><b>BAN של התצוגה</b>: כשתיבת WBC בתפריט השכבות מסומנת ואין ניתוח מוצג במקום, כתובות ה-BAN של התצוגה מופיעות מזום 18, באפור (קריאה בלבד); מוקפות בירוק כאשר ב-WME כבר יש אותו מספר באותו רחוב או בטווח 30 מ׳ (מספרי בתים שמורים, נקודות מגורים). <b>Ctrl+לחיצה</b> (Cmd+לחיצה ב-Mac) על כפתור המפה: הרשות שבמרכז מנותחת, או שהסריקה האחרונה שלה נפתחת מחדש, ומוצגת במפה בלי לפתוח את החלון.</p>",
             hMatchT: 'מתי מספר נמצא',
             hMatchB: '<p>כתובת BAN נמצאת כאשר ב-WME יש אותו מספר (כולל סיומות: <i>bis</i>, <i>ter</i>, אותיות) במרחק של פחות מ-150 מ\', ו:</p><table class="wbc-help-table"><tr><td>1</td><td>על רחוב באותו שם (שם ראשי או חלופי), או ששונה ממנו רק במילית יידוע (\u2066«Avenue Sembrancher» = «Avenue de Sembrancher»\u2069; הפער בשם עדיין מדווח);</td></tr><tr><td>2</td><td>או על מקטע שנושא את הכתובות של הרחוב הזה, <b>עם שם או בלי</b>;</td></tr><tr><td>3</td><td>או במרחק של פחות מ-30 מ\' מהכתובת.</td></tr></table><p>כלל 1 נבדק ראשון בכל מקום, אחריו 2, אחריו 3. מספר ב-WME משמש פעם אחת בלבד.</p>',
             hNamesT: 'העמודה «רחוב WME»',
@@ -2861,8 +2882,11 @@
             dirCap: (n, m) => 'מוצגות ' + n + ' מתוך ' + m + ' כתובות BAN: יש להתקרב כדי לראות את כולן',
             dirErr: m => 'כתובות BAN: הקריאה נכשלה — ' + m,
             dirEdition: d => 'מהדורה מ-' + d,
-            dirSource: 'מקור: Base Adresse Nationale (adresse.data.gouv.fr), מופץ על ידי Géoplateforme של IGN — Licence Ouverte Etalab 2.0. קריאה בלבד: דבר אינו מושווה או נכתב; יש לבטל את סימון WBC בתפריט השכבות כדי להסתיר.',
+            dirSource: 'מקור: Base Adresse Nationale (adresse.data.gouv.fr), מופץ על ידי Géoplateforme של IGN — Licence Ouverte Etalab 2.0. קריאה בלבד: דבר אינו נכתב; יש לבטל את סימון WBC בתפריט השכבות כדי להסתיר.',
             dirFiche: 'BAN, תצוגה ללא ניתוח',
+            dirWme: p => p + ' כבר ב-WME',
+            dirFicheWme: 'כבר ב-WME (אותו מספר, אותו רחוב או בטווח 30 מ׳)',
+            dirFicheAbs: 'לא נמצא בין המספרים שנטענו ב-WME',
             tipFabCtrl: mac => (mac ? 'Cmd' : 'Ctrl') + '+לחיצה: הצגת ה-BAN של הרשות שבמרכז',
             fabBusy: 'מנתח את הרשות שבמרכז…',
             fabErr: m => 'נכשל: ' + m,
@@ -4569,7 +4593,7 @@
     }
     const pastille = etat => '<span class="wbc-pt" style="background:' + couleur(etat) + '"></span>';
     const COULEURS_DEF = { manquant: '#e53935', present: '#43a047', trop: '#fb8c00', carte: '#2a78d6', pose: '#00838f' };
-    // Adresse BAN de la vue, sans analyse : neutre, ni présente ni manquante (rien n'est comparé à WME).
+    // Adresse BAN de la vue, sans analyse : neutre ; cerclée de la couleur « présent » quand WME a déjà le même numéro (voir marquerPresents).
     const COULEUR_DIRECT = '#546e7a';
     const HEX_RE = /^#[0-9a-f]{6}$/i;
     const couleur = etat => { const c = opts.couleurs && opts.couleurs[etat]; return HEX_RE.test(c || '') ? c : COULEURS_DEF[etat]; };
@@ -4747,7 +4771,7 @@
                 // 99999 : voie ou lieu-dit sans numéro, pas une adresse.
                 if (String(p.numero) === '99999') continue;
                 // Une même adresse peut revenir deux fois : dédoublonnée par id.
-                parId.set(p.id, { lon: c[0], lat: c[1], num: String(p.numero || '') + (p.rep ? ' ' + p.rep : ''), voie: String(p.nom_voie || ''),
+                parId.set(p.id, { lon: c[0], lat: c[1], num: String(p.numero || '') + (p.rep ? ' ' + p.rep : ''), n: String(p.numero || ''), rep: String(p.rep || ''), voie: String(p.nom_voie || ''),
                     commune: String(p.nom_commune || ''), ancienne: String(p.nom_ancienne_commune || ''), cert: String(p.certification_commune) === '1' });
             }
             if (!j.numberReturned || vus >= total) break;
@@ -4794,10 +4818,15 @@
         let pts = res.adresses.filter(a => a.lon >= ext[0] && a.lon <= ext[2] && a.lat >= ext[1] && a.lat <= ext[3]);
         const dansVue = pts.length;
         if (dansVue > DIRECT_DESSIN_MAX) { const k = Math.ceil(dansVue / DIRECT_DESSIN_MAX); pts = pts.filter((a, i) => i % k === 0); }
+        // Lecture de WME en échec : les points restent gris, sans rien affirmer.
+        pts.forEach(a => { a.dansWme = undefined; });
+        let presents = null;
+        if (pts.length) { try { presents = await marquerPresents(pts, ext); } catch (e) { pts.forEach(a => { a.dansWme = undefined; }); log('BAN de la vue, numéros de WME : ' + e.message); } }
+        if (perime()) return;
         dessinerDirect(pts);
-        afficherEtatDirect(res.tronque ? { etat: 'plafond', n: res.adresses.length, total: res.total }
-            : pts.length < dansVue ? { etat: 'plafond', n: pts.length, total: dansVue }
-                : { etat: dansVue ? 'ok' : 'vide', n: dansVue });
+        afficherEtatDirect(res.tronque ? { etat: 'plafond', n: res.adresses.length, total: res.total, p: presents }
+            : pts.length < dansVue ? { etat: 'plafond', n: pts.length, total: dansVue, p: presents }
+                : { etat: dansVue ? 'ok' : 'vide', n: dansVue, p: presents });
     }
     // Date d'édition de la couche, lue au plus une fois par jour (GetCapabilities restreint à la BAN, ~120 Ko).
     let editionBan = '', editionDemandee = false;
@@ -4812,6 +4841,77 @@
             try { localStorage.setItem(CLE_EDITION, JSON.stringify({ date: editionBan, t: Date.now() })); } catch (e) { }
             if (etatDirectVu) afficherEtatDirect(etatDirectVu);
         }).catch(e => log('édition de la BAN : ' + e.message));
+    }
+    // Déjà dans WME : même numéro (normNum) ET même nom de voie (principal ou alternatif du segment, rue du RPP),
+    // ou à moins de DIRECT_PROCHE_M quel que soit le nom — les règles 1 et 3 de l'analyse. Lu sur ce que WME a chargé autour
+    // de la vue : numéros ENREGISTRÉS des segments (fetchHouseNumbers relit le serveur ; un numéro tapé et pas encore enregistré
+    // n'y est pas : il compte après l'enregistrement) et RPP du modèle, en attente compris. Aucune requête vers un tiers.
+    const DIRECT_PROCHE_M = 30;
+    const DIRECT_RAYON_M = 150;           // même nom mais plus loin : une autre adresse
+    const DIRECT_AUTOUR = 0.0014;         // ~150 m autour de la vue : un numéro dont le marqueur déborde est vu
+    const hnDirect = new Map();           // segment → [{ num, pt }] enregistrés ; vidé à chaque enregistrement
+    async function numerosWme(ext) {
+        const dLat = DIRECT_AUTOUR, dLon = dLat / Math.cos((ext[1] + ext[3]) / 2 * Math.PI / 180);
+        const dans = (x, y) => x >= ext[0] - dLon && x <= ext[2] + dLon && y >= ext[1] - dLat && y <= ext[3] + dLat;
+        const segs = ((await sdk.DataModel.Segments.getAll()) || []).filter(sg => { const c = sg && sg.geometry && sg.geometry.coordinates; return !!c && c.some(([x, y]) => dans(x, y)); });
+        if (hnDirect.size > 20000) hnDirect.clear();
+        // Par lots de 250 : au-delà de ~500 segments, l'appel est rejeté.
+        const aLire = segs.map(sg => sg.id).filter(id => !hnDirect.has(id));
+        for (let k = 0; k < aLire.length; k += 250) {
+            const lot = aLire.slice(k, k + 250);
+            const r = await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: lot });
+            lot.forEach(id => hnDirect.set(id, []));
+            for (const h of r || []) if (hnDirect.has(h.segmentId)) hnDirect.get(h.segmentId).push({ num: Core.normNum(h.number), pt: (h.geometry && h.geometry.coordinates) || null });
+        }
+        const out = [];
+        for (const sg of segs) {
+            const l = hnDirect.get(sg.id) || [];
+            if (!l.length) continue;
+            const noms = new Set();
+            try {
+                const ad = (await sdk.DataModel.Segments.getAddress({ segmentId: sg.id })) || {};
+                if (ad.street && ad.street.name) noms.add(Core.normNom(ad.street.name));
+                for (const x of ad.altStreets || []) if (x && x.street && x.street.name) noms.add(Core.normNom(x.street.name));
+            } catch (e) { }
+            for (const h of l) out.push({ num: h.num, noms, pt: h.pt });
+        }
+        for (const v of (await sdk.DataModel.Venues.getAll()) || []) {
+            if (!v || !v.isResidential || !v.geometry) continue;
+            let pt = v.geometry.coordinates;
+            if (v.geometry.type === 'Polygon') { const a = pt[0]; pt = [a.reduce((x, q) => x + q[0], 0) / a.length, a.reduce((x, q) => x + q[1], 0) / a.length]; }
+            if (!pt || !dans(pt[0], pt[1])) continue;
+            let ad = null;
+            try { ad = await sdk.DataModel.Venues.getAddress({ venueId: String(v.id) }); } catch (e) { }
+            if (!ad || !ad.houseNumber) continue;
+            out.push({ num: Core.normNum(ad.houseNumber), noms: new Set(ad.street && ad.street.name ? [Core.normNom(ad.street.name)] : []), pt });
+        }
+        return out;
+    }
+    async function marquerPresents(pts, ext) {
+        const parNum = new Map();
+        for (const w of await numerosWme(ext)) { if (!w.num) continue; const l = parNum.get(w.num); if (l) l.push(w); else parNum.set(w.num, [w]); }
+        // Comme l'analyse : couples tranchés règle par règle (nom d'abord), puis au plus près ; un numéro de WME ne sert qu'UNE fois
+        // (sinon un « 5 » à l'angle de deux rues cerclerait les deux « 5 » de la BAN).
+        const couples = [];
+        for (const a of pts) {
+            a.dansWme = false;
+            const k = Math.cos(a.lat * Math.PI / 180) * 111320, nom = Core.normNom(a.voie);
+            for (const w of parNum.get(Core.normNum(a.n, a.rep)) || []) {
+                const dm = w.pt ? Math.hypot((w.pt[0] - a.lon) * k, (w.pt[1] - a.lat) * 111320) : Infinity;
+                const regle = !!nom && w.noms.has(nom) && (!w.pt || dm <= DIRECT_RAYON_M) ? 1 : dm <= DIRECT_PROCHE_M ? 3 : 0;
+                if (regle) couples.push({ a, w, regle, dm });
+            }
+        }
+        couples.sort((p, q) => p.regle - q.regle || p.dm - q.dm);
+        const pris = new Set();
+        let n = 0;
+        for (const c of couples) {
+            if (c.a.dansWme || pris.has(c.w)) continue;
+            c.a.dansWme = true;
+            pris.add(c.w);
+            n++;
+        }
+        return n;
     }
     // ==/WBC-DIRECT==
 
@@ -4840,13 +4940,16 @@
     const LAYER_DIRECT = 'wbc-ban-vue';
     let calqueDirectOk = false, pointsDirect = [];
     async function poserCalqueDirect() {
+        // Déjà dans WME : gris clair cerclé de la couleur « présent » ; le gris reste celui de la BAN sans analyse.
+        const gris = { pointRadius: 5, fillColor: COULEUR_DIRECT, fillOpacity: 0.95, strokeColor: '#ffffff', strokeWidth: 2,
+            label: '${lbl}', fontSize: '11px', fontWeight: 'bold', fontColor: assombrir(COULEUR_DIRECT, 0.6), labelYOffset: -13,
+            labelOutlineColor: '#ffffff', labelOutlineWidth: 3, pointerEvents: 'none' };
         try {
             await sdk.Map.addLayer({
                 layerName: LAYER_DIRECT,
                 styleContext: { lbl: ({ feature }) => (feature && feature.properties && feature.properties.lbl) || '' },
-                styleRules: [{ style: { pointRadius: 5, fillColor: COULEUR_DIRECT, fillOpacity: 0.95, strokeColor: '#ffffff', strokeWidth: 2,
-                    label: '${lbl}', fontSize: '11px', fontWeight: 'bold', fontColor: assombrir(COULEUR_DIRECT, 0.6), labelYOffset: -13,
-                    labelOutlineColor: '#ffffff', labelOutlineWidth: 3, pointerEvents: 'none' } }],
+                styleRules: [{ predicate: p => !p.ok, style: gris }, { predicate: p => !!p.ok, style: Object.assign({}, gris, {
+                    pointRadius: 6, fillColor: '#cfd8dc', strokeColor: couleur('present'), strokeWidth: 3 }) }],
             });
             calqueDirectOk = true;
         } catch (e) { log('calque de la BAN de la vue : ' + e.message); }
@@ -4860,7 +4963,7 @@
             try {
                 await sdk.Map.removeAllFeaturesFromLayer({ layerName: LAYER_DIRECT });
                 if (adresses.length) await sdk.Map.addFeaturesToLayer({ layerName: LAYER_DIRECT,
-                    features: adresses.map((a, i) => ({ type: 'Feature', id: 'wbc-v' + i, geometry: { type: 'Point', coordinates: [a.lon, a.lat] }, properties: { lbl: a.num } })) });
+                    features: adresses.map((a, i) => ({ type: 'Feature', id: 'wbc-v' + i, geometry: { type: 'Point', coordinates: [a.lon, a.lat] }, properties: { lbl: a.num, ok: a.dansWme ? 1 : 0 } })) });
             } catch (e) { log('BAN de la vue : ' + e.message); }
         });
     }
@@ -4885,7 +4988,8 @@
         const txt = e.etat === 'zoom' ? t('dirZoom', DIRECT_ZOOM) : e.etat === 'lecture' ? t('dirLoading') : e.etat === 'vide' ? t('dirNone')
             : e.etat === 'plafond' ? t('dirCap', nb(e.n), nb(e.total)) : e.etat === 'erreur' ? t('dirErr', messageErreur(e.erreur)) : t('dirCount', nb(e.n));
         badgeDirect.dir = _lang === 'he' ? 'rtl' : 'ltr';
-        badgeDirect.textContent = txt + (ed && e.etat !== 'erreur' && e.etat !== 'zoom' ? ' · ' + t('dirEdition', ed) : '');
+        badgeDirect.textContent = txt + (typeof e.p === 'number' && (e.etat === 'ok' || e.etat === 'plafond') ? ', ' + t('dirWme', nb(e.p)) : '')
+            + (ed && e.etat !== 'erreur' && e.etat !== 'zoom' ? ' · ' + t('dirEdition', ed) : '');
         badgeDirect.title = t('dirSource');
         badgeDirect.classList.toggle('erreur', e.etat === 'erreur' || e.etat === 'plafond');
         badgeDirect.hidden = false;
@@ -4918,6 +5022,8 @@
             const d = p.direct, ed = dateIso(editionBan);
             lignes.push('<b><bdi>' + esc(d.num + ' ' + d.voie) + '</bdi></b>');
             lignes.push('<bdi>' + esc(d.commune) + (d.ancienne && d.ancienne !== d.commune ? ' (' + esc(d.ancienne) + ')' : '') + '</bdi>');
+            if (d.dansWme === true) lignes.push(pastille('present') + '<span class="wbc-f-etat present">' + esc(t('dirFicheWme')) + '</span>');
+            else if (d.dansWme === false) lignes.push(esc(t('dirFicheAbs')));
             lignes.push(esc(t(d.cert ? 'hovCert' : 'hovNotCert')));
             lignes.push('<small>' + esc(t('dirFiche')) + (ed ? ' · ' + esc(t('dirEdition', ed)) : '') + '</small>');
         }
@@ -9124,9 +9230,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         try {
             sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: majRpp });
             sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: majRpp });
+            // Un numéro qu'on vient d'enregistrer n'était pas dans la relecture d'avant : relire, pour le voir cerclé.
+            sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: () => { hnDirect.clear(); demanderDirect(true); } });
             await sdk.Events.trackDataModelEvents({ dataModelName: 'venues' });
             for (const ev of ['wme-data-model-objects-added', 'wme-data-model-objects-changed', 'wme-data-model-objects-removed'])
-                sdk.Events.on({ eventName: ev, eventHandler: e => { if (e && e.dataModelName === 'venues') majRpp(); } });
+                sdk.Events.on({ eventName: ev, eventHandler: e => { if (e && e.dataModelName === 'venues') { majRpp(); demanderDirect(); } } });
         } catch (e) { log('événements des RPP : ' + e.message); }
         majRpp();
         await poserCaseCalque();
