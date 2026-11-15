@@ -39,7 +39,8 @@
     "0.21.17": "77342dc3b8f3078099264abdeb039d046ad5f92a3c289bcb5de3df469640c81a",
     "0.21.18": "bf4940a665c2d40c4d421ac6cd199a736e5505cf3da9514f1014dbb2f2e28404",
     "0.22.00": "b7764499c4ffa0842143925cdb5ed0c591c2fb5a42270890a5723d8e3456a856",
-    "0.24.01": "3d056eeb1440af10cdfb5057e5f06ca9fb5586c65bf81e73f4171e33e0202555"
+    "0.24.01": "3d056eeb1440af10cdfb5057e5f06ca9fb5586c65bf81e73f4171e33e0202555",
+    "0.25.00": "a3c9fa38987dab281a70d6ca64bf333a2c577d6db53cadf0d8097f9b0ee6a121"
   },
   "_lisezmoi": "Version minimale autorisée et empreinte SHA-256 du code de chaque version publiée (texte de l’enveloppe _wmeIntegre, fins de ligne LF). Une version plus ancienne, une copie modifiée ou une version absente ne démarre pas."
 }
