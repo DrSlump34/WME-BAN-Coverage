@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.26.00
+// @version      0.26.01
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4993,6 +4993,12 @@
         badgeDirect.title = t('dirSource');
         badgeDirect.classList.toggle('erreur', e.etat === 'erreur' || e.etat === 'plafond');
         badgeDirect.hidden = false;
+        // Sous la barre du haut de la carte (commune, droits de zone) : posé à top 8 px, il la recouvrait (MisterLogik, 16/11).
+        try {
+            const barre = document.getElementById('topbar-container'), vue = badgeDirect.parentElement;
+            const bas = barre && vue ? barre.getBoundingClientRect().bottom - vue.getBoundingClientRect().top : NaN;
+            if (bas >= 0 && bas < 200) badgeDirect.style.top = Math.round(bas + 6) + 'px';
+        } catch (x) { }
     }
 
     // Survol calculé à la main : sdk.Events.trackLayerEvents casse la sélection au cadre de WME (Ctrl+Maj+glisser).
@@ -5350,7 +5356,7 @@
     background: #c62828; color: #fff; font: 700 11px/15px Rubik, Arial, sans-serif; text-align: center; box-shadow: 0 0 0 2px #fff; }
 @keyframes wbc-pouls { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { #wbc-fab-btn.wbc-occupe svg { animation: wbc-pouls 1.6s ease-in-out infinite; } }
-#wbc-direct { position: absolute; top: 8px; inset-inline-start: 8px; z-index: 1000; max-width: calc(100% - 140px); padding: 3px 10px;
+#wbc-direct { position: absolute; top: 40px; inset-inline-start: 8px; z-index: 1000; max-width: calc(100% - 140px); padding: 3px 10px;
     border-radius: 50px; background: rgba(255,255,255,.94); color: #37474f; font: 600 11.5px/1.4 Rubik, 'Open Sans', sans-serif;
     box-shadow: 0 1px 4px rgba(0,0,0,.3); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #wbc-direct.erreur { background: #fff3e0; color: #8a2e00; }
