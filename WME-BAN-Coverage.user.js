@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.26.01
+// @version      0.26.02
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4850,6 +4850,8 @@
     const DIRECT_RAYON_M = 150;           // même nom mais plus loin : une autre adresse
     const DIRECT_AUTOUR = 0.0014;         // ~150 m autour de la vue : un numéro dont le marqueur déborde est vu
     const hnDirect = new Map();           // segment → [{ num, pt }] enregistrés ; vidé à chaque enregistrement
+    const DIRECT_RELIRE_MS = 4000;       // 2e relecture après un enregistrement
+    let relireDirect = null;
     async function numerosWme(ext) {
         const dLat = DIRECT_AUTOUR, dLon = dLat / Math.cos((ext[1] + ext[3]) / 2 * Math.PI / 180);
         const dans = (x, y) => x >= ext[0] - dLon && x <= ext[2] + dLon && y >= ext[1] - dLat && y <= ext[3] + dLat;
@@ -9236,8 +9238,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         try {
             sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: majRpp });
             sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: majRpp });
-            // Un numéro qu'on vient d'enregistrer n'était pas dans la relecture d'avant : relire, pour le voir cerclé.
-            sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: () => { hnDirect.clear(); demanderDirect(true); } });
+            // Un numéro qu'on vient d'enregistrer n'était pas dans la relecture d'avant : relire, pour le voir cerclé. Le serveur
+            // peut répondre avant d'avoir pris l'ajout en compte, et la relecture est gardée jusqu'à l'enregistrement suivant :
+            // relire tout de suite, puis encore après DIRECT_RELIRE_MS (Glenan56, 16/11).
+            sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: () => {
+                hnDirect.clear(); demanderDirect(true);
+                clearTimeout(relireDirect);
+                relireDirect = setTimeout(() => { hnDirect.clear(); demanderDirect(true); }, DIRECT_RELIRE_MS);
+            } });
             await sdk.Events.trackDataModelEvents({ dataModelName: 'venues' });
             for (const ev of ['wme-data-model-objects-added', 'wme-data-model-objects-changed', 'wme-data-model-objects-removed'])
                 sdk.Events.on({ eventName: ev, eventHandler: e => { if (e && e.dataModelName === 'venues') { majRpp(); demanderDirect(); } } });
