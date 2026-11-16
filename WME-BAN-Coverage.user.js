@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.26.02
+// @version      0.26.03
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4995,11 +4995,20 @@
         badgeDirect.title = t('dirSource');
         badgeDirect.classList.toggle('erreur', e.etat === 'erreur' || e.etat === 'plafond');
         badgeDirect.hidden = false;
-        // Sous la barre du haut de la carte (commune, droits de zone) : posé à top 8 px, il la recouvrait (MisterLogik, 16/11).
+        placerBadgeDirect();
+    }
+    // Sous la barre du haut de la carte (commune, droits de zone) : posé à top 8 px, il la recouvrait (MisterLogik, 16/11).
+    // Au chargement de WME la barre est encore VIDE (0 px) et se remplit après : mesurée à chaque affichage ET suivie par un
+    // ResizeObserver, jamais moins de 40 px (mesuré le 16/11 : 0 px au premier affichage, 31 px quelques secondes après).
+    let suiviBarre = null;
+    function placerBadgeDirect() {
+        if (!badgeDirect) return;
         try {
             const barre = document.getElementById('topbar-container'), vue = badgeDirect.parentElement;
             const bas = barre && vue ? barre.getBoundingClientRect().bottom - vue.getBoundingClientRect().top : NaN;
-            if (bas >= 0 && bas < 200) badgeDirect.style.top = Math.round(bas + 6) + 'px';
+            badgeDirect.style.top = (bas >= 0 && bas < 200 ? Math.max(40, Math.round(bas + 6)) : 40) + 'px';
+            const RO = window.ResizeObserver;
+            if (barre && !suiviBarre && typeof RO === 'function') { suiviBarre = new RO(() => placerBadgeDirect()); suiviBarre.observe(barre); }
         } catch (x) { }
     }
 
@@ -9292,6 +9301,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             await sdk.Events.trackDataModelEvents({ dataModelName: 'segments' });
             sdk.Events.on({ eventName: 'wme-data-model-objects-added', eventHandler: e => {
                 if (e && e.dataModelName === 'segments' && e.objectIds && e.objectIds.length) releverSignatures(e.objectIds).catch(x => log('renommage : ' + x.message));
+                // BAN de la vue : au chargement, la 1re passe part avant les segments (« dont 0 déjà dans WME ») ; relire quand ils arrivent.
+                if (e && e.dataModelName === 'segments' && e.objectIds && e.objectIds.length && pointsDirect.length) demanderDirect();
             } });
         } catch (e) { log('chargement des segments (renommage) : ' + e.message); }
         try {
