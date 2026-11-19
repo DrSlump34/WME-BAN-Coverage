@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.28.02
+// @version      0.28.05
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4134,7 +4134,50 @@
             return liste.filter(x => x.type === 'MISSING_ADDRESS' && Math.hypot((x.lon - lon) * kx, (x.lat - lat) * 110540) <= lim)
                 .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
         }
-        return { ordreNum, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, niveauQuota, rapprocherHn, planHn, segmentProbableHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, suffixeBloque, segsPresDesOrphelines };
+        // RPP du modèle de WME (posés à la main, enregistrés ou non) qui couvrent une adresse restée manquante dans l'analyse :
+        // l'analyse est un instantané, sans cela le point reste rouge jusqu'au rapprochement suivant (MisterLogik, 19/11).
+        // Mêmes règles que l'analyse : même numéro, même nom (ou variante) dans RAYON_M, sinon à PROCHE_M quel que soit le nom ;
+        // un RPP ne couvre qu'UNE adresse, et un RPP déjà retenu par l'analyse ne compte pas deux fois. Rend Map adresse → RPP.
+        function rppEnAttente(voies, rpps) {
+            // Forme RENDUE par analyser (celle de la fenêtre) : numéro en texte (« 5 bis », « 5 3 »), nom de voie BAN, nom WME retenu ;
+            // un RPP déjà retenu n'y a plus d'identifiant, seulement sa position (wlon, wlat).
+            const numDe = a => { if (a.num) return a.num; const m = /^(\S+)(?:\s+(.+))?$/.exec(String(a.brut || '').trim()); return m ? normNum(m[1], m[2]) : null; };
+            const retenus = [];
+            for (const v of voies || []) for (const a of v.adresses || []) if (a.trouve === 'RPP' && a.wlon != null) retenus.push({ num: numDe(a), lon: a.wlon, lat: a.wlat });
+            const dejaRetenu = x => retenus.some(y => y.num === x.num && Math.abs(y.lon - x.lon) < 1e-6 && Math.abs(y.lat - x.lat) < 1e-6);
+            const parNum = new Map();
+            for (const x of rpps || []) {
+                if (!x || !x.num || dejaRetenu(x)) continue;
+                const l = parNum.get(x.num); if (l) l.push(x); else parNum.set(x.num, [x]);
+            }
+            const couples = [];
+            for (const v of voies || []) {
+                const noms = new Set([v.norm || normNom(v.nom)]);
+                if (v.nomWme) noms.add(normNom(v.nomWme));
+                if (v.nomPrincipal) noms.add(normNom(v.nomPrincipal));
+                for (const nom of v.variantes || []) noms.add(nom);
+                noms.delete('');
+                for (const a of v.adresses || []) {
+                    if (a.trouve || a.hnPose) continue;
+                    const k = Math.cos(a.lat * Math.PI / 180) * 111320;
+                    for (const x of parNum.get(numDe(a)) || []) {
+                        const dm = Math.hypot((x.lon - a.lon) * k, (x.lat - a.lat) * 111320);
+                        if (dm > RAYON_M) continue;
+                        const regle = x.nom && noms.has(x.nom) ? 1 : dm <= PROCHE_M ? 3 : 0;
+                        if (regle) couples.push({ a, x, regle, dm });
+                    }
+                }
+            }
+            couples.sort((p, q) => p.regle - q.regle || p.dm - q.dm);
+            const vus = new Map(), pris = new Set();
+            for (const c of couples) {
+                if (vus.has(c.a) || pris.has(c.x)) continue;
+                vus.set(c.a, { id: c.x.id, lon: c.x.lon, lat: c.x.lat, dm: Math.round(c.dm) });
+                pris.add(c.x);
+            }
+            return vus;
+        }
+        return { ordreNum, rppEnAttente, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, niveauQuota, rapprocherHn, planHn, segmentProbableHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, suffixeBloque, segsPresDesOrphelines };
     })();
     // ==/WBC-CORE==
 
@@ -5040,8 +5083,9 @@
             if (a.trouve && arretLoin(a)) lignes.push('<span class="wbc-f-etat arret">' + esc(t('hovArret', nb(a.ea))) + '</span>');
             else if (a.hnPose) lignes.push('<span class="wbc-f-etat pose">' + esc(t('ajHnPoseTip')) + '</span>');
             else if (a.suffixe) lignes.push(etiq('suffixe', t('tipSuf', a.suffixe)));
+            else if (!a.trouve && vuRpp(a)) lignes.push(etiq('present', t('hovFound', 'RPP')) + ' · ' + esc(t('hovDist', nb(rppVus.get(a).dm))));
             else if (!a.trouve) lignes.push(etiq('manquant', t('hovMissing')));
-            if (!a.trouve && a.seg != null) lignes.push(esc(t('hovProbSeg', a.seg, nb(a.pd))));
+            if (!a.trouve && !vuRpp(a) && a.seg != null) lignes.push(esc(t('hovProbSeg', a.seg, nb(a.pd))));
             lignes.push(esc(t(a.cert ? 'hovCert' : 'hovNotCert')));
             if (v.statutNom !== 'identique' && v.nomWme) lignes.push(esc(t('hovWmeStreet', v.nomWme)));
         } else if (p.direct) {
@@ -6515,6 +6559,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (r && r.voies) for (const v of r.voies) if (v.adresses) v.adresses.sort(Core.ordreNum);
         const autre = !resultat || !r || resultat.commune.code !== r.commune.code;
         resultat = r;
+        rppVus = new Map();
+        majRppVus();
         vue.ouverte = null;
         vue.texte = '';
         vue.deleguee = '';
@@ -6654,6 +6700,37 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             statut(neufs.ids.size && neufs.ids.size === changes.size ? t('renomNeuf', Math.max(neufs.voies, 1)) : t('renomRelance', Math.max(n, 1)));
     }
 
+    // RPP posés à la main dans WME depuis l'analyse : leur adresse passe au vert tout de suite (Core.rppEnAttente), sans attendre
+    // le rapprochement d'après l'enregistrement. Recalculé sur chaque ajout, changement ou retrait de lieu, et après un enregistrement.
+    let rppVus = new Map(), majRppVusPrevue = null;
+    const vuRpp = a => rppVus.has(a);
+    function majRppVus() {
+        clearTimeout(majRppVusPrevue);
+        majRppVusPrevue = setTimeout(() => { majRppVusPrevue = null; lireRppVus().catch(e => log('RPP posés à la main : ' + e.message)); }, 400);
+    }
+    async function lireRppVus() {
+        const r = resultat;
+        if (!r) { rppVus = new Map(); return; }
+        const b = empriseResultat(r), marge = 0.002;
+        const rpps = [];
+        for (const v of (await sdk.DataModel.Venues.getAll()) || []) {
+            if (!v || !v.isResidential || !v.geometry) continue;
+            let pt = v.geometry.coordinates;
+            if (v.geometry.type === 'Polygon') { const q = pt[0]; pt = [q.reduce((x, c) => x + c[0], 0) / q.length, q.reduce((x, c) => x + c[1], 0) / q.length]; }
+            if (!pt || (b && (pt[0] < b[0] - marge || pt[0] > b[2] + marge || pt[1] < b[1] - marge || pt[1] > b[3] + marge))) continue;
+            let ad = null;
+            try { ad = await sdk.DataModel.Venues.getAddress({ venueId: String(v.id) }); } catch (e) { }
+            if (!ad || !ad.houseNumber) continue;
+            rpps.push({ id: v.id, num: Core.normNum(ad.houseNumber), nom: ad.street && ad.street.name ? Core.normNom(ad.street.name) : '', lon: pt[0], lat: pt[1] });
+        }
+        if (r !== resultat) return;
+        const vus = Core.rppEnAttente(r.voies, rpps);
+        const cle = m => [...m].map(([a, x]) => a.num + '@' + a.lon + '>' + x.id + '@' + x.lon + ',' + x.lat).sort().join('|');
+        if (cle(vus) === cle(rppVus)) return;
+        rppVus = vus;
+        majCalque();
+    }
+
     const MAX_POINTS = 3000;
     let calqueSuitLaVue = false;
     let tropMontre = null;
@@ -6672,8 +6749,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             // Après un Ctrl+clic sur le bouton de carte, fenêtre fermée : manquants, trouvés et en trop, sans réglage à faire.
             if (opts.carte || carteSeule) {
                 let tous = [];
-                voies.forEach(v => v.adresses.forEach(a => { if (!a.trouve && !a.hnPose) tous.push({ lon: a.lon, lat: a.lat, etat: 'manquant', lbl: a.brut, ad: a, voie: v }); }));
-                if (opts.trouves || carteSeule) voies.forEach(v => v.adresses.forEach(a => { if (a.trouve) tous.push({ lon: a.lon, lat: a.lat, etat: 'present', lbl: a.brut, ad: a, voie: v }); }));
+                voies.forEach(v => v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && !vuRpp(a)) tous.push({ lon: a.lon, lat: a.lat, etat: 'manquant', lbl: a.brut, ad: a, voie: v }); }));
+                if (opts.trouves || carteSeule) voies.forEach(v => v.adresses.forEach(a => { if (a.trouve || (vuRpp(a) && !a.hnPose)) tous.push({ lon: a.lon, lat: a.lat, etat: 'present', lbl: a.brut, ad: a, voie: v }); }));
                 if (!vue.deleguee) resultat.enTrop.forEach(x => tous.push({ lon: x.lon, lat: x.lat, etat: 'trop', lbl: x.brut, trop: x }));
                 if (tous.length > MAX_POINTS) {
                     // Trop de points : un sur k RÉPARTI sur la vue (couper la fin viderait des rues entières), et on le dit.
@@ -6693,9 +6770,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             if (v) {
                 // Tracés avant les points, pour passer dessous.
                 v.adresses.forEach(a => { if (a.trouve && a.wlon != null) pts.unshift({ ligne: [[a.lon, a.lat], [a.wlon, a.wlat]], etat: 'lien' }); });
-                v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && a.plon != null) pts.unshift({ ligne: [[a.lon, a.lat], [a.plon, a.plat]], etat: 'lienManq' }); });
+                v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && vuRpp(a)) { const x = rppVus.get(a); pts.unshift({ ligne: [[a.lon, a.lat], [x.lon, x.lat]], etat: 'lien' }); } });
+                v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && !vuRpp(a) && a.plon != null) pts.unshift({ ligne: [[a.lon, a.lat], [a.plon, a.plat]], etat: 'lienManq' }); });
                 v.adresses.forEach(a => { if (a.trouve && arretLoin(a)) pts.unshift({ ligne: [[a.wlon, a.wlat], [a.alon, a.alat]], etat: 'lienArret' }); });
-                v.adresses.forEach(a => { if ((a.trouve && !((opts.carte || carteSeule) && (opts.trouves || carteSeule))) || (!a.trouve && !a.hnPose && !(opts.carte || carteSeule))) pts.push({ lon: a.lon, lat: a.lat, etat: a.trouve ? 'present' : 'manquant', lbl: a.brut, ad: a, voie: v }); });
+                v.adresses.forEach(a => { const ok = a.trouve || (vuRpp(a) && !a.hnPose); if ((ok && !((opts.carte || carteSeule) && (opts.trouves || carteSeule))) || (!ok && !a.hnPose && !(opts.carte || carteSeule))) pts.push({ lon: a.lon, lat: a.lat, etat: ok ? 'present' : 'manquant', lbl: a.brut, ad: a, voie: v }); });
             }
             if (tropMontre) pts.push({ lon: tropMontre.lon, lat: tropMontre.lat, etat: 'trop', lbl: tropMontre.brut, trop: tropMontre });
             voies.forEach(w => w.adresses.forEach(a => { if (a.hnPose && (!a.trouve || a.rppHn || a.hnVersRpp)) pts.push({ lon: a.lon, lat: a.lat, etat: 'pose', lbl: a.brut, ad: a, voie: w }); }));
@@ -9328,6 +9406,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         try {
             sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: majRpp });
             sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: majRpp });
+            sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: () => setTimeout(majRppVus, 1500) });
             // Un numéro qu'on vient d'enregistrer n'était pas dans la relecture d'avant : relire, pour le voir cerclé. Le serveur
             // peut répondre avant d'avoir pris l'ajout en compte, et la relecture est gardée jusqu'à l'enregistrement suivant :
             // relire tout de suite, puis encore après DIRECT_RELIRE_MS (Glenan56, 16/11).
@@ -9338,7 +9417,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             } });
             await sdk.Events.trackDataModelEvents({ dataModelName: 'venues' });
             for (const ev of ['wme-data-model-objects-added', 'wme-data-model-objects-changed', 'wme-data-model-objects-removed'])
-                sdk.Events.on({ eventName: ev, eventHandler: e => { if (e && e.dataModelName === 'venues') { majRpp(); demanderDirect(); } } });
+                sdk.Events.on({ eventName: ev, eventHandler: e => { if (e && e.dataModelName === 'venues') { majRpp(); demanderDirect(); majRppVus(); } } });
         } catch (e) { log('événements des RPP : ' + e.message); }
         majRpp();
         await poserCaseCalque();
