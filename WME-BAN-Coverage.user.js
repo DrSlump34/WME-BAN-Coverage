@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.28.10
+// @version      0.28.11
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -3846,12 +3846,16 @@
         // BAN suffixée / WME nu : deux numéros, on pose. BAN nue / WME suffixé, ou deux suffixes différents : bloqué (peut-être la même adresse).
         const nu = s => /^\s*0*\d+\s*$/.test(String(s || ''));
         const suffixeBloque = a => !!(a && a.suffixe) && !(nu(a.suffixe) && !nu(a.brut));
+        // 0.28.11 — indice de répétition (bis, ter, quater, quinquies) SÉPARÉ par une espace, comme le wiki FR « Les numéros
+        // de rue » (v15). Mesuré dans l'appli le 20/11 (sylvain19300, Montpellier) : posé « 12 bis », il est trouvé qu'on tape
+        // « 12 bis » ou « 12bis » ; posé « 8bis », il n'est trouvé que tapé « 8bis ». Une lettre seule ou « log1 » restent collés.
+        const REPETITION = new Set(['bis', 'ter', 'quater', 'quinquies']);
         function numeroHn(brut) {
             const m = /^0*(\d+)(?:\s+([a-z][a-z0-9]*))?$/i.exec(String(brut || '').trim());
             if (!m || m[1] === '0') return null;
             if (!m[2]) return m[1];
-            const sf = m[2].toLowerCase();
-            return m[1] + (SUFFIXES_HN[sf] || sf);
+            const sf = m[2].toLowerCase(), mot = SUFFIXES_HN[sf] || sf;
+            return m[1] + (REPETITION.has(mot) ? ' ' : '') + mot;
         }
         // Quota : au plus HN_MAX par fenêtre glissante. Entrée { t, s, n, e: 0 réservé | 1 enregistré }, réservée à la pose,
         // gardée seulement si le numéro est relu sur le serveur ; un simple horodatage (ancien format) vaut une entrée enregistrée.
