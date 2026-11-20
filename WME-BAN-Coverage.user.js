@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.28.08
+// @version      0.28.10
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -193,6 +193,8 @@
             sbHoverHint: "Rest the pointer on a point of the map: its address, its state and its certification appear.",
             sbRppNum: "RPP numbers",
             sbRppNumHint: "Writes its house number under the triangle of each residential place (RPP) loaded in WME, from zoom 17: no need to click it to know which one it is. Display only.",
+            sbRppLot: "RPP in batch",
+            sbRppLotHint: "“Add the numbers” of a whole street also creates residential places (RPP) where needed (end of a driveway, outside a built-up area, no street of that name nearby). Off: only segment house numbers are added; RPPs are left to the “+”, one at a time. L6 only; your own setting.",
             sbColors: "Colours",
             sbColorsReset: "Default colours",
             legColMap: "Municipality map",
@@ -394,6 +396,7 @@
             rhnVersRppAbsent: n => 'Number ' + n + ' not found in WME (segment not loaded, or number already removed): nothing changed.',
             rhnVersRppTipPose: 'Turned into an RPP (not saved yet).',
             ajHnSkip: n => n + (un1(n) ? ' address skipped' : ' addresses skipped') + ' (details in the console).',
+            ajHnRppLot: n => n + (un1(n) ? ' RPP left' : ' RPPs left') + ' to the “+” (“RPP in batch” is off).',
             ajHnCut: (n, h) => n + (un1(n) ? ' address not placed' : ' addresses not placed') + ': quota reached, adding can resume at ' + h + '.',
             ajHnNoSeg: 'No loaded segment has exactly this name as primary name with the commune as city: nothing was placed.',
             ajHnErr: m => 'Adding stopped: ' + m,
@@ -569,6 +572,8 @@
             sbHoverHint: "Arrêtez le pointeur sur un point de la carte\u00a0: son adresse, son état et sa certification s’affichent.",
             sbRppNum: "Numéro des RPP",
             sbRppNumHint: "Écrit son numéro sous le triangle de chaque lieu résidentiel (RPP) chargé dans WME, à partir du zoom 17\u00a0: plus besoin de cliquer dessus pour savoir lequel c’est. Affichage seulement.",
+            sbRppLot: "RPP en lot",
+            sbRppLotHint: "« Ajouter les numéros » d’une voie entière crée aussi les lieux résidentiels (RPP) quand il le faut (bout d’allée, hors agglomération, pas de rue de ce nom à côté). Coupé : seuls les numéros de segment sont posés ; les RPP restent au « + », un par un. Réservé aux L6 ; réglage propre à chaque éditeur.",
             sbColors: "Couleurs",
             sbColorsReset: "Couleurs par défaut",
             legColMap: "Carte des communes",
@@ -770,6 +775,7 @@
             rhnVersRppAbsent: n => 'Le numéro ' + n + ' est introuvable dans WME (segment non chargé, ou numéro déjà retiré)\xa0: rien n’est changé.',
             rhnVersRppTipPose: 'Transformé en RPP (pas encore enregistré).',
             ajHnSkip: n => n + (un(n) ? ' adresse écartée' : ' adresses écartées') + ' (détail dans la console).',
+            ajHnRppLot: n => n + ' RPP ' + (un(n) ? 'laissé' : 'laissés') + ' au « + » (option « RPP en lot » coupée).',
             ajHnCut: (n, h) => n + (un(n) ? ' adresse non posée' : ' adresses non posées') + '\xa0: quota atteint, reprise possible à ' + h + '.',
             ajHnNoSeg: 'Aucun segment chargé ne porte exactement ce nom en nom principal avec la commune pour ville\xa0: rien n’a été posé.',
             ajHnErr: m => 'Ajout interrompu\xa0: ' + m,
@@ -945,6 +951,8 @@
             sbHoverHint: "Den Zeiger auf einem Kartenpunkt ruhen lassen: Adresse, Zustand und Zertifizierung erscheinen.",
             sbRppNum: "RPP-Hausnummern",
             sbRppNumHint: "Schreibt die Hausnummer unter das Dreieck jedes in WME geladenen Wohnorts (RPP), ab Zoom 17: kein Klick mehr nötig, um zu wissen, welcher es ist. Nur Anzeige.",
+            sbRppLot: "RPP im Stapel",
+            sbRppLotHint: "„Hausnummern hinzufügen“ für eine ganze Straße legt bei Bedarf auch Wohnorte (RPP) an (Ende einer Zufahrt, außerorts, keine Straße dieses Namens in der Nähe). Aus: nur Hausnummern auf Segmenten; RPP bleiben dem „+“ überlassen, einzeln. Nur L6; eigene Einstellung.",
             sbColors: "Farben",
             sbColorsReset: "Standardfarben",
             legColMap: "Gemeindekarte",
@@ -1146,6 +1154,7 @@
             rhnVersRppAbsent: n => 'Nummer ' + n + ' in WME nicht gefunden (Segment nicht geladen oder Nummer schon entfernt): nichts geändert.',
             rhnVersRppTipPose: 'In einen RPP umgewandelt (noch nicht gespeichert).',
             ajHnSkip: n => n + (un1(n) ? ' Adresse übersprungen' : ' Adressen übersprungen') + ' (Details in der Konsole).',
+            ajHnRppLot: n => n + ' RPP dem „+“ überlassen („RPP im Stapel“ aus).',
             ajHnCut: (n, h) => n + (un1(n) ? ' Adresse nicht gesetzt' : ' Adressen nicht gesetzt') + ': Kontingent erreicht, weiter ab ' + h + '.',
             ajHnNoSeg: 'Kein geladenes Segment trägt genau diesen Namen als Hauptnamen mit der Gemeinde als Stadt: nichts wurde gesetzt.',
             ajHnErr: m => 'Hinzufügen abgebrochen: ' + m,
@@ -1321,6 +1330,8 @@
             sbHoverHint: "Detenga el puntero sobre un punto del mapa: aparecen su dirección, su estado y su certificación.",
             sbRppNum: "Número de los RPP",
             sbRppNumHint: "Escribe su número bajo el triángulo de cada lugar residencial (RPP) cargado en WME, desde el zoom 17: ya no hace falta hacer clic para saber cuál es. Solo visualización.",
+            sbRppLot: "RPP en lote",
+            sbRppLotHint: "«Añadir los números» de una calle entera también crea los lugares residenciales (RPP) cuando hace falta (final de un acceso, fuera de poblado, ninguna calle con ese nombre cerca). Desactivado: solo números en segmentos; los RPP quedan para el «+», uno a uno. Solo L6; ajuste propio de cada editor.",
             sbColors: "Colores",
             sbColorsReset: "Colores por defecto",
             legColMap: "Mapa de municipios",
@@ -1522,6 +1533,7 @@
             rhnVersRppAbsent: n => 'El número ' + n + ' no se encuentra en WME (segmento no cargado, o número ya quitado): no se cambia nada.',
             rhnVersRppTipPose: 'Convertido en RPP (aún sin guardar).',
             ajHnSkip: n => n + (un1(n) ? ' dirección descartada' : ' direcciones descartadas') + ' (detalle en la consola).',
+            ajHnRppLot: n => n + ' RPP ' + (un1(n) ? 'dejado' : 'dejados') + ' para el «+» («RPP en lote» desactivado).',
             ajHnCut: (n, h) => n + (un1(n) ? ' dirección no colocada' : ' direcciones no colocadas') + ': cuota alcanzada, se podrá seguir a las ' + h + '.',
             ajHnNoSeg: 'Ningún segmento cargado lleva exactamente este nombre como nombre principal con el municipio como ciudad: no se ha colocado nada.',
             ajHnErr: m => 'Adición interrumpida: ' + m,
@@ -1697,6 +1709,8 @@
             sbHoverHint: "Ferma il puntatore su un punto della mappa: compaiono indirizzo, stato e certificazione.",
             sbRppNum: "Numero degli RPP",
             sbRppNumHint: "Scrive il numero civico sotto il triangolo di ogni luogo residenziale (RPP) caricato in WME, dallo zoom 17: non serve più cliccarlo per sapere quale sia. Solo visualizzazione.",
+            sbRppLot: "RPP in blocco",
+            sbRppLotHint: "«Aggiungi i numeri» di un’intera via crea anche i luoghi residenziali (RPP) quando serve (fine di un vialetto, fuori dal centro abitato, nessuna via con quel nome vicina). Disattivato: solo numeri sui segmenti; gli RPP restano al «+», uno alla volta. Solo L6; impostazione personale.",
             sbColors: "Colori",
             sbColorsReset: "Colori predefiniti",
             legColMap: "Mappa dei comuni",
@@ -1898,6 +1912,7 @@
             rhnVersRppAbsent: n => 'Il numero ' + n + ' non si trova in WME (segmento non caricato, o numero già tolto): nulla è cambiato.',
             rhnVersRppTipPose: 'Trasformato in RPP (non ancora salvato).',
             ajHnSkip: n => n + (un1(n) ? ' indirizzo scartato' : ' indirizzi scartati') + ' (dettagli nella console).',
+            ajHnRppLot: n => n + ' RPP ' + (un1(n) ? 'lasciato' : 'lasciati') + ' al «+» («RPP in blocco» disattivato).',
             ajHnCut: (n, h) => n + (un1(n) ? ' indirizzo non inserito' : ' indirizzi non inseriti') + ': quota raggiunta, si potrà riprendere alle ' + h + '.',
             ajHnNoSeg: 'Nessun segmento caricato porta esattamente questo nome come nome principale con il comune come città: non è stato inserito nulla.',
             ajHnErr: m => 'Aggiunta interrotta: ' + m,
@@ -2073,6 +2088,8 @@
             sbHoverHint: "Pare o ponteiro sobre um ponto do mapa: aparecem o endereço, o estado e a certificação.",
             sbRppNum: "Número dos RPP",
             sbRppNumHint: "Escreve o número sob o triângulo de cada lugar residencial (RPP) carregado no WME, a partir do zoom 17: não é mais preciso clicar para saber qual é. Só exibição.",
+            sbRppLot: "RPP em lote",
+            sbRppLotHint: "“Adicionar os números” de uma rua inteira também cria os locais residenciais (RPP) quando necessário (fim de um acesso, fora da área urbana, nenhuma rua com esse nome por perto). Desativado: só números em segmentos; os RPP ficam para o “+”, um de cada vez. Só L6; configuração de cada editor.",
             sbColors: "Cores",
             sbColorsReset: "Cores padrão",
             legColMap: "Mapa dos municípios",
@@ -2274,6 +2291,7 @@
             rhnVersRppAbsent: n => 'O número ' + n + ' não foi encontrado no WME (segmento não carregado, ou número já retirado): nada mudou.',
             rhnVersRppTipPose: 'Transformado em RPP (ainda não salvo).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes no console).',
+            ajHnRppLot: n => n + ' RPP ' + (un1(n) ? 'deixado' : 'deixados') + ' para o “+” (“RPP em lote” desativado).',
             ajHnCut: (n, h) => n + (un1(n) ? ' endereço não colocado' : ' endereços não colocados') + ': cota atingida, retomada possível às ' + h + '.',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
             ajHnErr: m => 'Adição interrompida: ' + m,
@@ -2449,6 +2467,8 @@
             sbHoverHint: "Pare o ponteiro sobre um ponto do mapa: aparecem a morada, o estado e a certificação.",
             sbRppNum: "Número dos RPP",
             sbRppNumHint: "Escreve o número sob o triângulo de cada lugar residencial (RPP) carregado no WME, a partir do zoom 17: já não é preciso clicar para saber qual é. Só apresentação.",
+            sbRppLot: "RPP em lote",
+            sbRppLotHint: "«Adicionar os números» de uma rua inteira também cria os locais residenciais (RPP) quando necessário (fim de um acesso, fora da zona urbana, nenhuma rua com esse nome perto). Desativado: só números em segmentos; os RPP ficam para o «+», um de cada vez. Só L6; definição de cada editor.",
             sbColors: "Cores",
             sbColorsReset: "Cores predefinidas",
             legColMap: "Mapa dos municípios",
@@ -2650,6 +2670,7 @@
             rhnVersRppAbsent: n => 'O número ' + n + ' não foi encontrado no WME (segmento não carregado, ou número já retirado): nada mudou.',
             rhnVersRppTipPose: 'Transformado em RPP (ainda não guardado).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes na consola).',
+            ajHnRppLot: n => n + ' RPP ' + (un1(n) ? 'deixado' : 'deixados') + ' para o «+» («RPP em lote» desativado).',
             ajHnCut: (n, h) => n + (un1(n) ? ' morada não colocada' : ' moradas não colocadas') + ': quota atingida, retoma possível às ' + h + '.',
             ajHnNoSeg: 'Nenhum segmento carregado tem exatamente este nome como nome principal com o município como cidade: nada foi colocado.',
             ajHnErr: m => 'Adição interrompida: ' + m,
@@ -2825,6 +2846,8 @@
             sbHoverHint: "עצרו את הסמן על נקודה במפה: הכתובת, המצב והאישור שלה יופיעו.",
             sbRppNum: "מספרי RPP",
             sbRppNumHint: "כותב את מספר הבית מתחת למשולש של כל מקום מגורים (RPP) שנטען ב-WME, מזום 17: אין צורך ללחוץ כדי לדעת איזה הוא. תצוגה בלבד.",
+            sbRppLot: "RPP באצווה",
+            sbRppLotHint: "„הוספת המספרים” לרחוב שלם יוצרת גם מקומות מגורים (RPP) בעת הצורך (סוף דרך גישה, מחוץ לשטח בנוי, אין רחוב בשם זה בקרבת מקום). כבוי: רק מספרי בתים על מקטעים; ה-RPP נשארים ל-„+”, אחד אחד. ל-L6 בלבד; הגדרה אישית.",
             sbColors: "צבעים",
             sbColorsReset: "צבעי ברירת מחדל",
             legColMap: "מפת הרשויות",
@@ -3026,6 +3049,7 @@
             rhnVersRppAbsent: n => 'המספר ' + n + ' לא נמצא ב-WME (המקטע לא נטען, או שהמספר כבר הוסר): דבר לא שונה.',
             rhnVersRppTipPose: 'הפך ל־RPP (עדיין לא נשמר).',
             ajHnSkip: n => (un1(n) ? 'כתובת אחת דולגה' : n + ' כתובות דולגו') + ' (פרטים במסוף).',
+            ajHnRppLot: n => (un1(n) ? 'RPP אחד נשאר' : n + ' RPP נשארו') + ' ל-„+” („RPP באצווה” כבוי).',
             ajHnCut: (n, h) => n + (un1(n) ? ' כתובת לא הוצבה' : ' כתובות לא הוצבו') + ': המכסה נוצלה, ניתן להמשיך בשעה ' + h + '.',
             ajHnNoSeg: 'אף מקטע טעון אינו נושא בדיוק שם זה כשם ראשי עם הרשות כעיר: דבר לא הוצב.',
             ajHnErr: m => 'ההוספה הופסקה: ' + m,
@@ -3593,13 +3617,21 @@
             // Couples tranchés règle par règle, HN avant RPP (le RPP est le doublon), puis au plus près ; chacun ne sert qu'une fois.
             const couples = [];
             const memeNom = (x, v) => x.noms.has(v.norm) || (v.variantes.size > 0 && [...x.noms].some(nom => v.variantes.has(nom)));
+            // Rattaché à la voie par son segment (règle 2, suffixes, « loin »). 0.28.09 — Narbonne (auteur, 20/11) : un RPP « 5 Rue de
+            // Navarre » posé contre l'avenue Montesquieu avait pour segment le plus proche un segment de l'avenue, et le passage « loin »
+            // le donnait au « 5 Avenue Montesquieu » de la BAN, à 156 m. Un RPP qui porte une rue n'est rattaché ainsi que si cette rue
+            // est un nom des segments de la voie (rue mal nommée dans WME : le RPP au nom WME reste rattaché). Un numéro de segment, lui,
+            // porte les noms de son propre segment : inchangé.
+            const nomsSegsVoie = new Map();
+            const nomsDesSegs = v => { let s = nomsSegsVoie.get(v); if (!s) { s = new Set(); for (const sg of v.segs) sg.noms.forEach(n => s.add(n)); nomsSegsVoie.set(v, s); } return s; };
+            const parSegment = (x, v) => !!x.seg && v.segs.has(x.seg) && (x.type !== 'RPP' || !x.noms.size || [...x.noms].some(n => nomsDesSegs(v).has(n)));
             for (const v of voies.values()) {
                 for (const a of v.adresses) {
                     a.trouve = null;
                     for (const x of autourDe(a.num, a.lon, a.lat)) {
                         const dm = distWme(a, x);
                         if (dm > RAYON_M) continue;
-                        const regle = memeNom(x, v) ? 1 : (x.seg && v.segs.has(x.seg)) ? 2 : dm <= PROCHE_M ? 3 : 0;
+                        const regle = memeNom(x, v) ? 1 : parSegment(x, v) ? 2 : dm <= PROCHE_M ? 3 : 0;
                         if (regle) couples.push({ a, x, regle, dm });
                     }
                 }
@@ -3626,7 +3658,7 @@
                 for (const x of baseAutour(base(a.num), a.lon, a.lat)) {
                     if (suffixes.has(x) || x.num === a.num) continue;
                     const dm = distWme(a, x);
-                    if (dm <= dmin && (memeNom(x, v) || (x.seg && v.segs.has(x.seg)))) { meilleur = x; dmin = dm; }
+                    if (dm <= dmin && (memeNom(x, v) || parSegment(x, v))) { meilleur = x; dmin = dm; }
                 }
                 if (meilleur) { a.suffixe = meilleur.brut; suffixes.add(meilleur); }
             }
@@ -3643,7 +3675,7 @@
                 if (a.trouve || a.suffixe) continue;
                 let meilleur = null, dmin = LOIN_MAX_M;
                 for (const x of parNumTous.get(a.num) || []) {
-                    if (pris.has(x) || !(memeNom(x, v) || (x.seg && v.segs.has(x.seg))) || !dansContour(x.lon, x.lat, contourCommune)) continue;
+                    if (pris.has(x) || !(memeNom(x, v) || parSegment(x, v)) || !dansContour(x.lon, x.lat, contourCommune)) continue;
                     const dm = distWme(a, x);
                     if (dm <= dmin) { meilleur = x; dmin = dm; }
                 }
@@ -3875,7 +3907,10 @@
             };
             const deLaVoie = new Set([...(voie.segs || [])].concat([...probables]));
             const nomsVoie = [...new Set(segs.filter(s => deLaVoie.has(s.id) && !bonNom(s) && !horsAgglo(s) && s.nom).map(s => s.nom))];
-            const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0 };
+            const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0, rppLot: 0 };
+            // 0.28.10 — option « RPP en lot » (L6, par éditeur ; demandée par milkyway35, décision de l'auteur 20/11) : coupée, « Ajouter les
+            // numéros » d'une voie ne pose que des numéros de segment, comme avant ; les RPP restent au « + », un par un.
+            const sansRppLot = !!(opt && opt.lot && opt.rppLot === false);
             const poses = [];
             const vus = new Set((existants || []).map(n => normNum(n)));
             // Dans l'ordre des numéros : quand le quota coupe, pas de trou au milieu de la rue.
@@ -3902,12 +3937,14 @@
                         // (il porte sa propre adresse), entrée sur cette voie ; en lot comme au « + ».
                         const libre = voieRoulableProche(a, segs);
                         if (!libre) { ecartes.loin++; continue; }
+                        if (sansRppLot) { ecartes.rppLot++; continue; }
                         if (poses.length >= reste) { ecartes.quota++; continue; }
                         vus.add(cle);
                         poses.push({ number, lon: a.lon, lat: a.lat, segmentId: libre.id, adresse: a, libre: true, entree: pointLePlusProche(a.lon, a.lat, libre.coords),
                             rpp: { rue: voie.nom, ville: villeRpp(commune) } });
                         continue;
                     }
+                    if (sansRppLot) { ecartes.rppLot++; continue; }
                     if (poses.length >= reste) { ecartes.quota++; continue; }
                     vus.add(cle);
                     const altR = enAgglo.indexOf(r.rue) < 0 ? altBan(r.rue) : null;
@@ -3916,6 +3953,7 @@
                     continue;
                 }
                 const alt = enAgglo.indexOf(best) < 0 ? altBan(best) : null;
+                if (alt && sansRppLot) { ecartes.rppLot++; continue; }
                 if (poses.length >= reste) { ecartes.quota++; continue; }
                 vus.add(cle);
                 poses.push({ number, lon: a.lon, lat: a.lat, segmentId: best.id, adresse: a, rpp: alt ? { rue: alt.nom, ville: villeRpp(alt.ville) } : null });
@@ -5836,7 +5874,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 
 
     let ovEl = null;
-    const OPTS_DEF = () => ({ mode: 'here', carte: false, trouves: false, certSeules: false, survol: true, couleurs: {}, carteDep: true, replie: false, seuilArret: 80, numRpp: true, calque: false, contour: false });
+    const OPTS_DEF = () => ({ mode: 'here', carte: false, trouves: false, certSeules: false, survol: true, couleurs: {}, carteDep: true, replie: false, seuilArret: 80, numRpp: true, rppLot: true, calque: false, contour: false });
     let opts = OPTS_DEF();
     let choixCommune = null;          // {code, nom, dep} choisi dans la recherche
     let choixDep = '';
@@ -8177,8 +8215,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const n = posablesHn(v);
         const ap = v.apercuHn;
         const nomOk = nomOkHn(v);
-        const k = ap ? Math.min(ap.hn + (ap.allee || 0) + (ap.rpp || 0), q.reste) : Math.min(n, q.reste);
-        const tip = !nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !k ? (ap && ap.nomEcart ? t('ajHnNomEcart', ap.nomEcart, v.nom) : ap && ap.loin ? t('ajHnLoin', nb(ap.loin)) : t('ajHnNone')) : t('ajHnAddTip', nb(q.reste));
+        // Option « RPP en lot » coupée : le bouton ne compte que les numéros de segment, les RPP restent au « + ».
+        const rppAu1 = ap && opts.rppLot === false ? (ap.allee || 0) + (ap.rpp || 0) : 0;
+        const k = ap ? Math.min(ap.hn + (ap.allee || 0) + (ap.rpp || 0) - rppAu1, q.reste) : Math.min(n, q.reste);
+        const tip = (!nomOk ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : !k && !rppAu1 ? (ap && ap.nomEcart ? t('ajHnNomEcart', ap.nomEcart, v.nom) : ap && ap.loin ? t('ajHnLoin', nb(ap.loin)) : t('ajHnNone')) : k ? t('ajHnAddTip', nb(q.reste)) : '')
+            + (rppAu1 ? (k ? ' ' : '') + t('ajHnRppLot', nb(rppAu1)) : '');
         const lib = t('ajHnAdd', nb(k));
         return boutonOutil('hnvoie', 'add', lib, tip, k, !(nomOk && k && !hnEnCours)) +
             (hnEnCours ? ' <button type="button" class="wbc-btn wbc-btn-neutral" data-act="hnstop" title="' + esc(t('ajHnStopTip')) + '">' + esc(t('stop')) + '</button>' : '') +
@@ -8473,7 +8514,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             const msgAlt =() => (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : '') + (sansAltR ? ' ' + t('ajHnSansAltRoute', v.nom, commune) : '');
             const passe = async (cadrerSiBesoin, zone) => {
                 const { segs, existants } = await lireVoieHn(v, cadrerSiBesoin, zone);
-                const plan = Core.planHn(vPlan, commune, segs, existants, Core.quotaHn(horo, Date.now()).reste, { lot: !seule });
+                const plan = Core.planHn(vPlan, commune, segs, existants, Core.quotaHn(horo, Date.now()).reste, { lot: !seule, rppLot: opts.rppLot !== false });
                 log('numéros ' + v.nom + ' : ' + plan.poses.length + ' à poser, segments admis ' + plan.admis + '/' + segs.length +
                     ' (hors agglo ' + plan.hors + ', autre nom ' + plan.refus.nom + ', autre ville ' + plan.refus.ville + '), écartés ' + JSON.stringify(plan.ecartes));
                 admisTotal += plan.admis;
@@ -8569,7 +8610,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             msg = [(critiques.length ? t('ajRppCrit', critiques.join(' · ')) + ' ' : '') +
                 (nRpp && !n ? t('ajHnDoneRpp', nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : nRpp ? t('ajHnDoneMix', nb(n), nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : t('ajHnDone', nb(n), nb(Core.quotaHn(horo, Date.now()).reste))) +
                 (n + nRpp ? ' ' + t('ajHnSee', n + nRpp) : '') + (sugg && n ? ' ' + t('ajHn1Lock', Core.numeroHn(seule.brut), sugg.niveau) : '') + (hnStop ? ' ' + t('ajHnStopped') : '') + coupe +
-                (ecartes ? ' ' + t('ajHnSkip', nb(ecartes)) : '') +
+                (ecartes ? ' ' + t('ajHnSkip', nb(ecartes)) : '') + (!seule && e.rppLot ? ' ' + t('ajHnRppLot', nb(e.rppLot)) : '') +
                 (nEchec ? ' ' + t('ajHnFail', nb(nEchec)) : '') + (nVerrou ? ' ' + t('ajHnLockSkip', nb(nVerrou)) : '') +
                 (e.loin ? msgAlt() : '') +
                 (err ? ' ' + t('ajHnErr', (err && (err.message || err.name)) || '') : ''), (!(n + nRpp) && (!!err || nVerrou > 0)) || critiques.length > 0];
@@ -9233,6 +9274,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     <div class="wbc-toggle-row wbc-sb-ligne"><label class="wbc-toggle-lbl" for="wbc-numrpp">${esc(t('sbRppNum'))}</label>
         <label class="wbc-toggle"><input type="checkbox" id="wbc-numrpp"${opts.numRpp ? ' checked' : ''}><span class="wbc-toggle-slider"></span></label></div>
     <p class="wbc-sb-hint">${esc(t('sbRppNumHint'))}</p>
+    <div data-rpplot${droitGeste('voie') ? '' : ' hidden'}><div class="wbc-toggle-row wbc-sb-ligne"><label class="wbc-toggle-lbl" for="wbc-rpplot">${esc(t('sbRppLot'))}</label>
+        <label class="wbc-toggle"><input type="checkbox" id="wbc-rpplot"${opts.rppLot !== false ? ' checked' : ''}><span class="wbc-toggle-slider"></span></label></div>
+    <p class="wbc-sb-hint">${esc(t('sbRppLotHint'))}</p></div>
     <p class="wbc-sb-lbl"><label for="wbc-arret">${esc(t('sbArret'))}</label></p>
     <select class="wbc-champ wbc-sb-select" id="wbc-arret">${Core.PALIERS_ARRET.map(p => `<option value="${p}"${p === seuilArret() ? ' selected' : ''}>${esc(nb(p))}\u00a0m</option>`).join('')}</select>
     <p class="wbc-sb-hint">${esc(t('sbArretHint'))}</p>
@@ -9266,6 +9310,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             res.tabPane.addEventListener('change', ev => {
                 if (ev.target.id === 'wbc-survol') { opts.survol = ev.target.checked; ecrireOpts(); if (!opts.survol) cacherFiche(); }
                 if (ev.target.id === 'wbc-numrpp') { opts.numRpp = ev.target.checked; ecrireOpts(); majRpp(); }
+                if (ev.target.id === 'wbc-rpplot') { opts.rppLot = ev.target.checked; ecrireOpts(); if (resultat) rendre(); }
                 if (ev.target.id === 'wbc-arret') { opts.seuilArret = Number(ev.target.value) || 80; ecrireOpts(); majCalque(); if (resultat || resDep) rendre(); }
             });
             // « input » et non « change » : la carte suit le sélecteur de couleur pendant qu'on le règle.
@@ -9483,6 +9528,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         editeurConnu.then(lireDroits).then(() => {
             if (!droitGeste('hn1')) return;
             document.querySelectorAll('#wbc-sidebar [data-hn]').forEach(e => { e.hidden = false; });
+            // Option « RPP en lot » : seulement pour qui a « Ajouter les numéros » d'une voie entière (L6).
+            document.querySelectorAll('#wbc-sidebar [data-rpplot]').forEach(e => { e.hidden = !droitGeste('voie'); });
             rendre();
             lancerRapprochement(false);
             try { sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: r => { if (r && r.success) lancerRapprochement(true); } }); }
