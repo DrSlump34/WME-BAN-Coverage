@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.28.05
+// @version      0.28.08
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -400,6 +400,7 @@
             ajHnRights: '“Add the house numbers” for a whole street is reserved for L6 editors; the “+” of a single number and the ⇄ conversions are open to all ranks.',
             ajHnSee: n => (un1(n) ? 'It is' : 'They are') + ' circled in turquoise on the map.',
             ajHnPoseTip: 'Placed by WBC, not saved yet: click to centre the map on it.',
+            ajZoom17: 'Zoom to level 17 or more: below it, WME does not load residential places. The map is left where it is.',
             ajHnSaved: (c, r, q) => 'Save: ' + c + (un1(c) ? ' number counted' : ' numbers counted') + ', ' + r + ' given back to the quota (removed before saving). Quota left: ' + q + '.',
             ajHnSavedTip: 'Placed by WBC and saved.',
             hHnT: 'Adding house numbers',
@@ -775,6 +776,7 @@
             ajHnRights: '«\u00a0Ajouter les numéros\u00a0» d’une voie entière est réservé aux éditeurs L6\u00a0; le «\u00a0+\u00a0» d’un seul numéro et les conversions «\u00a0⇄\u00a0» sont ouverts à tous les rangs.',
             ajHnSee: n => un(n) ? 'Il est entouré en turquoise sur la carte.' : 'Ils sont entourés en turquoise sur la carte.',
             ajHnPoseTip: 'Posé par WBC, pas encore enregistré\xa0: cliquez pour centrer la carte dessus.',
+            ajZoom17: 'Zoomez au niveau 17 ou plus\u00a0: en dessous, WME ne charge pas les lieux résidentiels. La carte reste où elle est.',
             ajHnSaved: (c, r, q) => 'Enregistrement\xa0: ' + c + (un(c) ? ' numéro compté' : ' numéros comptés') + ', ' + r + ' rendu(s) au quota (retirés avant l’enregistrement). Reste au quota\xa0: ' + q + '.',
             ajHnSavedTip: 'Posé par WBC et enregistré.',
             hHnT: 'Ajouter les numéros',
@@ -1150,6 +1152,7 @@
             ajHnRights: '„Hausnummern hinzufügen“ für eine ganze Straße ist L6-Editoren vorbehalten; das „+“ einer einzelnen Nummer und die Umwandlungen „⇄“ stehen allen Rängen offen.',
             ajHnSee: n => (un1(n) ? 'Sie ist' : 'Sie sind') + ' auf der Karte türkis eingekreist.',
             ajHnPoseTip: 'Von WBC gesetzt, noch nicht gespeichert: klicken, um die Karte darauf zu zentrieren.',
+            ajZoom17: 'Auf Stufe 17 oder höher zoomen: darunter lädt WME keine Wohnorte. Die Karte bleibt, wo sie ist.',
             ajHnSaved: (c, r, q) => 'Gespeichert: ' + c + (un1(c) ? ' Nummer gezählt' : ' Nummern gezählt') + ', ' + r + ' dem Kontingent zurückgegeben (vor dem Speichern entfernt). Verbleibendes Kontingent: ' + q + '.',
             ajHnSavedTip: 'Von WBC gesetzt und gespeichert.',
             hHnT: 'Hausnummern hinzufügen',
@@ -1525,6 +1528,7 @@
             ajHnRights: '«Añadir los números» de una calle entera está reservado a los editores L6; el «+» de un solo número y las conversiones «⇄» están abiertos a todos los rangos.',
             ajHnSee: n => (un1(n) ? 'Aparece rodeado' : 'Aparecen rodeados') + ' en turquesa en el mapa.',
             ajHnPoseTip: 'Colocado por WBC, aún sin guardar: haga clic para centrar el mapa en él.',
+            ajZoom17: 'Acerque el zoom al nivel 17 o más: por debajo, WME no carga los lugares residenciales. El mapa no se mueve.',
             ajHnSaved: (c, r, q) => 'Guardado: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devueltos a la cuota (retirados antes de guardar). Cuota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado por WBC y guardado.',
             hHnT: 'Añadir los números',
@@ -1900,6 +1904,7 @@
             ajHnRights: '«Aggiungi i numeri» di un’intera via è riservato agli editor L6; il «+» di un solo numero e le conversioni «⇄» sono aperti a tutti i livelli.',
             ajHnSee: n => (un1(n) ? 'È cerchiato' : 'Sono cerchiati') + ' in turchese sulla mappa.',
             ajHnPoseTip: 'Inserito da WBC, non ancora salvato: clicca per centrare la mappa.',
+            ajZoom17: 'Ingrandisci al livello 17 o più: al di sotto, WME non carica i luoghi residenziali. La mappa resta dov’è.',
             ajHnSaved: (c, r, q) => 'Salvataggio: ' + c + (un1(c) ? ' numero contato' : ' numeri contati') + ', ' + r + ' restituiti alla quota (rimossi prima del salvataggio). Quota residua: ' + q + '.',
             ajHnSavedTip: 'Inserito da WBC e salvato.',
             hHnT: 'Aggiungere i numeri',
@@ -2275,6 +2280,7 @@
             ajHnRights: '“Adicionar os números” de uma rua inteira é reservado aos editores L6; o “+” de um só número e as conversões “⇄” estão abertos a todos os níveis.',
             ajHnSee: n => un1(n) ? 'Ele aparece circulado em turquesa no mapa.' : 'Eles aparecem circulados em turquesa no mapa.',
             ajHnPoseTip: 'Colocado pelo WBC, ainda não salvo: clique para centralizar o mapa nele.',
+            ajZoom17: 'Aproxime para o nível 17 ou mais: abaixo dele, o WME não carrega os locais residenciais. O mapa fica onde está.',
             ajHnSaved: (c, r, q) => 'Salvamento: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à cota (removidos antes de salvar). Cota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e salvo.',
             hHnT: 'Adicionar os números',
@@ -2650,6 +2656,7 @@
             ajHnRights: '«Adicionar os números» de uma rua inteira está reservado aos editores L6; o «+» de um só número e as conversões «⇄» estão abertos a todos os níveis.',
             ajHnSee: n => (un1(n) ? 'Aparece rodeado' : 'Aparecem rodeados') + ' a turquesa no mapa.',
             ajHnPoseTip: 'Colocado pelo WBC, ainda não guardado: clique para centrar o mapa nele.',
+            ajZoom17: 'Aproxime para o nível 17 ou superior: abaixo dele, o WME não carrega os locais residenciais. O mapa fica onde está.',
             ajHnSaved: (c, r, q) => 'Gravação: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à quota (retirados antes de guardar). Quota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e guardado.',
             hHnT: 'Adicionar os números',
@@ -3025,6 +3032,7 @@
             ajHnRights: '„הוספת המספרים” לרחוב שלם שמורה לעורכי L6; ה־„+” של מספר בודד והמרות «⇄» פתוחים לכל הדרגות.',
             ajHnSee: n => un1(n) ? 'הוא מוקף בטורקיז על המפה.' : 'הם מוקפים בטורקיז על המפה.',
             ajHnPoseTip: 'הוצב על ידי WBC, טרם נשמר: יש ללחוץ כדי למרכז את המפה עליו.',
+            ajZoom17: 'יש להתקרב לרמה 17 ומעלה: מתחת לכך WME אינו טוען מקומות מגורים. המפה נשארת במקומה.',
             ajHnSaved: (c, r, q) => 'שמירה: ' + (un1(c) ? 'מספר אחד נספר' : c + ' מספרים נספרו') + ', ' + r + ' הוחזרו למכסה (הוסרו לפני השמירה). יתרת המכסה: ' + q + '.',
             ajHnSavedTip: 'הוצב על ידי WBC ונשמר.',
             hHnT: 'הוספת המספרים',
@@ -3780,8 +3788,10 @@
 
         // Nom « souple » : seuls accents, casse, apostrophes, espaces et ponctuation sont tolérés ; un écart de ponctuation avertit sans bloquer.
         function nomGraphie(s) {
+            // 0.28.08 \u2014 signal\u00e9 par milkyway35 (Foug\u00e8res, all\u00e9e des \u0152illets) : la BAN \u00e9crit \u00ab Oeillets \u00bb, WME \u00ab \u0152illets \u00bb.
+            // normNom (analyse) pliait d\u00e9j\u00e0 \u0153/\u00e6 ; nomGraphie (pose, villes) non \u21d2 la rue n'\u00e9tait pas admise et la pose partait en RPP.
             return String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[\u2018\u2019`\u00b4]/g, "'")
-                .replace(/\s+/g, ' ').trim().toLowerCase();
+                .replace(/\s+/g, ' ').trim().toLowerCase().replace(/\u0153/g, 'oe').replace(/\u00e6/g, 'ae');
         }
         function nomSouple(s) {
             return nomGraphie(s).replace(/[-\u2010\u2011\u2012\u2013\u2014.]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -5249,10 +5259,11 @@
                 const ou = { x: parseFloat(bulle.style.left) || 0, y: parseFloat(bulle.style.top) || 0 };
                 vue.hnMsg = null;
                 fermerBulle();
+                gesteCarte = true;
                 const action = b.dataset.hnrpp1 ? convertirHnRpp(bi, bk)
                     : b.dataset.rpphn1 ? (vue.curseurRpp = bi + ':' + bk, convertirRppVoie(bi, bk))
                     : (vue.curseur = bk, ajouterHnVoie(bi, bk));
-                Promise.resolve(action).then(() => { const m = vue.hnMsg; if (m && m.i === bi && m.err) montrerAvis(m.txt, ou); }, () => { });
+                Promise.resolve(action).then(() => { gesteCarte = false; const m = vue.hnMsg; if (m && m.i === bi && m.err) montrerAvis(m.txt, ou); }, () => { gesteCarte = false; });
             });
         }
         bulle.dir = _lang === 'he' ? 'rtl' : 'ltr';
@@ -5273,6 +5284,15 @@
         cacherFiche();
         const btn = bulle.querySelector('.wbc-bulle-btn:not([disabled])');
         if (btn) btn.focus({ preventScroll: true });
+        // Sous le zoom 17 le geste ne déplacerait plus la carte : il est refusé d'avance, motif dans la bulle.
+        const ouverte = bulleAdr;
+        zoomCarte().then(z => {
+            if (z == null || z >= 17 || bulleAdr !== ouverte || !bulle || bulle.hidden) return;
+            const bb = bulle.querySelector('.wbc-bulle-btn');
+            if (bb) bb.disabled = true;
+            const act = bulle.querySelector('.wbc-bulle-act');
+            if (act) { act.querySelectorAll('.wbc-bulle-raison').forEach(x => x.remove()); act.insertAdjacentHTML('beforeend', '<div class="wbc-bulle-raison">' + esc(t('ajZoom17')) + '</div>'); }
+        });
         return true;
     }
     document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && bulleAdr) fermerBulle(); });
@@ -5338,6 +5358,7 @@
         try { ext = await sdk.Map.getMapExtent(); zoom = await sdk.Map.getZoomLevel(); c = await sdk.Map.getMapCenter(); } catch (e) { }
         const dedans = !!ext && lon >= ext[0] && lon <= ext[2] && lat >= ext[1] && lat <= ext[3];
         if (dedans && zoom >= 17) return false;
+        if (gesteCarte) return 'zoom';
         const k = Math.pow(2, zoom - 17);
         const lonLat = dedans && c ? { lon: lon + (c.lon - lon) * k, lat: lat + (c.lat - lat) * k } : { lon, lat };
         await sdk.Map.setMapCenter({ lonLat, zoomLevel: Math.max(17, zoom) });
@@ -7831,7 +7852,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const a = resultat.voies[i].adresses[k];
         vue.curseur = k;
         rendre();
-        centrerLibre(a.lon, a.lat, 19);
+        // Depuis la fenêtre : on ne recentre que si l'adresse est hors de la partie visible de la carte (auteur, 19/11).
+        Promise.resolve().then(async () => {
+            const z = zoneVisible(), px = await sdk.Map.getPixelFromLonLat({ lonLat: { lon: a.lon, lat: a.lat } });
+            if (z && px && px.x >= z.g + 10 && px.x <= z.d - 10 && px.y >= z.h + 10 && px.y <= z.b - 10) return;
+            await centrerLibre(a.lon, a.lat, 19);
+        }).catch(() => centrerLibre(a.lon, a.lat, 19));
         const b = ovEl.querySelector('[data-adr="' + i + ':' + k + '"]');
         if (b) b.focus({ preventScroll: false });
     }
@@ -7923,6 +7949,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         return { n: v.length ? Math.min(...v) : -1, nom };
     }
     let droitHn = false, droitHn1 = false, hnUser = '', hnEnCours = false, hnStop = false;
+    // Modifications en attente laissées par le dernier geste « ⇄ » de WBC (compte de WME juste après lui) : un ⇄ suivant peut
+    // s'enchaîner sans enregistrer si rien d'autre n'a bougé depuis. Remis à 0 à chaque enregistrement.
+    let attenteWbc = 0;
+    // Geste lancé depuis la bulle de la CARTE : la carte ne bouge pas (auteur, 18/11 puis 19/11) ; sous le zoom 17, le geste est refusé.
+    let gesteCarte = false;
     async function lireDroitHn() {
         const p = await _hp();
         hnUser = p.nom;
@@ -8501,7 +8532,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             };
             let plan;
             if (seule) {
-                await assurerVue(seule.lon, seule.lat);
+                if ((await assurerVue(seule.lon, seule.lat)) === 'zoom') { msg = [t('ajZoom17'), true]; return; }
                 plan = await passe(false, { lon: seule.lon, lat: seule.lat, adresses: [seule] });
                 if (refusRappel) { statut(''); return; }
                 if (!n && !nRpp && !err) {
@@ -8609,13 +8640,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const q = Core.quotaHn(lireHorodatages(), Date.now());
         if (!q.reste) { statut(t('ajHnQuota', heureCourte(q.libre)), true); return; }
         const n0 = await enAttente();
-        if (n0 !== 0) { statut(t('rhnUnsaved'), true); return; }
+        // Rien en attente, ou seulement ce que le ⇄ précédent de WBC vient de poser (auteur, 19/11 : « il me faut enregistrer, puis faire le
+        // suivant »). Une autre modification, ou une annulation depuis, change le compte : refus comme avant. Le refus se voit dans la bulle.
+        if (n0 !== 0 && (n0 == null || n0 !== attenteWbc)) { vue.hnMsg = { i, txt: t('rhnUnsaved'), err: true }; statut(t('rhnUnsaved'), true); return; }
         hnEnCours = true;
         majArrierePlan(true);
         statut(t('ajHnRunning'));
         let msg = null;
         try {
-            await assurerVue(a.wlon, a.wlat);
+            if ((await assurerVue(a.wlon, a.wlat)) === 'zoom') { msg = [t('ajZoom17'), true]; return; }
             const rpp = await trouverRpp(a);
             if (!rpp) { msg = [t('rhnNotFound'), true]; return; }
             if (rpp.aucunLieu) { msg = [t('rhnNoPlaces'), true]; return; }
@@ -8639,6 +8672,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             const kx = Math.cos(lat * Math.PI / 180) * 111320, dist = c => Math.hypot((c[0] - lon) * kx, (c[1] - lat) * 110540);
             const noter = (seg, c) => { const d = dist(c); if (d <= Core.RPP_DOUBLON_M && (!doublon || d < doublon.dist)) doublon = { dist: d, seg }; };
             const ids = admis.map(sg => sg.id);
+            // Ce que WBC a posé sans enregistrer n'est pas relu par fetchHouseNumbers : le même numéro en attente sur ces segments = refus.
+            if (n0 && lireHorodatages().some(x => x && typeof x === 'object' && x.e !== 1 && x.p === SESSION_HN && ids.includes(x.s) && x.n != null && Core.normNum(String(x.n)) === Core.normNum(number))) { msg = [t('rhnUnsaved'), true]; return; }
             for (let n = 0; n < ids.length; n += 250) {
                 const lot = await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: ids.slice(n, n + 250) });
                 for (const h of lot || []) if (Core.normNum(h.number) === Core.normNum(number) && h.geometry) noter(h.segmentId, h.geometry.coordinates);
@@ -8686,6 +8721,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if (!doublon) horo.push({ t: Date.now() + 1, s: seg, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN });
             ecrireHorodatages(horo);
             Object.assign(a, { rppHn: true, hnPose: true, hnSeg: seg, hnNum: number });
+            attenteWbc = (await enAttente()) || 0;
             const reste = nb(Core.quotaHn(horo, Date.now()).reste);
             msg = [(doublon ? t('rhnDoneDbl', number, reste) : t('rhnDone', number, reste)) + (suggRpp ? ' ' + t('rhnLock', suggRpp) : rpp.verrou ? ' ' + t('rhnLockInfo', rpp.verrou + 1) : '') + (suggSeg ? ' ' + t('rhnSegLock', suggSeg.n) : '') + ' ' + t('ajHnSee', 1), false];
         } catch (e) { log('RPP → numéro : ' + e.message); msg = [t('rhnErr', e.message), true]; }
@@ -8718,7 +8754,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const n0 = await enAttente();
         try {
             const lon0 = enAtt ? a.lon : a.wlon, lat0 = enAtt ? a.lat : a.wlat;
-            await assurerVue(lon0, lat0);
+            if ((await assurerVue(lon0, lat0)) === 'zoom') { msg = [t('ajZoom17'), true]; return; }
             const autour = await segmentsAutour(lon0, lat0);
             let hn = null;
             if (enAtt) hn = { id: String(a.hnId), seg: a.hnSeg, number: a.hnNum, pos: [a.lon, a.lat] };
@@ -8880,9 +8916,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         await new Promise(r => setTimeout(r, 600));
         if (j !== suiviJeton) return;
         let px = null, rc = null;
-        try { px = await sdk.Map.getPixelFromLonLat({ lonLat: { lon, lat } }); rc = (await sdk.Map.getMapViewportElement()).getBoundingClientRect(); } catch (e) { return; }
-        if (!px || !rc) return;
-        ouvrirBulle({ voie: cible.voie, ad: cible.ad, lon, lat }, rc.left + px.x, rc.top + px.y);
+        // getPixelFromLonLat rend des coordonnées de PAGE (mesuré le 19/11 : centre de la carte = marge gauche + demi-largeur) :
+        // y ajouter la position de la carte décalait la bulle à droite et en bas, de la largeur du panneau ouvert (signalé par l'auteur).
+        try { px = await sdk.Map.getPixelFromLonLat({ lonLat: { lon, lat } }); } catch (e) { return; }
+        if (!px) return;
+        ouvrirBulle({ voie: cible.voie, ad: cible.ad, lon, lat }, px.x, px.y);
     }
 
     function ouvrirVoie(i) {
@@ -9407,6 +9445,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: majRpp });
             sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: majRpp });
             sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: () => setTimeout(majRppVus, 1500) });
+            sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: () => { attenteWbc = 0; } });
             // Un numéro qu'on vient d'enregistrer n'était pas dans la relecture d'avant : relire, pour le voir cerclé. Le serveur
             // peut répondre avant d'avoir pris l'ajout en compte, et la relecture est gardée jusqu'à l'enregistrement suivant :
             // relire tout de suite, puis encore après DIRECT_RELIRE_MS (Glenan56, 16/11).
