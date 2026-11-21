@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.28.11
+// @version      0.28.12
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4374,6 +4374,19 @@
             '69123': Array.from({ length: 9 }, (_, i) => String(69381 + i)),
         };
         const versCommune = c => ({ code: c.code, nom: c.nom, dep: c.codeDepartement || (c.departement && c.departement.code) || '', bbox: c.bbox ? bboxDe(c.bbox) : null, contour: c.contour || null });
+        // Collectivités d'outre-mer que la BAN couvre au moins en partie (mesuré le 21/11/2026) : geo.api.gouv.fr
+        // ne les liste pas dans /departements, mais rend leurs communes (/departements/<code>/communes).
+        // Wallis-et-Futuna (986) et les TAAF (984) n'ont aucune adresse dans la BAN : non proposés.
+        const COM_BAN = [
+            { code: '975', nom: 'Saint-Pierre-et-Miquelon' },
+            { code: '977', nom: 'Saint-Barthélemy' },
+            { code: '978', nom: 'Saint-Martin' },
+            { code: '987', nom: 'Polynésie française' },
+            { code: '988', nom: 'Nouvelle-Calédonie' },
+        ];
+        // Commune de Polynésie ou de Nouvelle-Calédonie sans BAN : la plateforme répond 500, pas 404 (Belep 98801,
+        // Alo 98611). On la traite comme une commune sans BAN, sans les deux nouveaux essais d'une panne passagère.
+        const sansBanCom = (code, e) => /^98/.test(code) && e && e.status === 500;
         let departements = null;
         const empriseDep = new Map();
 
@@ -4390,11 +4403,12 @@
                     const k = suivant++;
                     let texte;
                     try {
-                        const rep = await gm(BAN_URL(codes[k]), (f, o) => { recus[k] = o; avance(codes.length > 1 ? finis / codes.length : f, total()); }, true);
+                        const lire = /^98/.test(codes[k]) ? gmUneFois : gm;
+                        const rep = await lire(BAN_URL(codes[k]), (f, o) => { recus[k] = o; avance(codes.length > 1 ? finis / codes.length : f, total()); }, true);
                         texte = rep.texte;
                         etags[k] = etagDe(rep.entetes);
                     }
-                    catch (e) { if (e.status === 404) { etags[k] = '404'; finis++; continue; } throw e; }
+                    catch (e) { if (e.status === 404 || sansBanCom(codes[k], e)) { etags[k] = '404'; finis++; continue; } throw e; }
                     recus[k] = texte.length;
                     finis++;
                     avance(codes.length > 1 ? finis / codes.length : null, total());
@@ -4435,7 +4449,11 @@
                 return gmJson(GEO_URL + '/communes?nom=' + encodeURIComponent(q) + '&boost=population' + F);
             },
             groupes: async () => {
-                if (!departements) departements = await gmJson(GEO_URL + '/departements?fields=nom,code');
+                if (!departements) {
+                    const l = await gmJson(GEO_URL + '/departements?fields=nom,code');
+                    for (const d of COM_BAN) if (!l.some(x => x.code === d.code)) l.push(d);
+                    departements = l;
+                }
                 return departements;
             },
             communesDe: async dep => (await gmJson(GEO_URL + '/departements/' + encodeURIComponent(dep) + '/communes?fields=nom,code,codeDepartement,bbox,contour')).map(versCommune),
@@ -4454,7 +4472,10 @@
             adresses,
             empreinte: async code => {
                 const l = [];
-                for (const c of ARRONDISSEMENTS[code] || [code]) l.push(await gmTete(BAN_URL(c)));
+                for (const c of ARRONDISSEMENTS[code] || [code]) {
+                    try { l.push(await gmTete(BAN_URL(c))); }
+                    catch (e) { if (!sansBanCom(c, e)) throw e; l.push('404'); }
+                }
                 return l.join('|');
             },
             dateRevision: async code => {
@@ -4471,12 +4492,13 @@
     const pays = PAYS.FR;
 
     function nouveauCache() { return { carreaux: new Map(), hn: new Map() }; }
-    async function lireWme(bbox, cache, jeton, prog, sansNumeros) {
+    // garder(i, j) : carreau à lire ou non (absent : tout le rectangle).
+    async function lireWme(bbox, cache, jeton, prog, sansNumeros, garder) {
         const [w, s, e, n] = bbox;
         const url = cheminWme('features', '/row-Descartes/app/Features');
         const cles = [];
         for (let i = Math.floor(w / CARREAU); i <= Math.floor(e / CARREAU); i++)
-            for (let j = Math.floor(s / CARREAU); j <= Math.floor(n / CARREAU); j++) cles.push([i, j]);
+            for (let j = Math.floor(s / CARREAU); j <= Math.floor(n / CARREAU); j++) if (!garder || garder(i, j)) cles.push([i, j]);
         const taches = cles.map(([i, j]) => async () => {
             const k = i + ':' + j;
             if (cache.carreaux.has(k)) { const v = cache.carreaux.get(k); cache.carreaux.delete(k); cache.carreaux.set(k, v); return v; }
@@ -4532,6 +4554,23 @@
         return new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => { c.port1.close(); r(); }; c.port2.postMessage(0); });
     }
 
+    // Carreaux utiles d'une commune (0.28.12) : l'analyse ne retient que ce qui est DANS le contour (Core.dansContour), le reste
+    // du rectangle englobant (mer, communes voisines) était lu pour rien — Nouvelle-Calédonie : 491 carreaux → 275.
+    // Gardé : tout carreau à moins de M d'un sommet du contour, et tout carreau dont un coin ou le centre est dans le contour.
+    // Ne dépend que du contour : « Mettre à jour » (verifierWme) relit exactement les mêmes carreaux. Sans contour : tout le rectangle.
+    function carreauxUtiles(contour, M) {
+        if (!contour) return null;
+        const pres = new Set();
+        const polys = contour.type === 'MultiPolygon' ? contour.coordinates : [contour.coordinates];
+        for (const p of polys) for (const anneau of p) for (const [x, y] of anneau)
+            for (const dx of [-M, 0, M]) for (const dy of [-M, 0, M]) pres.add(Math.floor((x + dx) / CARREAU) + ':' + Math.floor((y + dy) / CARREAU));
+        return (i, j) => {
+            if (pres.has(i + ':' + j)) return true;
+            const x0 = i * CARREAU, y0 = j * CARREAU, x1 = x0 + CARREAU, y1 = y0 + CARREAU;
+            return [[x0, y0], [x1, y0], [x0, y1], [x1, y1], [(x0 + x1) / 2, (y0 + y1) / 2]].some(([x, y]) => Core.dansContour(x, y, contour));
+        };
+    }
+
     async function analyserCommune(com, cache, jeton, prog, banPret, sortie) {
         const t0 = Date.now();
         prog(t('stBan'), 0, true);
@@ -4547,7 +4586,7 @@
         const M = 0.003;
         const bbox = [w - M, s - M, e + M, n + M];
         const tBan = Date.now() - t0;
-        const wme = await lireWme(bbox, cache, jeton, (txt, f) => prog(txt, 0.3 + 0.65 * f));
+        const wme = await lireWme(bbox, cache, jeton, (txt, f) => prog(txt, 0.3 + 0.65 * f), false, carreauxUtiles(com.contour, M));
         const empreinte = empreinteWme(wme, bbox);
         prog(t('stCalc'), 0.97);
         await ceder();
@@ -4557,7 +4596,7 @@
         if (!jeton.departement || r.chrono.total > 300)
             log(com.nom + ' — ' + adresses.length + ' adresses' + (adresses.reserve ? ' (+ ' + adresses.reserve + ' numéros de réserve écartés)' : '') + ', ' + wme.segments.length + ' segments, ' + wme.hns.length + ' HN, ' + wme.rpps.length + ' RPP — BAN ' + tBan + ' ms, WME ' + tWme + ' ms, calcul ' + JSON.stringify(r.chrono));
         r.commune = com;
-        r.memo = { date: Date.now(), cert: !!jeton.certSeules, etag: adresses.etag || '', wme: empreinte, bbox };
+        r.memo = { date: Date.now(), cert: !!jeton.certSeules, etag: adresses.etag || '', wme: empreinte, bbox, carreaux: com.contour ? 'contour' : 'rect' };
         return r;
     }
 
@@ -4650,14 +4689,106 @@
         });
     }
     const communesVisibles = () => !!(resDep && !resultat && opts.carteDep);
+    // Pendant une analyse de département, le calque n'est redessiné qu'une fois toutes les 8 s (0.28.12) : il l'était après CHAQUE
+    // commune, et un gros département (988 : 33 communes) figeait WME à chaque fois. Fin d'analyse : redessin immédiat.
+    const COMMUNES_PAS_MS = 8000;
+    let communesDessinees = 0, communesDiffere = null;
     function majCommunes() {
         if (!calqueComOk) return;
+        if (jeton && Date.now() - communesDessinees < COMMUNES_PAS_MS) {
+            if (!communesDiffere) communesDiffere = setTimeout(() => { communesDiffere = null; majCommunes(); }, COMMUNES_PAS_MS - (Date.now() - communesDessinees));
+            return;
+        }
+        if (communesDiffere) { clearTimeout(communesDiffere); communesDiffere = null; }
         const lignes = communesVisibles() ? resDep.communes.filter(c => c.commune.contour) : [];
         const signalee = c => !!c.verif && (c.verif.ban === 'maj' || c.verif.wme === 'maj');
         const sig = couleur('carte') + '|' + lignes.map(c => c.commune.code + ':' + classeCouv(c.totaux) + ':' + (c.totaux ? c.totaux.presents : '') + (signalee(c) ? '!' : '')).join(',');
         if (sig === communesSig) return;
         communesSig = sig;
+        communesDessinees = Date.now();
         enFile(() => dessinerCommunes(lignes, signalee));
+    }
+    // Contour DESSINÉ simplifié (Douglas-Peucker, ~30 m, 0.28.12) : invisible au zoom d'un département, et WME ne gèle plus —
+    // Nouvelle-Calédonie : 275 528 sommets → 40 556 (côtes et îlots), la page restait figée plus d'une minute au choix du 988.
+    // Seul le dessin est simplifié : l'analyse et le clic sur une commune gardent le contour exact. Un anneau réduit à moins
+    // de 4 points (îlot de quelques dizaines de mètres) n'est pas dessiné.
+    const TOL_CONTOUR = 0.0003;
+    // Sommets gardés d'un anneau (Douglas-Peucker itératif) : tableau de 0/1, extrémités toujours gardées.
+    function gardeAnneau(r, tol) {
+        const garde = new Uint8Array(r.length);
+        if (r.length <= 8) return garde.fill(1);
+        const t2 = tol * tol;
+        garde[0] = garde[r.length - 1] = 1;
+        const pile = [[0, r.length - 1]];
+        while (pile.length) {
+            const [a, b] = pile.pop();
+            const [ax, ay] = r[a], [bx, by] = r[b], dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+            let im = -1, dm = t2;
+            for (let i = a + 1; i < b; i++) {
+                const [x, y] = r[i];
+                const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l2)) : 0;
+                const d = (x - ax - t * dx) * (x - ax - t * dx) + (y - ay - t * dy) * (y - ay - t * dy);
+                if (d > dm) { dm = d; im = i; }
+            }
+            if (im >= 0) { garde[im] = 1; pile.push([a, im], [im, b]); }
+        }
+        return garde;
+    }
+    // 🔴 La simplification peut rendre un morceau INVALIDE (contour qui se recoupe, trou qui en sort : 76 morceaux sur 1 250 en
+    // Nouvelle-Calédonie, 3 sur 702 au Gard + Hérault) ; le SDK le refuse et rejette alors TOUT le lot (carte vide).
+    // Côtés qui se croisent, cherchés sur une grille (linéaire en pratique) : rend [anneau, indice du côté] de chacun.
+    function croisements(anneaux) {
+        const segs = [], vus = new Set();
+        let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
+        anneaux.forEach((r, k) => {
+            for (let i = 1; i < r.length; i++) {
+                segs.push([r[i - 1], r[i], k, i, r.length - 1]);
+                w = Math.min(w, r[i][0]); e = Math.max(e, r[i][0]); s = Math.min(s, r[i][1]); n = Math.max(n, r[i][1]);
+            }
+        });
+        const pas = Math.max(e - w, n - s, 1e-9) / Math.max(1, Math.ceil(Math.sqrt(segs.length))), grille = new Map();
+        const cote = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        const croisent = (A, B) => {
+            if (A[2] === B[2] && (Math.abs(A[3] - B[3]) <= 1 || Math.abs(A[3] - B[3]) === A[4] - 1)) return false;   // côtés voisins
+            const d1 = cote(B[0], B[1], A[0]), d2 = cote(B[0], B[1], A[1]), d3 = cote(A[0], A[1], B[0]), d4 = cote(A[0], A[1], B[1]);
+            return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+        };
+        for (const g of segs) {
+            const i0 = Math.floor((Math.min(g[0][0], g[1][0]) - w) / pas), i1 = Math.floor((Math.max(g[0][0], g[1][0]) - w) / pas);
+            const j0 = Math.floor((Math.min(g[0][1], g[1][1]) - s) / pas), j1 = Math.floor((Math.max(g[0][1], g[1][1]) - s) / pas);
+            for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+                const k = i + ':' + j, l = grille.get(k);
+                if (!l) { grille.set(k, [g]); continue; }
+                for (const h of l) if (croisent(g, h)) { vus.add(g); vus.add(h); }
+                l.push(g);
+            }
+        }
+        return [...vus].map(g => [g[2], g[3]]);
+    }
+    // Réparation LOCALE : un côté simplifié qui en croise un autre récupère le sommet d'origine du milieu de ce qu'il résume,
+    // jusqu'à ce que plus rien ne se croise (au pire : le contour d'origine, valide). Un trou qui sort encore du contour
+    // n'est pas dessiné (enclave : la commune voisine se dessine par-dessus).
+    function simplifierPolygone(pg) {
+        const R = pg.coordinates, gardes = R.map(r => gardeAnneau(r, TOL_CONTOUR));
+        let anneaux, idx, net = false;
+        for (let tour = 0; tour < 200 && !net; tour++) {
+            idx = gardes.map(g => { const l = []; for (let i = 0; i < g.length; i++) if (g[i]) l.push(i); return l; });
+            anneaux = idx.map((l, k) => l.map(i => R[k][i]));
+            const cr = croisements(anneaux.filter(r => r.length >= 4));
+            if (!cr.length) { net = true; break; }
+            let change = false;
+            const pleins = anneaux.map((r, k) => r.length >= 4 ? k : -1).filter(k => k >= 0);
+            for (const [kk, i] of cr) {
+                const k = pleins[kk], a = idx[k][i - 1], b = idx[k][i];
+                if (b - a > 1) { gardes[k][(a + b) >> 1] = 1; change = true; }
+            }
+            if (!change) break;
+        }
+        if (!net) return { type: 'Polygon', coordinates: R };
+        if (anneaux[0].length < 4) return null;
+        const ext = { type: 'Polygon', coordinates: [anneaux[0]] };
+        const trous = anneaux.slice(1).filter(r => r.length >= 4 && r.every(([x, y]) => Core.dansContour(x, y, ext)));
+        return { type: 'Polygon', coordinates: [anneaux[0], ...trous] };
     }
     async function dessinerCommunes(lignes, signalee) {
         try {
@@ -4668,7 +4799,8 @@
             const taille = pg => { const r = pg.coordinates[0]; let a = 0; for (let i = 1; i < r.length; i++) a += r[i - 1][0] * r[i][1] - r[i][0] * r[i - 1][1]; return Math.abs(a); };
             const features = [];
             for (const c of lignes) {
-                const pgs = morceaux(c.commune.contour);
+                const pgs = morceaux(c.commune.contour).map(simplifierPolygone).filter(Boolean);
+                if (!pgs.length) continue;
                 const grand = pgs.reduce((m, pg, k) => taille(pg) > taille(pgs[m]) ? k : m, 0);
                 const lbl = c.totaux && c.totaux.ban ? c.commune.nom + '\n' + pct(c.totaux.presents, c.totaux.ban) : '';
                 pgs.forEach((pg, k) => features.push({ type: 'Feature', id: 'wbc-c' + c.commune.code + '-' + k, geometry: pg,
@@ -5196,8 +5328,11 @@
         fiche.style.top = Math.max(4, Math.min(ev.clientY - h - 10, window.innerHeight - h - 4)) + 'px';
     }
     // La bulle SUIT son point : sélectionner un RPP ouvre le panneau de WME, qui décale la carte et signale un déplacement sans mouvement.
-    let bulle = null, bulleAdr = null, bulleLL = null, bulleXY = null, bulleZ = null;
-    function fermerBulle() { if (bulle) bulle.hidden = true; bulleAdr = null; bulleLL = null; bulleXY = null; bulleZ = null; }
+    // Position ABSOLUE (0.28.12) : point + décalage mémorisé à l'ouverture. Les déplacements de carte arrivent en rafale (clic sur un
+    // numéro WME : sélection, panneau) ; cumuler des écarts « depuis la position d'avant » les appliquait deux fois ou dans le
+    // désordre, et la bulle partait au bord de l'écran, au hasard (signalé par l'auteur, 21/11). Seul le dernier calcul compte.
+    let bulle = null, bulleAdr = null, bulleLL = null, bulleOff = null, bulleZ = null, bulleSeq = 0, bulleNo = 0;
+    function fermerBulle() { if (bulle) bulle.hidden = true; bulleAdr = null; bulleLL = null; bulleOff = null; bulleZ = null; bulleSeq++; bulleNo++; }
     const zoomCarte = () => Promise.resolve().then(() => sdk.Map.getZoomLevel()).catch(() => null);
     const pixelDe = ll => Promise.resolve().then(() => sdk.Map.getPixelFromLonLat({ lonLat: ll })).then(p => p ? [p.x, p.y] : null, () => null);
     // Mêmes contrôles, dans le même ordre, que convertirRppVoie.
@@ -5267,18 +5402,19 @@
         clearTimeout(avisMinuteur);
         avisMinuteur = setTimeout(() => { avis.hidden = true; }, 12000);
     }
-    async function bulleBougee() {
-        const ll = bulleLL, avant = await bulleXY, z0 = await bulleZ;
-        if (!ll || ll !== bulleLL) return;
-        const apres = await pixelDe(ll), z = await zoomCarte();
-        if (ll !== bulleLL) return;
-        if (!avant || !apres || z !== z0) { fermerBulle(); return; }
-        const dx = apres[0] - avant[0], dy = apres[1] - avant[1];
-        if (!dx && !dy) return;
-        bulleXY = Promise.resolve(apres);
+    function placerBulle(x, y) {
         const w = bulle.offsetWidth, h = bulle.offsetHeight;
-        bulle.style.left = Math.max(4, Math.min(parseFloat(bulle.style.left) + dx, window.innerWidth - w - 4)) + 'px';
-        bulle.style.top = Math.max(4, Math.min(parseFloat(bulle.style.top) + dy, window.innerHeight - h - 4)) + 'px';
+        bulle.style.left = Math.max(4, Math.min(x, window.innerWidth - w - 4)) + 'px';
+        bulle.style.top = Math.max(4, Math.min(y, window.innerHeight - h - 4)) + 'px';
+    }
+    async function bulleBougee() {
+        const ll = bulleLL, seq = ++bulleSeq;
+        if (!ll) return;
+        const off = await bulleOff, z0 = await bulleZ;
+        const apres = await pixelDe(ll), z = await zoomCarte();
+        if (ll !== bulleLL || seq !== bulleSeq) return;
+        if (!off || !apres || z !== z0) { fermerBulle(); return; }
+        placerBulle(apres[0] + off[0], apres[1] + off[1]);
     }
     function ouvrirBulle(p, cx, cy) {
         const v = p.voie, i = resultat ? resultat.voies.indexOf(v) : -1, k = i < 0 ? -1 : v.adresses.indexOf(p.ad);
@@ -5319,10 +5455,12 @@
         bulle.hidden = false;
         bulleAdr = [i, k];
         const ll = { lon: p.lon, lat: p.lat };
-        bulleLL = ll; bulleXY = pixelDe(ll); bulleZ = zoomCarte();
-        const w = bulle.offsetWidth, h = bulle.offsetHeight;
-        bulle.style.left = Math.max(4, Math.min(cx + 14, window.innerWidth - w - 4)) + 'px';
-        bulle.style.top = Math.max(4, Math.min(cy - h - 10, window.innerHeight - h - 4)) + 'px';
+        bulleLL = ll; bulleZ = zoomCarte();
+        const h0 = bulle.offsetHeight;
+        placerBulle(cx + 14, cy - h0 - 10);
+        // Décalage voulu (avant bornage) par rapport au POINT : le clic peut tomber à quelques pixels de lui.
+        const no = ++bulleNo;
+        bulleOff = pixelDe(ll).then(p => p && no === bulleNo ? [cx + 14 - p[0], cy - h0 - 10 - p[1]] : null);
         cacherFiche();
         const btn = bulle.querySelector('.wbc-bulle-btn:not([disabled])');
         if (btn) btn.focus({ preventScroll: true });
@@ -7072,11 +7210,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             if (j.stop) throw Arret();
             i++;
             const b = o.memo.bbox;
+            // Mêmes carreaux qu'à l'analyse : au contour depuis la 0.28.12, tout le rectangle pour un balayage plus ancien.
+            const garder = o.memo.carreaux === 'contour' ? carreauxUtiles(o.commune && o.commune.contour, 0.003) : null;
             const w = await lireWme(b, cache, j, (txt, f) => {
                 const tout = (i - 1 + f) / objs.length;
                 barre(tout);
                 progres({ pct: pct(tout, 1), eta: '', cpt: objs.length > 1 ? nb(i) + '/' + nb(objs.length) : '', nom: o.commune.nom, etape: txt });
-            });
+            }, false, garder);
             const e = empreinteWme(w, b), a = o.memo.wme;
             o.verif = o.verif || {};
             const pareil = !!a && ['segN', 'segMax', 'hn', 'rppN', 'rppMax', 'hnN', 'hnSig'].every(k => a[k] === undefined || e[k] === a[k]);
@@ -7894,11 +8034,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const a = resultat.voies[i].adresses[k];
         vue.curseur = k;
         rendre();
-        // Depuis la fenêtre : on ne recentre que si l'adresse est hors de la partie visible de la carte (auteur, 19/11).
+        // Depuis la LISTE de la fenêtre : la carte se centre toujours sur l'adresse, au zoom 19 au moins (auteur, 21/11 ; la
+        // 0.28.07 ne recentrait plus qu'une adresse hors de vue — signalé par Glenan56). Un clic sur la CARTE ne recentre jamais.
         Promise.resolve().then(async () => {
-            const z = zoneVisible(), px = await sdk.Map.getPixelFromLonLat({ lonLat: { lon: a.lon, lat: a.lat } });
-            if (z && px && px.x >= z.g + 10 && px.x <= z.d - 10 && px.y >= z.h + 10 && px.y <= z.b - 10) return;
-            await centrerLibre(a.lon, a.lat, 19);
+            let z = 19;
+            try { z = Math.max(19, await sdk.Map.getZoomLevel()); } catch (e) { }
+            await centrerLibre(a.lon, a.lat, z);
         }).catch(() => centrerLibre(a.lon, a.lat, 19));
         const b = ovEl.querySelector('[data-adr="' + i + ':' + k + '"]');
         if (b) b.focus({ preventScroll: false });
