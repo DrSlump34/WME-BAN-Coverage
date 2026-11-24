@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.28.12
+// @version      0.29.08
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -273,6 +273,9 @@
             delNote: "not attributable to a delegated commune",
             mapCap: (a, b) => 'Map: ' + a + ' points shown out of ' + b + ' in view (zoom in to see them all)',
             legExtra: "extra in WME",
+            legHorsCom: "BAN point outside its commune",
+            hovHorsCom: m => "BAN point outside the commune (" + m + " m beyond its boundary): the BAN probably attaches this address to the wrong commune, report it",
+            hovForme: (w, f) => "WME number written \u201c" + w + "\u201d, expected \u201c" + f + "\u201d",
             legFound: "found",
             legMiss: "missing",
             eta: m => '≈ ' + m + (un1(m) ? ' min left' : ' min left'),
@@ -413,6 +416,23 @@
             ajHnFull: h => 'Quota reached — next adding at ' + h,
             ajHn1: 'Add this number',
             ajHn1Tip: 'Places this single number in WME (all ranks), with the checks of “Add the house numbers” (BAN name, city, segment within 80 m, already present); counts in the quota. Nothing is saved.',
+            legCorr: "number to correct",
+            corrTip: (o, n) => 'Correct: WME number “' + o + '” becomes “' + n + '” (same point). Outside the quota; nothing is saved.',
+            corrLoin: b => 'It was matched from afar to BAN number “' + b + '”, which will become missing again.',
+            corrAdd: n => 'Correct the numbers (' + n + ')',
+            corrAddTip: 'Rewrites at once the WME numbers of this street placed where another BAN address is (renumbered street) or written differently from the expected form (“2bis” ⇒ “2 bis”). Outside the quota. Nothing is saved: review, then save or undo in WME.',
+            corrRunning: 'Correcting the numbers…',
+            corrDone: n => n + ' number(s) corrected: review, then save or undo in WME.',
+            corrRefus: l => 'Left as they are: ' + l + ' (segment not editable, number not found or circular swap).',
+            corrNone: l => 'No number corrected' + (l ? ': ' + l : '') + '.',
+            corrPoseTip: 'Corrected by WBC, not saved yet.',
+            formeT: n => 'Placed but incorrect (' + n + ')',
+            fCorr: 'To fix',
+            tipFCorr: "Streets with WME numbers placed but incorrect: another number where the BAN address is (renumbered street), or the right number written differently (2bis ⇒ 2 bis).",
+            kCorr: n => 'incl. ' + n + ' to fix (↻)',
+            corrBtn: (o, n) => 'Fix: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'At this spot, WME has number “' + o + '”: “↻” changes it to “' + n + '”.',
+            corrTag: n => n + ' number(s) to correct in this street (↻)',
             ajHn1Exists: n => 'Number ' + n + ' is already in WME on this street: nothing placed.',
             ajHn1Rights: 'WME has not identified you as an editor (username and rank unreadable): reload WME, then try again.',
             ajHn1Lock: (n, v) => 'Number ' + n + ' will become a suggestion when you save: ' + (v ? 'its segment is locked at level ' + v + ', above your rank' : 'WME does not let you edit the house numbers of its segment directly') + '; an editor of sufficient rank will approve it.',
@@ -652,6 +672,9 @@
             delNote: "non rattachables à une commune déléguée",
             mapCap: (a, b) => 'Carte\u00a0: ' + a + ' points montrés sur ' + b + ' dans la vue (zoomez pour tout voir)',
             legExtra: "en trop dans WME",
+            legHorsCom: "point BAN hors de sa commune",
+            hovHorsCom: m => "Point BAN hors de la commune (à " + m + "\u00a0m de sa limite)\u00a0: la BAN rattache sans doute cette adresse à la mauvaise commune, à signaler",
+            hovForme: (w, f) => "Numéro WME écrit «\u00a0" + w + "\u00a0», attendu «\u00a0" + f + "\u00a0»",
             legFound: "trouvé",
             legMiss: "manquant",
             eta: m => '≈\u00a0' + m + '\u00a0min restante' + (un(m) ? '' : 's'),
@@ -792,6 +815,23 @@
             ajHnFull: h => 'Quota atteint — prochain ajout à ' + h,
             ajHn1: 'Ajouter ce numéro',
             ajHn1Tip: 'Pose ce seul numéro dans WME (tous rangs), avec les contrôles d’«\u00a0Ajouter les numéros\u00a0» (nom BAN, ville, segment à moins de 80\u00a0m, doublon)\u00a0; il compte au quota. Rien n’est enregistré.',
+            legCorr: "numéro à corriger",
+            corrTip: (o, n) => 'Corriger\xa0: le numéro WME «\xa0' + o + '\xa0» devient «\xa0' + n + '\xa0» (même point). Hors quota, rien n’est enregistré.',
+            corrLoin: b => 'Il était rattaché de loin au «\xa0' + b + '\xa0» de la BAN, qui redeviendra manquant.',
+            corrAdd: n => 'Corriger les numéros (' + n + ')',
+            corrAddTip: 'Réécrit d’un coup les numéros WME de la voie posés à l’emplacement d’une autre adresse BAN (rue renumérotée) ou écrits autrement que la forme attendue («\xa02bis\xa0» ⇒ «\xa02 bis\xa0»). Hors quota. Rien n’est enregistré\xa0: relisez, puis enregistrez ou annulez dans WME.',
+            corrRunning: 'Correction des numéros…',
+            corrDone: n => n + ' numéro(s) corrigé(s)\xa0: relisez, puis enregistrez ou annulez dans WME.',
+            corrRefus: l => 'Laissés tels quels\xa0: ' + l + ' (segment non modifiable, numéro introuvable ou échange circulaire).',
+            corrNone: l => 'Aucun numéro corrigé' + (l ? '\xa0: ' + l : '') + '.',
+            corrPoseTip: 'Corrigé par WBC, pas encore enregistré.',
+            formeT: n => 'Posés mais incorrects (' + n + ')',
+            fCorr: 'À corriger',
+            tipFCorr: "Les voies dont des numéros WME sont posés mais incorrects\xa0: un autre numéro à l’emplacement de l’adresse BAN (rue renumérotée), ou le bon numéro écrit autrement (2bis ⇒ 2 bis).",
+            kCorr: n => 'dont ' + n + ' à corriger (↻)',
+            corrBtn: (o, n) => 'Corriger\xa0: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'À cet emplacement, WME porte le numéro «\xa0' + o + '\xa0»\xa0: «\xa0↻\xa0» le change en «\xa0' + n + '\xa0».',
+            corrTag: n => n + ' numéro(s) à corriger dans cette voie (↻)',
             ajHn1Exists: n => 'Le ' + n + ' est déjà dans WME sur cette voie\xa0: rien n’est posé.',
             ajHn1Rights: 'WME ne vous a pas encore identifié (pseudo et rang illisibles)\u00a0: rechargez WME, puis réessayez.',
             ajHn1Lock: (n, v) => 'Le ' + n + ' deviendra une suggestion à l’enregistrement\u00a0: ' + (v ? 'son segment est verrouillé au niveau ' + v + ', au-dessus de votre rang' : 'WME ne vous laisse pas modifier directement les numéros de son segment') + '\u00a0; un éditeur de rang suffisant la validera.',
@@ -1031,6 +1071,9 @@
             delNote: "keinem Ortsteil zuordenbar",
             mapCap: (a, b) => 'Karte: ' + a + ' von ' + b + ' Punkten im Ausschnitt (hineinzoomen, um alle zu sehen)',
             legExtra: "zu viel im WME",
+            legHorsCom: "BAN-Punkt außerhalb seiner Gemeinde",
+            hovHorsCom: m => "BAN-Punkt außerhalb der Gemeinde (" + m + " m jenseits der Grenze): Die BAN ordnet diese Adresse vermutlich der falschen Gemeinde zu, bitte melden",
+            hovForme: (w, f) => "WME-Nummer \u201e" + w + "\u201c geschrieben, erwartet \u201e" + f + "\u201c",
             legFound: "gefunden",
             legMiss: "fehlt",
             eta: m => '≈ ' + m + ' Min. verbleibend',
@@ -1171,6 +1214,23 @@
             ajHnFull: h => 'Kontingent erreicht — nächstes Hinzufügen um ' + h,
             ajHn1: 'Diese Nummer hinzufügen',
             ajHn1Tip: 'Setzt nur diese Nummer im WME (alle Ränge), mit den Prüfungen von „Hausnummern hinzufügen“ (BAN-Name, Stadt, Segment innerhalb von 80 m, Duplikat); zählt zum Kontingent. Nichts wird gespeichert.',
+            legCorr: "zu korrigierende Nummer",
+            corrTip: (o, n) => 'Korrigieren: WME-Nummer „' + o + '“ wird zu „' + n + '“ (gleicher Punkt). Außerhalb des Kontingents; nichts wird gespeichert.',
+            corrLoin: b => 'Sie war aus der Ferne der BAN-Nummer „' + b + '“ zugeordnet, die wieder fehlen wird.',
+            corrAdd: n => 'Nummern korrigieren (' + n + ')',
+            corrAddTip: 'Schreibt auf einmal die WME-Nummern dieser Straße um, die an der Stelle einer anderen BAN-Adresse stehen (umnummerierte Straße) oder anders als in der erwarteten Form geschrieben sind („2bis“ ⇒ „2 bis“). Außerhalb des Kontingents. Nichts wird gespeichert: prüfen, dann im WME speichern oder rückgängig machen.',
+            corrRunning: 'Nummern werden korrigiert…',
+            corrDone: n => n + ' Nummer(n) korrigiert: prüfen, dann im WME speichern oder rückgängig machen.',
+            corrRefus: l => 'Unverändert gelassen: ' + l + ' (Segment nicht bearbeitbar, Nummer nicht gefunden oder Ringtausch).',
+            corrNone: l => 'Keine Nummer korrigiert' + (l ? ': ' + l : '') + '.',
+            corrPoseTip: 'Von WBC korrigiert, noch nicht gespeichert.',
+            formeT: n => 'Gesetzt, aber falsch (' + n + ')',
+            fCorr: 'Zu korrigieren',
+            tipFCorr: "Straßen mit gesetzten, aber falschen WME-Nummern: eine andere Nummer an der Stelle der BAN-Adresse (umnummerierte Straße) oder die richtige Nummer anders geschrieben (2bis ⇒ 2 bis).",
+            kCorr: n => 'davon ' + n + ' zu korrigieren (↻)',
+            corrBtn: (o, n) => 'Korrigieren: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'An dieser Stelle trägt WME die Nummer „' + o + '“: „↻“ ändert sie in „' + n + '“.',
+            corrTag: n => n + ' zu korrigierende Nummer(n) in dieser Straße (↻)',
             ajHn1Exists: n => 'Nummer ' + n + ' ist auf dieser Straße schon im WME: nichts gesetzt.',
             ajHn1Rights: 'WME hat Sie nicht als Editor erkannt (Name und Rang nicht lesbar): WME neu laden und erneut versuchen.',
             ajHn1Lock: (n, v) => 'Nummer ' + n + ' wird beim Speichern zu einem Vorschlag: ' + (v ? 'das Segment ist auf Stufe ' + v + ' gesperrt, über Ihrem Rang' : 'WME lässt Sie die Hausnummern des Segments nicht direkt bearbeiten') + '; ein Editor mit ausreichendem Rang gibt ihn frei.',
@@ -1410,6 +1470,9 @@
             delNote: "no atribuibles a un municipio delegado",
             mapCap: (a, b) => 'Mapa: ' + a + ' puntos mostrados de ' + b + ' en la vista (acerque el zoom para verlos todos)',
             legExtra: "de más en WME",
+            legHorsCom: "punto BAN fuera de su municipio",
+            hovHorsCom: m => "Punto BAN fuera del municipio (a " + m + " m de su límite): la BAN probablemente asigna esta dirección al municipio equivocado, repórtalo",
+            hovForme: (w, f) => "Número de WME escrito «" + w + "», se esperaba «" + f + "»",
             legFound: "encontrado",
             legMiss: "falta",
             eta: m => '≈ ' + m + ' min restante' + (un1(m) ? '' : 's'),
@@ -1550,6 +1613,23 @@
             ajHnFull: h => 'Cuota alcanzada — próxima adición a las ' + h,
             ajHn1: 'Añadir este número',
             ajHn1Tip: 'Coloca solo este número en WME (todos los rangos), con los controles de «Añadir los números» (nombre BAN, ciudad, segmento a menos de 80 m, duplicado); cuenta en la cuota. No se guarda nada.',
+            legCorr: "número que corregir",
+            corrTip: (o, n) => 'Corregir: el número WME «' + o + '» pasa a ser «' + n + '» (mismo punto). Fuera de la cuota; no se guarda nada.',
+            corrLoin: b => 'Estaba asociado de lejos al «' + b + '» de la BAN, que volverá a faltar.',
+            corrAdd: n => 'Corregir los números (' + n + ')',
+            corrAddTip: 'Reescribe de una vez los números WME de la vía colocados en el lugar de otra dirección BAN (calle renumerada) o escritos de otra forma que la esperada («2bis» ⇒ «2 bis»). Fuera de la cuota. No se guarda nada: revise y luego guarde o deshaga en WME.',
+            corrRunning: 'Corrigiendo los números…',
+            corrDone: n => n + ' número(s) corregido(s): revise y luego guarde o deshaga en WME.',
+            corrRefus: l => 'Dejados tal cual: ' + l + ' (segmento no editable, número no encontrado o intercambio circular).',
+            corrNone: l => 'Ningún número corregido' + (l ? ': ' + l : '') + '.',
+            corrPoseTip: 'Corregido por WBC, aún sin guardar.',
+            formeT: n => 'Colocados pero incorrectos (' + n + ')',
+            fCorr: 'A corregir',
+            tipFCorr: "Calles con números WME colocados pero incorrectos: otro número en el lugar de la dirección BAN (calle renumerada) o el número correcto escrito de otra forma (2bis ⇒ 2 bis).",
+            kCorr: n => 'de ellas ' + n + ' a corregir (↻)',
+            corrBtn: (o, n) => 'Corregir: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'En este lugar, WME tiene el número «' + o + '»: «↻» lo cambia a «' + n + '».',
+            corrTag: n => n + ' número(s) que corregir en esta vía (↻)',
             ajHn1Exists: n => 'El número ' + n + ' ya está en WME en esta calle: no se coloca nada.',
             ajHn1Rights: 'WME no le ha identificado como editor (nombre y rango ilegibles): recargue WME y vuelva a intentarlo.',
             ajHn1Lock: (n, v) => 'El número ' + n + ' se convertirá en una sugerencia al guardar: ' + (v ? 'su segmento está bloqueado en el nivel ' + v + ', por encima de su rango' : 'WME no le deja modificar directamente los números de su segmento') + '; la validará un editor de rango suficiente.',
@@ -1789,6 +1869,9 @@
             delNote: "non attribuibili a un comune delegato",
             mapCap: (a, b) => 'Mappa: ' + a + ' punti mostrati su ' + b + ' nella vista (ingrandisci per vederli tutti)',
             legExtra: "in più in WME",
+            legHorsCom: "punto BAN fuori dal suo comune",
+            hovHorsCom: m => "Punto BAN fuori dal comune (a " + m + " m dal confine): la BAN probabilmente assegna questo indirizzo al comune sbagliato, da segnalare",
+            hovForme: (w, f) => "Numero WME scritto «" + w + "», atteso «" + f + "»",
             legFound: "trovato",
             legMiss: "mancante",
             eta: m => '≈ ' + m + (un1(m) ? ' minuto rimanente' : ' min rimanenti'),
@@ -1929,6 +2012,23 @@
             ajHnFull: h => 'Quota raggiunta — prossima aggiunta alle ' + h,
             ajHn1: 'Aggiungi questo numero',
             ajHn1Tip: 'Inserisce in WME solo questo numero (tutti i livelli), con i controlli di «Aggiungi i numeri» (nome BAN, città, segmento entro 80 m, doppione); conta nella quota. Niente viene salvato.',
+            legCorr: "numero da correggere",
+            corrTip: (o, n) => 'Correggi: il numero WME «' + o + '» diventa «' + n + '» (stesso punto). Fuori quota; niente viene salvato.',
+            corrLoin: b => 'Era associato da lontano al «' + b + '» della BAN, che tornerà mancante.',
+            corrAdd: n => 'Correggi i numeri (' + n + ')',
+            corrAddTip: 'Riscrive in una volta i numeri WME della via posti al posto di un altro indirizzo BAN (via rinumerata) o scritti diversamente dalla forma attesa («2bis» ⇒ «2 bis»). Fuori quota. Niente viene salvato: rileggi, poi salva o annulla in WME.',
+            corrRunning: 'Correzione dei numeri…',
+            corrDone: n => n + ' numero/i corretto/i: rileggi, poi salva o annulla in WME.',
+            corrRefus: l => 'Lasciati invariati: ' + l + ' (segmento non modificabile, numero non trovato o scambio circolare).',
+            corrNone: l => 'Nessun numero corretto' + (l ? ': ' + l : '') + '.',
+            corrPoseTip: 'Corretto da WBC, non ancora salvato.',
+            formeT: n => 'Presenti ma errati (' + n + ')',
+            fCorr: 'Da correggere',
+            tipFCorr: "Strade con numeri WME presenti ma errati: un altro numero al posto dell’indirizzo BAN (strada rinumerata) o il numero giusto scritto in altro modo (2bis ⇒ 2 bis).",
+            kCorr: n => 'di cui ' + n + ' da correggere (↻)',
+            corrBtn: (o, n) => 'Correggi: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'In questo punto WME ha il numero «' + o + '»: «↻» lo cambia in «' + n + '».',
+            corrTag: n => n + ' numero/i da correggere in questa via (↻)',
             ajHn1Exists: n => 'Il numero ' + n + ' è già in WME su questa via: niente inserito.',
             ajHn1Rights: 'WME non ti ha identificato come editor (nome e livello illeggibili): ricarica WME e riprova.',
             ajHn1Lock: (n, v) => 'Il numero ' + n + ' diventerà un suggerimento al salvataggio: ' + (v ? 'il suo segmento è bloccato al livello ' + v + ', sopra il tuo livello' : 'WME non ti lascia modificare direttamente i numeri del suo segmento') + '; lo approverà un editor di livello sufficiente.',
@@ -2168,6 +2268,9 @@
             delNote: "não atribuíveis a um município delegado",
             mapCap: (a, b) => 'Mapa: ' + a + ' pontos mostrados de ' + b + ' na vista (aproxime para ver todos)',
             legExtra: "a mais no WME",
+            legHorsCom: "ponto BAN fora do seu município",
+            hovHorsCom: m => "Ponto BAN fora do município (a " + m + " m do limite): a BAN provavelmente atribui este endereço ao município errado, reporte",
+            hovForme: (w, f) => "Número do WME escrito \u201c" + w + "\u201d, esperado \u201c" + f + "\u201d",
             legFound: "encontrado",
             legMiss: "faltando",
             eta: m => '≈ ' + m + ' min restante' + (un1(m) ? '' : 's'),
@@ -2308,6 +2411,23 @@
             ajHnFull: h => 'Cota atingida — próxima adição às ' + h,
             ajHn1: 'Adicionar este número',
             ajHn1Tip: 'Coloca só este número no WME (todos os níveis), com as verificações de “Adicionar os números” (nome BAN, cidade, segmento a menos de 80 m, duplicado); conta na cota. Nada é salvo.',
+            legCorr: "número a corrigir",
+            corrTip: (o, n) => 'Corrigir: o número WME “' + o + '” passa a ser “' + n + '” (mesmo ponto). Fora da cota; nada é salvo.',
+            corrLoin: b => 'Ele estava associado de longe ao “' + b + '” da BAN, que voltará a faltar.',
+            corrAdd: n => 'Corrigir os números (' + n + ')',
+            corrAddTip: 'Reescreve de uma vez os números WME da via colocados no lugar de outro endereço BAN (rua renumerada) ou escritos de forma diferente da esperada (“2bis” ⇒ “2 bis”). Fora da cota. Nada é salvo: revise e depois salve ou desfaça no WME.',
+            corrRunning: 'Corrigindo os números…',
+            corrDone: n => n + ' número(s) corrigido(s): revise e depois salve ou desfaça no WME.',
+            corrRefus: l => 'Deixados como estão: ' + l + ' (segmento não editável, número não encontrado ou troca circular).',
+            corrNone: l => 'Nenhum número corrigido' + (l ? ': ' + l : '') + '.',
+            corrPoseTip: 'Corrigido pelo WBC, ainda não salvo.',
+            formeT: n => 'Presentes mas incorretos (' + n + ')',
+            fCorr: 'A corrigir',
+            tipFCorr: "Vias com números WME presentes mas incorretos: outro número no lugar do endereço BAN (via renumerada) ou o número certo escrito de outra forma (2bis ⇒ 2 bis).",
+            kCorr: n => 'sendo ' + n + ' a corrigir (↻)',
+            corrBtn: (o, n) => 'Corrigir: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'Neste local, o WME tem o número “' + o + '”: “↻” o muda para “' + n + '”.',
+            corrTag: n => n + ' número(s) a corrigir nesta via (↻)',
             ajHn1Exists: n => 'O número ' + n + ' já está no WME nesta rua: nada foi colocado.',
             ajHn1Rights: 'O WME não identificou você como editor (nome e nível ilegíveis): recarregue o WME e tente de novo.',
             ajHn1Lock: (n, v) => 'O número ' + n + ' virará uma sugestão ao salvar: ' + (v ? 'o segmento está bloqueado no nível ' + v + ', acima do seu nível' : 'o WME não deixa você editar diretamente os números do segmento') + '; um editor de nível suficiente vai aprová-la.',
@@ -2547,6 +2667,9 @@
             delNote: "não atribuíveis a uma freguesia delegada",
             mapCap: (a, b) => 'Mapa: ' + a + ' pontos mostrados de ' + b + ' na vista (aproxime para ver todos)',
             legExtra: "a mais no WME",
+            legHorsCom: "ponto BAN fora do seu município",
+            hovHorsCom: m => "Ponto BAN fora do município (a " + m + " m do limite): a BAN provavelmente atribui esta morada ao município errado, comunique-o",
+            hovForme: (w, f) => "Número do WME escrito «" + w + "», esperado «" + f + "»",
             legFound: "encontrado",
             legMiss: "em falta",
             eta: m => '≈ ' + m + ' min restante' + (un1(m) ? '' : 's'),
@@ -2687,6 +2810,23 @@
             ajHnFull: h => 'Quota atingida — próxima adição às ' + h,
             ajHn1: 'Adicionar este número',
             ajHn1Tip: 'Coloca apenas este número no WME (todos os níveis), com as verificações de «Adicionar os números» (nome BAN, localidade, segmento a menos de 80 m, duplicado); conta na quota. Nada é guardado.',
+            legCorr: "número a corrigir",
+            corrTip: (o, n) => 'Corrigir: o número WME «' + o + '» passa a ser «' + n + '» (mesmo ponto). Fora da quota; nada é guardado.',
+            corrLoin: b => 'Estava associado de longe ao «' + b + '» da BAN, que voltará a faltar.',
+            corrAdd: n => 'Corrigir os números (' + n + ')',
+            corrAddTip: 'Reescreve de uma vez os números WME da via colocados no lugar de outro endereço BAN (rua renumerada) ou escritos de forma diferente da esperada («2bis» ⇒ «2 bis»). Fora da quota. Nada é guardado: reveja e depois guarde ou anule no WME.',
+            corrRunning: 'A corrigir os números…',
+            corrDone: n => n + ' número(s) corrigido(s): reveja e depois guarde ou anule no WME.',
+            corrRefus: l => 'Deixados como estão: ' + l + ' (segmento não editável, número não encontrado ou troca circular).',
+            corrNone: l => 'Nenhum número corrigido' + (l ? ': ' + l : '') + '.',
+            corrPoseTip: 'Corrigido pelo WBC, ainda não guardado.',
+            formeT: n => 'Presentes mas incorrectos (' + n + ')',
+            fCorr: 'A corrigir',
+            tipFCorr: "Vias com números WME presentes mas incorrectos: outro número no lugar do endereço BAN (via renumerada) ou o número certo escrito de outra forma (2bis ⇒ 2 bis).",
+            kCorr: n => 'das quais ' + n + ' a corrigir (↻)',
+            corrBtn: (o, n) => 'Corrigir: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'Neste local, o WME tem o número «' + o + '»: «↻» muda-o para «' + n + '».',
+            corrTag: n => n + ' número(s) a corrigir nesta via (↻)',
             ajHn1Exists: n => 'O número ' + n + ' já está no WME nesta rua: nada foi colocado.',
             ajHn1Rights: 'O WME não o identificou como editor (nome e nível ilegíveis): recarregue o WME e tente novamente.',
             ajHn1Lock: (n, v) => 'O número ' + n + ' passará a sugestão ao guardar: ' + (v ? 'o segmento está bloqueado no nível ' + v + ', acima do seu nível' : 'o WME não o deixa editar diretamente os números do segmento') + '; um editor de nível suficiente vai aprová-la.',
@@ -2926,6 +3066,9 @@
             delNote: "לא ניתן לשייך לרשות מאוחדת",
             mapCap: (a, b) => 'מפה: מוצגות ' + a + ' נקודות מתוך ' + b + ' בתצוגה (התקרבו כדי לראות את כולן)',
             legExtra: "עודף ב-WME",
+            legHorsCom: "נקודת BAN מחוץ לרשות שלה",
+            hovHorsCom: m => "נקודת BAN מחוץ לרשות (" + m + " מ׳ מעבר לגבול): ככל הנראה ה-BAN משייך כתובת זו לרשות הלא נכונה, יש לדווח",
+            hovForme: (w, f) => "מספר ב-WME נכתב \u201c" + w + "\u201d, צפוי \u201c" + f + "\u201d",
             legFound: "נמצא",
             legMiss: "חסר",
             articleTag: "מילית",
@@ -3066,6 +3209,23 @@
             ajHnFull: h => 'המכסה נוצלה — ההוספה הבאה בשעה ' + h,
             ajHn1: 'הוספת המספר הזה',
             ajHn1Tip: 'מציב ב־WME רק את המספר הזה (כל הדרגות), עם הבדיקות של „הוספת המספרים” (שם BAN, עיר, מקטע בטווח 80 מ׳, כפילות); נספר במכסה. דבר אינו נשמר.',
+            legCorr: "מספר לתיקון",
+            corrTip: (o, n) => 'תיקון: המספר ב־WME „' + o + '” הופך ל„' + n + '” (אותה נקודה). מחוץ למכסה; דבר אינו נשמר.',
+            corrLoin: b => 'הוא שויך מרחוק למספר „' + b + '” של BAN, שיחזור להיות חסר.',
+            corrAdd: n => 'תיקון המספרים (' + n + ')',
+            corrAddTip: 'כותב מחדש בבת אחת את מספרי ה־WME של הרחוב שהוצבו במקום כתובת BAN אחרת (רחוב שמוספר מחדש) או שנכתבו אחרת מהצורה הצפויה („2bis” ⇒ „2 bis”). מחוץ למכסה. דבר אינו נשמר: יש לבדוק ואז לשמור או לבטל ב־WME.',
+            corrRunning: 'מתקן את המספרים…',
+            corrDone: n => n + ' מספרים תוקנו: יש לבדוק ואז לשמור או לבטל ב־WME.',
+            corrRefus: l => 'נשארו כפי שהם: ' + l + ' (מקטע שאינו ניתן לעריכה, מספר שלא נמצא או החלפה מעגלית).',
+            corrNone: l => 'לא תוקן אף מספר' + (l ? ': ' + l : '') + '.',
+            corrPoseTip: 'תוקן על ידי WBC, טרם נשמר.',
+            formeT: n => 'קיימים אך שגויים (' + n + ')',
+            fCorr: 'לתיקון',
+            tipFCorr: "רחובות שבהם מספרי WME קיימים אך שגויים: מספר אחר במקום כתובת ה-BAN (רחוב שמוספר מחדש) או המספר הנכון בכתיב אחר (2bis ⇒ 2 bis).",
+            kCorr: n => 'מהן ' + n + ' לתיקון (↻)',
+            corrBtn: (o, n) => 'תיקון: ' + o + ' → ' + n,
+            hovCorr: (o, n) => 'במקום הזה WME מציג את המספר „' + o + '”: „↻” משנה אותו ל„' + n + '”.',
+            corrTag: n => n + ' מספרים לתיקון ברחוב הזה (↻)',
             ajHn1Exists: n => 'המספר ' + n + ' כבר קיים ב־WME ברחוב הזה: לא הוצב דבר.',
             ajHn1Rights: 'WME לא זיהה אותך כעורך (שם ודרגה אינם קריאים): טען מחדש את WME ונסה שוב.',
             ajHn1Lock: (n, v) => 'מספר ' + n + ' יהפוך להצעה בשמירה: ' + (v ? 'המקטע שלו נעול ברמה ' + v + ', מעל הדרגה שלך' : 'WME לא מאפשר לך לערוך ישירות את מספרי הבתים של המקטע') + '; עורך בדרגה מספקת יאשר אותה.',
@@ -3344,6 +3504,28 @@
             if (!geo) return true;
             const polys = geo.type === 'MultiPolygon' ? geo.coordinates : [geo.coordinates];
             return polys.some(p => dansAnneau(lon, lat, p[0]) && !p.slice(1).some(tr => dansAnneau(lon, lat, tr)));
+        }
+        // Distance en mètres du point au bord le plus proche du contour (anneaux extérieurs et trous).
+        function distContour(lon, lat, geo, m) {
+            if (!geo) return 0;
+            const polys = geo.type === 'MultiPolygon' ? geo.coordinates : [geo.coordinates];
+            const [px, py] = m(lon, lat);
+            let d = Infinity;
+            for (const p of polys) for (const r of p) for (let i = 1; i < r.length; i++) {
+                const [ax, ay] = m(r[i - 1][0], r[i - 1][1]), [bx, by] = m(r[i][0], r[i][1]);
+                d = Math.min(d, distSeg(px, py, ax, ay, bx, by));
+            }
+            return d;
+        }
+        // 0.28.13 — Ju2P0mme (22/11, 2 Chemin du Calvaire) : la BAN range l'adresse à Parçay-Meslay, mais son point tombe à
+        // Rochecorbon ; rapprochée du numéro WME, elle restait VERTE. Point BAN hors du contour de sa commune, à plus de HORS_COM_M
+        // du bord (contours simplifiés, points en limite) : adresse marquée « hors commune », rattachement BAN probablement faux.
+        const HORS_COM_M = 20;
+        // Forme attendue d'un numéro WME : celle que pose WBC (« 2 bis », « 4log1 », « 12b ») si elle diffère, sinon null.
+        function formeAttendueHn(brut) {
+            const b = String(brut == null ? '' : brut).trim();
+            const c = numeroHn(b.replace(/^(\d+)\s*([a-z])/i, '$1 $2'));
+            return c && c !== b ? c : null;
         }
 
         // Grille de cases de CASE_M m : segment converti en mètres une fois, rangé dans les cases que ses côtés TRAVERSENT (pas toute sa boîte).
@@ -3687,6 +3869,35 @@
                     pris.add(meilleur);
                 }
             }
+            // 0.29.00 — Correction (milkyway35, 23/11 : rue renumérotée). Adresse BAN manquante dont l'EMPLACEMENT porte un autre numéro
+            // de segment de la même voie, lui-même sans adresse BAN (en trop, doublon) ou rattaché « loin » à la sienne : WBC propose de lui
+            // donner le numéro BAN. Au plus près, à CORR_M au plus, même parité (l'autre trottoir n'est pas l'emplacement) ; chaque numéro
+            // WME ne sert qu'une fois. Certifiée ou non (décision de l'auteur). Rien n'est écrit ici.
+            const CORR_M = PROCHE_M;
+            const parite = n => { const b = base(n); return b ? Number(b.slice(-1)) % 2 : -1; };
+            const loinDe = new Map();
+            for (const v of voies.values()) for (const a of v.adresses) if (a.loin && a.wme) loinDe.set(a.wme, a);
+            const corrigeable = x => x.type === 'HN' && x.id != null && !suffixes.has(x) && (!pris.has(x) || loinDe.has(x)) && dansContour(x.lon, x.lat, contourCommune);
+            const parTous = new Map();
+            for (const x of wme) if (corrigeable(x)) indexer('', x, parTous);
+            const candCorr = [];
+            for (const v of voies.values()) for (const a of v.adresses) {
+                a.corr = null;
+                if (a.trouve || a.suffixe || !numeroHn(a.brut)) continue;
+                for (const x of autour(parTous, '', a.lon, a.lat)) {
+                    if (x.num === a.num || parite(x.num) !== parite(a.num) || !(memeNom(x, v) || parSegment(x, v))) continue;
+                    const dm = distWme(a, x);
+                    if (dm <= CORR_M) candCorr.push({ a, x, dm });
+                }
+            }
+            candCorr.sort((p, q) => p.dm - q.dm);
+            const corrPris = new Set();
+            for (const c of candCorr) {
+                if (c.a.corr || corrPris.has(c.x)) continue;
+                c.a.corr = c.x;
+                c.a.corrDm = c.dm;
+                corrPris.add(c.x);
+            }
             // Excès mesuré depuis le MARQUEUR WME, pas le point BAN ; rue de même nom si elle a des segments, sinon le segment le plus proche.
             for (const v of voies.values()) for (const a of v.adresses) {
                 a.ea = null;
@@ -3709,6 +3920,21 @@
             const doublons = dehors.filter(x => admissibles.has(x));
             const enTrop = dehors.filter(x => !admissibles.has(x));
 
+            // Point BAN hors de sa commune (voir HORS_COM_M).
+            for (const v of voies.values()) for (const a of v.adresses) {
+                a.horsCom = null;
+                if (d.contour && !dansContour(a.lon, a.lat, d.contour)) { const dc = distContour(a.lon, a.lat, d.contour, m); if (dc > HORS_COM_M) a.horsCom = dc; }
+            }
+            // 0.29.03 — Numéro WME de la bonne adresse mais mal écrit (« 21bis » pour « 21 bis ») : traité comme un autre numéro posé à
+            // la place de l'adresse (décision de l'auteur, 24/11 : « comme un 67 qui doit devenir 27 »). L'adresse n'est plus « trouvée »,
+            // elle est à corriger au même point. Après la recherche des renumérotations : ce numéro y est déjà pris par sa propre adresse.
+            for (const v of voies.values()) for (const a of v.adresses) {
+                a.corrForme = false;
+                if (a.trouve !== 'HN' || !a.wme || a.wme.id == null) continue;
+                const n = numeroHn(a.brut);
+                if (!n || n === a.wme.brut || !formeAttendueHn(a.wme.brut)) continue;
+                Object.assign(a, { corr: a.wme, corrDm: a.dm, corrForme: true, trouve: null, loin: false, ea: null });
+            }
             // Non certifiées : rapprochées comme les autres, retirées seulement ici des comptes, voies et manquants.
             const compte = a => !d.certSeules || a.cert;
             // Clé en double (communes déléguées) : l'outil de signalement n'en ouvrira qu'une.
@@ -3734,6 +3960,7 @@
                     manquants: gardees.filter(a => !a.trouve).map(a => a.brut),
                     suffixes: gardees.filter(a => a.suffixe).length,
                     eloignes: gardees.filter(a => a.loin).length,
+                    corrigeables: gardees.filter(a => a.corr).length,
                     arretsHist,
                     idVoie: voieDeCles(gardees.map(a => a.cle)),
                     uidV: plusFrequent(gardees.map(a => a.uidV)),
@@ -3743,7 +3970,12 @@
                         ea: a.ea != null ? Math.round(a.ea) : null, alon: a.ea != null ? a.wme.arret[0] : null, alat: a.ea != null ? a.wme.arret[1] : null,
                         seg: !a.trouve && a.proche ? a.proche.seg.id : null,
                         plon: !a.trouve && a.proche ? a.proche.fx / kx : null, plat: !a.trouve && a.proche ? a.proche.fy / 110540 : null,
-                        pd: !a.trouve && a.proche ? Math.round(a.proche.d) : null })),
+                        pd: !a.trouve && a.proche ? Math.round(a.proche.d) : null,
+                        horsCom: a.horsCom != null ? Math.round(a.horsCom) : null,
+                        wbrut: a.trouve ? a.wme.brut : null, formeHn: a.trouve === 'HN' ? formeAttendueHn(a.wme.brut) : null,
+                        wid: a.trouve === 'HN' && a.wme.id != null ? String(a.wme.id) : null, wseg: a.trouve === 'HN' && a.wme.seg ? a.wme.seg.id : null,
+                        corr: a.corr ? { id: String(a.corr.id), brut: a.corr.brut, seg: a.corr.seg ? a.corr.seg.id : null, lon: a.corr.lon, lat: a.corr.lat,
+                            dm: Math.round(a.corrDm), forme: !!a.corrForme, loin: !a.corrForme && loinDe.has(a.corr) ? loinDe.get(a.corr).brut : null } : null })),
                     bbox: v.bbox,
                     segs: v.segsVoie.map(x => x.id),
                 });
@@ -3772,6 +4004,9 @@
                     voiesAlt: liste.filter(v => v.statutNom === 'alternatif').length,
                     voiesRoute: liste.filter(v => v.statutNom === 'numeroRoute').length,
                     voiesProche: liste.filter(v => PROCHES.has(v.statutNom)).length,
+                    horsCom: liste.reduce((x, v) => x + v.adresses.filter(a => a.horsCom != null).length, 0),
+                    formeHn: liste.reduce((x, v) => x + v.adresses.filter(a => a.formeHn).length, 0),
+                    corrigeables: liste.reduce((x, v) => x + v.corrigeables, 0),
                 },
             };
         }
@@ -3911,7 +4146,7 @@
             };
             const deLaVoie = new Set([...(voie.segs || [])].concat([...probables]));
             const nomsVoie = [...new Set(segs.filter(s => deLaVoie.has(s.id) && !bonNom(s) && !horsAgglo(s) && s.nom).map(s => s.nom))];
-            const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0, rppLot: 0 };
+            const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0, rppLot: 0, corriger: 0 };
             // 0.28.10 — option « RPP en lot » (L6, par éditeur ; demandée par milkyway35, décision de l'auteur 20/11) : coupée, « Ajouter les
             // numéros » d'une voie ne pose que des numéros de segment, comme avant ; les RPP restent au « + », un par un.
             const sansRppLot = !!(opt && opt.lot && opt.rppLot === false);
@@ -3921,6 +4156,8 @@
             const ordre = (voie.adresses || []).slice().sort((x, y) => (parseInt(x.brut, 10) || 0) - (parseInt(y.brut, 10) || 0) || String(x.brut).localeCompare(String(y.brut)));
             for (const a of ordre) {
                 if (a.trouve) continue;
+                // 0.29.03 — un autre numéro (ou le même mal écrit) est à cet emplacement : il se corrige (« ↻ »), on n'en pose pas un second.
+                if (a.corr) { ecartes.corriger++; continue; }
                 if (a.hnPose || a.hnEnregistre) { ecartes.dejaPose++; continue; }
                 if (suffixeBloque(a)) { ecartes.suffixe++; continue; }
                 const number = numeroHn(a.brut);
@@ -4002,6 +4239,47 @@
                 if (d < bd) { bd = d; best = [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]; }
             }
             return best;
+        }
+        // 0.29.04 — Bulle d'un point de la carte : du côté OPPOSÉ à son segment (demande de l'auteur, 24/11 : posée en haut à droite,
+        // elle masquait la rue et l'endroit où replacer le numéro). 0.29.06 : COLLÉE au point (l'auteur : « à proximité, mais du
+        // bon côté » — au-delà du segment, elle partait loin du numéro). En pixels d'écran : a = le point, p = son pied sur le
+        // segment, w × h = la bulle, b = { g, h, d, b } bornes de la carte, marge = écart au point. Essais, dans l'ordre :
+        //  1. derrière le point (côté maisons), à `marge` px ;
+        //  2. à côté du point, d'un côté puis de l'autre, sans s'avancer vers la rue ;
+        //  3. au-delà du segment (rue au bord de la carte) ; sinon null (placement par défaut).
+        // 0.29.07 — obst : marqueurs à laisser visibles (numéro WME à corriger ou trouvé ; l'auteur, 24/11 : « qu'elle évite aussi le
+        // marqueur WME »). Derrière le point, la bulle peut glisser par pas d'un côté ou de l'autre pour les éviter. Parmi les positions
+        // derrière ou à côté qui les laissent libres, la PLUS PROCHE du point l'emporte (« pas envie de parcourir l'écran ») ; au-delà
+        // du segment seulement s'il n'y en a aucune ; sinon la première position valable sans eux.
+        function placementBulle(a, p, w, h, b, marge, obst) {
+            const dx = p[0] - a[0], dy = p[1] - a[1], d = Math.hypot(dx, dy);
+            if (!(d >= 2)) return null;
+            const nx = dx / d, ny = dy / d, tx = -ny, ty = nx;
+            const demi = (ex, ey) => w / 2 * Math.abs(ex) + h / 2 * Math.abs(ey);
+            const coins = (L, T) => [[L, T], [L + w, T], [L, T + h], [L + w, T + h]];
+            const borne = (cx, cy) => [Math.max(b.g + 4, Math.min(cx - w / 2, b.d - w - 4)), Math.max(b.h + 4, Math.min(cy - h / 2, b.b - h - 4))];
+            const proj = (L, T, o, ex, ey, f) => f(...coins(L, T).map(c => (c[0] - o[0]) * ex + (c[1] - o[1]) * ey));
+            const libre = r => (obst || []).every(o => o[0] < r[0] - marge || o[0] > r[0] + w + marge || o[1] < r[1] - marge || o[1] > r[1] + h + marge);
+            const valables = [];
+            // 1. Derrière le point : centrée, puis glissée par pas d'un côté et de l'autre.
+            const k = marge + demi(nx, ny), gl = (demi(tx, ty) + 1.5 * marge) / 3;
+            for (const g of [0, 1, -1, 2, -2, 3, -3]) {
+                const r = borne(a[0] - nx * k + tx * gl * g, a[1] - ny * k + ty * gl * g);
+                if (proj(r[0], r[1], a, nx, ny, Math.max) <= -marge / 2) valables.push(r);
+            }
+            // 2. À côté du point, son bord avant aligné sur le point (rien vers la rue).
+            for (const sg of [1, -1]) {
+                const ex = tx * sg, ey = ty * sg, kt = marge + demi(ex, ey), recul = demi(nx, ny);
+                const r = borne(a[0] + ex * kt - nx * recul, a[1] + ey * kt - ny * recul);
+                if (proj(r[0], r[1], a, nx, ny, Math.max) <= marge / 2 && proj(r[0], r[1], a, ex, ey, Math.min) >= marge / 2) valables.push(r);
+            }
+            // 3. Au-delà du segment.
+            const r3 = borne(p[0] + nx * k, p[1] + ny * k), au_dela = proj(r3[0], r3[1], p, nx, ny, Math.min) >= marge / 2;
+            const dist = r => Math.hypot(Math.max(r[0] - a[0], 0, a[0] - r[0] - w), Math.max(r[1] - a[1], 0, a[1] - r[1] - h));
+            const pres = valables.filter(libre).sort((x, y) => dist(x) - dist(y));
+            if (au_dela) valables.push(r3);
+            const r = pres[0] || (au_dela && libre(r3) ? r3 : null) || valables[0];
+            return r ? [Math.round(r[0]), Math.round(r[1])] : null;
         }
         // Entrée d'un numéro transformé en RPP : segment roulable le plus proche, autre que le sien, SANS NOM ou allée, à moins de SEG_MAX_M ; sinon null.
         const NON_ROULABLES = new Set([5, 10, 15, 16, 18, 19]);
@@ -4229,7 +4507,7 @@
             }
             return vus;
         }
-        return { ordreNum, rppEnAttente, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, niveauQuota, rapprocherHn, planHn, segmentProbableHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, suffixeBloque, segsPresDesOrphelines };
+        return { ordreNum, rppEnAttente, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, distContour, formeAttendueHn, HORS_COM_M, analyser, PALIERS_ARRET, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, niveauQuota, rapprocherHn, planHn, segmentProbableHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, suffixeBloque, segsPresDesOrphelines, placementBulle };
     })();
     // ==/WBC-CORE==
 
@@ -4826,7 +5104,7 @@
         return l.join('<br>');
     }
     const pastille = etat => '<span class="wbc-pt" style="background:' + couleur(etat) + '"></span>';
-    const COULEURS_DEF = { manquant: '#e53935', present: '#43a047', trop: '#fb8c00', carte: '#2a78d6', pose: '#00838f' };
+    const COULEURS_DEF = { manquant: '#e53935', present: '#43a047', trop: '#fb8c00', horsCom: '#8e24aa', corriger: '#3949ab', carte: '#2a78d6', pose: '#00838f' };
     // Adresse BAN de la vue, sans analyse : neutre ; cerclée de la couleur « présent » quand WME a déjà le même numéro (voir marquerPresents).
     const COULEUR_DIRECT = '#546e7a';
     const HEX_RE = /^#[0-9a-f]{6}$/i;
@@ -4889,6 +5167,8 @@
                     { predicate: p => p.etat === 'manquant', style: Object.assign({ pointRadius: 6 }, pt, texte) },
                     { predicate: p => p.etat === 'present', style: Object.assign({ pointRadius: 5 }, pt, texte) },
                     { predicate: p => p.etat === 'trop', style: Object.assign({ pointRadius: 6 }, pt, texte) },
+                    { predicate: p => p.etat === 'horsCom', style: Object.assign({ pointRadius: 6 }, pt, texte) },
+                    { predicate: p => p.etat === 'corriger', style: Object.assign({ pointRadius: 7 }, pt, texte) },
                     { predicate: p => p.etat === 'pose', style: Object.assign({}, texte, { pointRadius: 15, fillColor: '#00e5ff', fillOpacity: 0.3,
                         strokeColor: '#00838f', strokeWidth: 4, strokeOpacity: 1, fontColor: '#006064', labelYOffset: -24 }) },
                     { predicate: p => p.etat === 'lien', style: { strokeColor: '${coul}', strokeWidth: 2, strokeOpacity: 0.9, strokeDashstyle: 'dash' } },
@@ -5272,6 +5552,11 @@
             if (!a.trouve && !vuRpp(a) && a.seg != null) lignes.push(esc(t('hovProbSeg', a.seg, nb(a.pd))));
             lignes.push(esc(t(a.cert ? 'hovCert' : 'hovNotCert')));
             if (v.statutNom !== 'identique' && v.nomWme) lignes.push(esc(t('hovWmeStreet', v.nomWme)));
+            if (a.horsCom != null) lignes.push(etiq('horsCom', t('hovHorsCom', nb(a.horsCom))));
+            if (a.formeHn) lignes.push(esc(t('hovForme', a.wbrut, a.formeHn)));
+            if (a.corrPose) lignes.push('<span class="wbc-f-etat pose">' + esc(t('corrPoseTip')) + '</span>');
+            // Texte long : pastille DANS le cadre (à côté, elle restait seule sur sa ligne — vu le 24/11).
+            else if (a.corr && !a.trouve) lignes.push('<span class="wbc-f-etat corriger">' + pastille('corriger') + esc(t('hovCorr', a.corr.brut, a.brut)) + '</span>');
         } else if (p.direct) {
             const d = p.direct, ed = dateIso(editionBan);
             lignes.push('<b><bdi>' + esc(d.num + ' ' + d.voie) + '</bdi></b>');
@@ -5416,12 +5701,53 @@
         if (!off || !apres || z !== z0) { fermerBulle(); return; }
         placerBulle(apres[0] + off[0], apres[1] + off[1]);
     }
+    // Pied du point sur son segment : projection déjà calculée (manquante) ; sinon segment du numéro à corriger, trouvé ou posé ;
+    // sinon le plus proche des segments de la voie chargés autour. Rien n'est demandé au serveur.
+    async function piedSegment(a, v) {
+        if (a.plon != null && a.plat != null) return [a.plon, a.plat];
+        let segs = await segmentsCharges([a.corr && a.corr.seg, a.wseg, a.hnSeg].filter(x => x != null));
+        if (!segs.length) segs = await segmentsCharges(await idsVoieHn(v, { lon: a.lon, lat: a.lat, adresses: [a] }));
+        const kx = Math.cos(a.lat * Math.PI / 180);
+        let best = null, bd = Infinity;
+        for (const s of segs) {
+            const c = s && s.geometry && s.geometry.coordinates;
+            if (!c || c.length < 2) continue;
+            const q = Core.pointLePlusProche(a.lon, a.lat, c), d = Math.hypot((q[0] - a.lon) * kx, q[1] - a.lat);
+            if (d < bd) { bd = d; best = q; }
+        }
+        return best;
+    }
+    async function placerBulleCote(p, v, no) {
+        try {
+            const pied = await piedSegment(p.ad, v);
+            if (!pied || no !== bulleNo || !bulle || bulle.hidden) return;
+            const pa = await pixelDe({ lon: p.lon, lat: p.lat }), pp = await pixelDe({ lon: pied[0], lat: pied[1] });
+            // Marqueurs WME à laisser visibles : numéro à corriger, numéro trouvé.
+            const obst = [];
+            for (const m of [p.ad.corr, p.ad.wlon != null ? { lon: p.ad.wlon, lat: p.ad.wlat } : null]) {
+                if (!m || m.lon == null) continue;
+                const q = await pixelDe({ lon: m.lon, lat: m.lat });
+                if (q) obst.push(q);
+            }
+            let r = null;
+            try { const el = await sdk.Map.getMapViewportElement(); r = el && el.getBoundingClientRect(); } catch (e) { }
+            if (!pa || !pp || no !== bulleNo || !bulle || bulle.hidden) return;
+            const b = r ? { g: r.left, h: r.top, d: r.right, b: r.bottom } : { g: 0, h: 0, d: window.innerWidth, b: window.innerHeight };
+            const pos = Core.placementBulle(pa, pp, bulle.offsetWidth, bulle.offsetHeight, b, 14, obst);
+            if (!pos) return;
+            placerBulle(pos[0], pos[1]);
+            bulleOff = Promise.resolve([pos[0] - pa[0], pos[1] - pa[1]]);
+        } catch (e) { log('bulle : ' + e.message); }
+        finally { if (no === bulleNo && bulle) bulle.style.visibility = ''; }
+    }
     function ouvrirBulle(p, cx, cy) {
         const v = p.voie, i = resultat ? resultat.voies.indexOf(v) : -1, k = i < 0 ? -1 : v.adresses.indexOf(p.ad);
         if (k < 0) return false;
         const q = Core.quotaHn(lireHorodatages(), Date.now()), rpp = droitGeste('conv') && rppConvertible(p.ad);
         const versRpp = droitGeste('conv') && !rpp && !hnPosable(p.ad) && hnConvertible(p.ad);
-        if (!rpp && !versRpp && !hnPosable(p.ad)) return false;
+        // 0.29.04 — numéro à corriger : « ↻ » dans la bulle (même geste que dans la liste, hors quota).
+        const corr = droitGeste('hn1') && aCorriger(p.ad) ? corrDe(p.ad) : null;
+        if (!rpp && !versRpp && !corr && !hnPosable(p.ad)) return false;
         const raison = versRpp ? (p.ad.trouve && q.reste < 2 ? t('ajHnQuota', heureCourte(q.libre)) : '') :
             !(rpp ? v.statutNom === 'identique' : nomOkHn(v)) ? t('ajHnNoName') : !q.reste ? t('ajHnQuota', heureCourte(q.libre)) : '';
         if (!bulle) {
@@ -5431,26 +5757,28 @@
             document.body.appendChild(bulle);
             bulle.addEventListener('click', ev => {
                 if (ev.target.closest('[data-bulle-fermer]')) { fermerBulle(); return; }
-                const b = ev.target.closest('[data-hn1], [data-rpphn1], [data-hnrpp1]');
-                if (!b || b.disabled || !resultat || !droitGeste(b.dataset.hn1 ? 'hn1' : 'conv') || hnEnCours) return;
-                const [bi, bk] = (b.dataset.hn1 || b.dataset.rpphn1 || b.dataset.hnrpp1).split(':').map(Number);
+                const b = ev.target.closest('[data-hn1], [data-rpphn1], [data-hnrpp1], [data-corr1]');
+                if (!b || b.disabled || !resultat || !droitGeste(b.dataset.hn1 || b.dataset.corr1 ? 'hn1' : 'conv') || hnEnCours) return;
+                const [bi, bk] = (b.dataset.hn1 || b.dataset.rpphn1 || b.dataset.hnrpp1 || b.dataset.corr1).split(':').map(Number);
                 const ou = { x: parseFloat(bulle.style.left) || 0, y: parseFloat(bulle.style.top) || 0 };
                 vue.hnMsg = null;
                 fermerBulle();
                 gesteCarte = true;
-                const action = b.dataset.hnrpp1 ? convertirHnRpp(bi, bk)
+                const action = b.dataset.corr1 ? (vue.curseur = bk, corrigerHnVoie(bi, bk))
+                    : b.dataset.hnrpp1 ? convertirHnRpp(bi, bk)
                     : b.dataset.rpphn1 ? (vue.curseurRpp = bi + ':' + bk, convertirRppVoie(bi, bk))
                     : (vue.curseur = bk, ajouterHnVoie(bi, bk));
                 Promise.resolve(action).then(() => { gesteCarte = false; const m = vue.hnMsg; if (m && m.i === bi && m.err) montrerAvis(m.txt, ou); }, () => { gesteCarte = false; });
             });
         }
         bulle.dir = _lang === 'he' ? 'rtl' : 'ltr';
-        const lbl = rpp ? t('rhnConv') : versRpp ? t('rhnVersRpp') : t('ajHn1');
+        const lbl = corr ? t('corrBtn', corr.avant, corr.apres) : rpp ? t('rhnConv') : versRpp ? t('rhnVersRpp') : t('ajHn1');
         bulle.setAttribute('aria-label', lbl + ' ' + p.ad.brut);
         bulle.innerHTML = '<button type="button" class="wbc-bulle-x" data-bulle-fermer title="' + esc(t('close')) + '" aria-label="' + esc(t('close')) + '">&#x2715;</button>' + htmlFiche(p) +
-            '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn' + (rpp || versRpp ? ' rpp' : '') + '" ' + (rpp ? 'data-rpphn1' : versRpp ? 'data-hnrpp1' : 'data-hn1') + '="' + i + ':' + k + '" title="' + esc(raison || t(rpp ? 'rhnConvTip' : versRpp ? 'rhnVersRppTip' : 'ajHn1Tip')) + '"' + (raison || hnEnCours ? ' disabled' : '') + '>' + (rpp || versRpp ? '&#x21C4; ' : '+ ') + esc(lbl) + '</button>' +
-            (raison ? '<div class="wbc-bulle-raison">' + esc(raison) + '</div>' : '') + '</div>';
-        if (rpp && !raison) precontrolerRpp(p.ad, v, i, k);
+            (corr ? '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn corr" data-corr1="' + i + ':' + k + '" title="' + esc(t('corrTip', corr.avant, corr.apres)) + '"' + (hnEnCours ? ' disabled' : '') + '>&#x21BB; ' + esc(lbl) + '</button></div>' : '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn' + (rpp || versRpp ? ' rpp' : '') + '" ' + (rpp ? 'data-rpphn1' : versRpp ? 'data-hnrpp1' : 'data-hn1') + '="' + i + ':' + k + '" title="' + esc(raison || t(rpp ? 'rhnConvTip' : versRpp ? 'rhnVersRppTip' : 'ajHn1Tip')) + '"' + (raison || hnEnCours ? ' disabled' : '') + '>' + (rpp || versRpp ? '&#x21C4; ' : '+ ') + esc(lbl) + '</button>' +
+            (raison ? '<div class="wbc-bulle-raison">' + esc(raison) + '</div>' : '') + '</div>');
+        if (corr) { /* hors quota, droit relu au clic */ }
+        else if (rpp && !raison) precontrolerRpp(p.ad, v, i, k);
         else if (!versRpp && (!raison || raison === t('ajHnNoName'))) precontrolerHn1(p.ad, v, i, k, !!raison).catch(e => log('droit du segment : ' + e.message));
         bulle.hidden = false;
         bulleAdr = [i, k];
@@ -5461,6 +5789,10 @@
         // Décalage voulu (avant bornage) par rapport au POINT : le clic peut tomber à quelques pixels de lui.
         const no = ++bulleNo;
         bulleOff = pixelDe(ll).then(p => p && no === bulleNo ? [cx + 14 - p[0], cy - h0 - 10 - p[1]] : null);
+        // Invisible le temps de trouver le segment (au plus 600 ms), puis placée de l'autre côté ; sinon là où elle est.
+        bulle.style.visibility = 'hidden';
+        placerBulleCote(p, v, no);
+        setTimeout(() => { if (no === bulleNo && bulle) bulle.style.visibility = ''; }, 600);
         cacherFiche();
         const btn = bulle.querySelector('.wbc-bulle-btn:not([disabled])');
         if (btn) btn.focus({ preventScroll: true });
@@ -5498,7 +5830,7 @@
             if (droitGeste('hn1') && resultat && pointsVus.length) {
                 let sous = null;
                 try { sous = await pointSous(ev.clientX, ev.clientY); } catch (e) { }
-                if (sous && sous.best && sous.best.ad && (hnPosable(sous.best.ad) || rppConvertible(sous.best.ad) || hnConvertible(sous.best.ad)) && ouvrirBulle(sous.best, ev.clientX, ev.clientY)) return;
+                if (sous && sous.best && sous.best.ad && (hnPosable(sous.best.ad) || aCorriger(sous.best.ad) || rppConvertible(sous.best.ad) || hnConvertible(sous.best.ad)) && ouvrirBulle(sous.best, ev.clientX, ev.clientY)) return;
             }
             if (!communesVisibles()) return;
             let z = 99;
@@ -5887,6 +6219,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 /* Violet : l'orange est réservé aux numéros EN TROP. */
 .wbc-num.suffixe { border-color: #ce93d8; background: #f3e5f5; color: #6a1b9a; }
 .wbc-num.pose { border-color: #006064; background: #00838f; color: #fff; }
+.wbc-num.corriger { border-color: #3949ab; background: #e8eaf6; color: #283593; }
+.wbc-num-plus.corr { background: #3949ab; }
+#wbc-bulle .wbc-bulle-btn.corr { background: #3949ab; border-color: #3949ab; color: #fff; }
+#wbc-bulle .wbc-bulle-btn.corr:hover { background: #283593; }
+.wbc-num-plus.corr:hover { background: #283593; }
+.wbc-tag.wbc-tag-corr { background: #e8eaf6; color: #283593; }
+.wbc-h-corr { color: #283593; }
 .wbc-num.pose:hover { background: #006064; }
 .wbc-f-etat.pose { color: #006064; font-weight: 700; }
 .wbc-hn-msg { margin: 0 0 6px; padding: 5px 8px; border-radius: 6px; background: #e0f7fa; color: #004d57; font-size: 11px; line-height: 1.45; }
@@ -6012,6 +6351,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-f-etat.trop { background: #fff3e0; color: #b23c00; }
 .wbc-f-etat.arret { background: #fff3e0; color: #8a3200; }
 .wbc-f-etat.suffixe { background: #f3e5f5; color: #6a1b9a; }
+.wbc-f-etat.corriger { background: #e8eaf6; color: #283593; }
 `;
 
 
@@ -6435,7 +6775,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             kpi(nb(T.ban), t('kBan'), '', t('kCert', nb(T.cert))) +
             kpi(nb(T.presents), t('kWme'), '', t('kHnRpp', nb(T.hn), nb(T.rpp)) + (T.eloignes ? ' · ' + t('kFar', nb(T.eloignes)) : '') +
                 (Core.arretsAuDela(T.arretsHist, seuilArret()) ? ' · ' + t('kArret', nb(Core.arretsAuDela(T.arretsHist, seuilArret()))) : '')) +
-            kpi(nb(T.manquants), t('kMiss'), T.manquants ? 'ko' : 'ok', T.suffixes ? t('kSuf', nb(T.suffixes)) : '') +
+            kpi(nb(T.manquants), t('kMiss'), T.manquants ? 'ko' : 'ok', [T.corrigeables ? t('kCorr', nb(T.corrigeables)) : '', T.suffixes ? t('kSuf', nb(T.suffixes)) : ''].filter(x => x).join(' · ')) +
             (T.enTrop == null ? kpi('—', t('kExtra'), '', t('delNote'))
                 : kpi(nb(T.enTrop), t('kExtra'), T.enTrop ? 'warn' : '', T.doublons ? t('kDup', nb(T.doublons)) : '')) +
             '</div><div class="wbc-cov-l" title="' + esc(t('kCov')) + '"><b>' + esc(c) + '</b><span class="wbc-cov" role="img" aria-label="' + esc(t('kCov') + ' ' + c) + '"><i style="width:' +
@@ -6461,6 +6801,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         let l = r.voies.filter(v => {
             if (vue.filtre === 'todo' && v.presents >= v.ban) return false;
             if (vue.filtre === 'done' && v.presents < v.ban) return false;
+            if (vue.filtre === 'corr' && !v.adresses.some(enCorrection)) return false;
             // « Nom à vérifier » : tout sauf le nom BAN porté en principal ou en alternatif.
             if (vue.filtre === 'name' && (v.statutNom === 'identique' || v.statutNom === 'alternatif' || v.statutNom === 'parking')) return false;
             if (vue.deleguee && v.deleguee !== vue.deleguee) return false;
@@ -6469,7 +6810,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const cle = {
             nom: v => v.nom, wme: v => v.nomWme || '', ban: v => v.ban, wmeN: v => v.presents, ecart: v => v.ban - v.presents,
         }[vue.tri] || (v => v.ban - v.presents);
+        // 0.29.04 — « À corriger », tri par défaut (écart) : les voies qui ont le plus de numéros à corriger d'abord.
+        const parCorr = vue.filtre === 'corr' && vue.tri === 'ecart';
         l = l.slice().sort((a, b) => {
+            if (parCorr) { const dc = b.adresses.filter(enCorrection).length - a.adresses.filter(enCorrection).length; if (dc) return dc * -vue.sens; }
             const x = cle(a), y = cle(b);
             const c = typeof x === 'number' ? x - y : String(x).localeCompare(String(y), LOCALES[_lang]);
             return c * vue.sens || a.nom.localeCompare(b.nom, LOCALES[_lang]);
@@ -6521,11 +6865,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     function htmlNums(v, i) {
         const plus = droitGeste('hn1') && !hnEnCours && nomOkHn(v) && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
         return '<div class="wbc-nums">' + v.adresses.map((a, k) => {
-            if (a.trouve) return '';
+            if (a.trouve || enCorrection(a)) return '';
             const p = plus && hnPosable(a);
-            const tip = a.hnVersRpp ? t('rhnVersRppTipPose') : a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) + (p ? ' — ' + t('tipGoAdd') : '') : p ? t('tipGoAdd') : t('tipGo');
-            const num = '<button type="button" class="wbc-num' + (a.hnPose ? ' pose' : a.hnEnregistre ? ' enregistre' : a.suffixe ? ' suffixe' : '') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '"' + (a.hnPose || a.hnEnregistre ? ' aria-label="' + esc(a.brut + ' — ' + tip) + '"' : '') + '>' + esc(a.brut) + (a.suffixe ? ' ≠ ' + esc(a.suffixe) : '') +
-                (a.hnPose ? '<span class="wbc-num-etat" aria-hidden="true">&#x271A;</span>' : a.hnEnregistre ? '<span class="wbc-num-etat" aria-hidden="true">&#x2713;</span>' : '') + '</button>';
+            const c = aCorriger(a) ? corrDe(a) : null, cp = !!a.corrPose;
+            const tip = cp ? t('corrPoseTip') : c ? t('corrTip', c.avant, c.apres) + (c.loin ? ' ' + t('corrLoin', c.loin) : '') : a.hnVersRpp ? t('rhnVersRppTipPose') : a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) + (p ? ' — ' + t('tipGoAdd') : '') : p ? t('tipGoAdd') : t('tipGo');
+            const num = '<button type="button" class="wbc-num' + (a.hnPose || cp ? ' pose' : a.hnEnregistre ? ' enregistre' : c ? ' corriger' : a.suffixe ? ' suffixe' : '') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '"' + (a.hnPose || a.hnEnregistre || cp || c ? ' aria-label="' + esc(a.brut + ' — ' + tip) + '"' : '') + '>' + esc(a.brut) + (c ? ' ≠ ' + esc(c.avant) : a.suffixe ? ' ≠ ' + esc(a.suffixe) : '') +
+                (a.hnPose ? '<span class="wbc-num-etat" aria-hidden="true">&#x271A;</span>' : cp ? '<span class="wbc-num-etat" aria-hidden="true">&#x21BB;</span>' : a.hnEnregistre ? '<span class="wbc-num-etat" aria-hidden="true">&#x2713;</span>' : '') + '</button>';
+            // Autre numéro à cet emplacement : « ↻ » à la place du « + » (en poser un second ferait deux numéros au même endroit).
+            if (c || cp) return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + boutonCorr(a, i, k) + boutonBanNum(a, i, k) + '</span>';
             // Segment probable non modifiable : « + » grisé, motif en infobulle ; il reste focalisable pour que l'infobulle se lise.
             const bl = p && a.hn1Bloque;
             const plusB = !p ? '' : '<button type="button" class="wbc-num-plus' + (bl ? ' sugg' : '') + '" data-hn1="' + i + ':' + k + '" title="' + esc(bl ? motifHn1(bl) : t('ajHn1') + ' — ' + t('ajHn1Tip')) + '" aria-label="' + esc(t('ajHn1') + ' ' + a.brut + (bl ? ' — ' + motifHn1(bl) : '')) + '">+</button>';
@@ -6541,6 +6888,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     const ICONES_OUTILS = {
         select: '<path d="M3.5 2l9 5.6-4 1.1 2.4 4.4-1.8 1-2.4-4.4-3.2 2.8z" fill="currentColor"/>',
         add: '<path d="M4.5 4.5v7M1 8h7M11.5 4.5v7M8 8h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" fill="none"/>',
+        corr: '<path d="M13 8a5 5 0 1 1-1.5-3.55" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" fill="none"/><path d="M13.6 1.6v4h-4z" fill="currentColor"/>',
         next: '<path d="M2.5 3l7.5 5-7.5 5z" fill="currentColor"/><rect x="11" y="3" width="2.4" height="10" rx=".6" fill="currentColor"/>',
         mail: '<rect x="1.5" y="3.5" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M2 4.5l6 4.6 6-4.6" stroke="currentColor" stroke-width="1.5" fill="none"/>',
         flag: '<path d="M3.5 14.5V2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4 2.5h8.5l-2 3 2 3H4z" fill="currentColor"/>',
@@ -6607,7 +6955,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const T = totauxVus(r), c = r.commune;
         const vs = r.voies.filter(v => !vue.deleguee || v.deleguee === vue.deleguee);
         const nF = { todo: vs.filter(v => v.presents < v.ban).length, name: vs.filter(v => v.statutNom !== 'identique' && v.statutNom !== 'alternatif' && v.statutNom !== 'parking').length,
-            done: vs.filter(v => v.presents >= v.ban).length, all: vs.length };
+            done: vs.filter(v => v.presents >= v.ban).length, all: vs.length, corr: vs.filter(v => v.adresses.some(enCorrection)).length };
         const detailNoms = [T.voiesAlt ? t('vAlt', nb(T.voiesAlt)) : '', T.voiesSansNom ? t('vNoName', nb(T.voiesSansNom)) : '', T.voiesAutreNom ? t('vOtherName', nb(T.voiesAutreNom)) : '',
             T.voiesRoute ? t('vRoute', nb(T.voiesRoute)) : '', T.voiesProche ? t('vType', nb(T.voiesProche)) : '', T.voiesSansSegment ? t('vNoSeg', nb(T.voiesSansSegment)) : ''].filter(x => x).join(' · ');
         const filtre = (k, lbl, tip) => '<button type="button" class="wbc-mode" role="radio" data-filtre="' + k + '" aria-checked="' + (vue.filtre === k) + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
@@ -6623,7 +6971,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             htmlKpis(T) + (cmpCommune(r) ? ligneCmp(cmpCommune(r), r.totaux) : '') +
             '<p class="wbc-note" id="wbc-calque-note" hidden></p>' +
             '<div class="wbc-outils"><div class="wbc-filtres" role="radiogroup">' + filtre('todo', t('fTodo'), t('voiesLine', nb(T.voiesCompletes), nb(T.voies))) +
-            filtre('name', t('fName'), detailNoms) + filtre('done', t('fDone'), t('tipFDone')) + filtre('all', t('fAll'), t('tipFAll')) + '</div>' +
+            filtre('name', t('fName'), detailNoms) + (nF.corr || vue.filtre === 'corr' ? filtre('corr', t('fCorr'), t('tipFCorr')) : '') + filtre('done', t('fDone'), t('tipFDone')) + filtre('all', t('fAll'), t('tipFAll')) + '</div>' +
             selectDeleguee(r) +
             '<div class="wbc-rech' + (vue.texte ? ' actif' : '') + '"><span class="wbc-loupe" aria-hidden="true">&#x1F50D;</span>' +
             '<input type="search" class="wbc-champ" id="wbc-filtre-txt" placeholder="' + esc(t('filterPh')) + '" aria-label="' + esc(t('filterPh')) + '" autocomplete="off" spellcheck="false">' +
@@ -6638,16 +6986,17 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 const i = r.voies.indexOf(v), gap = v.ban - v.presents, ouvert = vue.ouverte === i;
                 h += '<tr class="wbc-l' + (ouvert ? ' ouvert' : '') + '" data-voie="' + i + '" tabindex="0" aria-expanded="' + ouvert + '" title="' + esc(t('tipVoie')) + '">' +
                     '<td><bdi>' + esc(v.nom) + '</bdi>' + (v.deleguee ? '<span class="wbc-del">' + esc(v.deleguee) + '</span>' : '') + '</td>' +
-                    '<td>' + celluleNom(v) + '</td><td class="num">' + nb(v.ban) + '</td>' +
+                    '<td>' + celluleNom(v) + (nCorr(v) ? ' <span class="wbc-tag wbc-tag-corr" title="' + esc(t('corrTag', nb(nCorr(v)))) + '" aria-label="' + esc(t('corrTag', nb(nCorr(v)))) + '">&#x21BB;\u00a0' + nb(nCorr(v)) + '</span>' : '') + '</td><td class="num">' + nb(v.ban) + '</td>' +
                     '<td class="num" title="' + esc(t('kHnRpp', v.hn, v.rpp)) + '">' + nb(v.presents) + '</td>' +
                     '<td class="num ecart ' + (gap ? 'ko' : 'ok') + '">' + (gap ? '−' + nb(gap) : '0') + '</td>' +
                     (cc ? celluleDelta((() => { const a = cc.data.voies.get(Core.normNom(v.nom) + '|' + (v.deleguee || '')); return a ? v.presents - a.presents : null; })(), dC) : '') + '</tr>';
                 if (ouvert) h += '<tr class="wbc-detail"><td colspan="' + nCol + '"><p class="wbc-voie-outils">' + boutonOutil('selvoie', 'select', t('selSegs', nb((v.segs || []).length)), t('selSegsTip'), (v.segs || []).length, !(v.segs || []).length) +
-                    (droitGeste('voie') ? boutonHn(v) : '') + boutonBanVoie(v) + '</p>' +
-                    (droitGeste('hn1') && vue.hnMsg && vue.hnMsg.i === i ? '<p class="wbc-hn-msg' + (vue.hnMsg.err ? ' erreur' : '') + '" role="status">' + esc(vue.hnMsg.txt) + '</p>' : '') + '<h4>' + esc(t('missingT')) +
+                    (droitGeste('voie') ? boutonHn(v) + boutonCorrVoie(v) : '') + boutonBanVoie(v) + '</p>' +
+                    (droitGeste('hn1') && vue.hnMsg && vue.hnMsg.i === i ? '<p class="wbc-hn-msg' + (vue.hnMsg.err ? ' erreur' : '') + '" role="status">' + esc(vue.hnMsg.txt) + '</p>' : '') + htmlFormes(v, i) +
+                    (nSeulsManquants(v) || !v.manquants.length ? '<h4>' + esc(t('missingT')) +
                     (v.manquants.length ? ' <button type="button" class="wbc-btn wbc-btn-neutral wbc-suivant" data-act="suivant" title="' + esc(t('tipNext')) + '">' + esc(t('nextMissing')) + ' <span class="wbc-fl">&#x25B6;</span></button>' : '') + '</h4>' +
                     (v.manquants.length ? htmlNums(v, i)
-                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') + (droitGeste('conv') ? htmlRpps(v, i) : '') + htmlArrets(v, i) + htmlSigVoie(v, r) + '</td></tr>';
+                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') : '') + (droitGeste('conv') ? htmlRpps(v, i) : '') + htmlArrets(v, i) + htmlSigVoie(v, r) + '</td></tr>';
             }
             h += '</tbody></table>';
         }
@@ -6937,6 +7286,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     let tropMontre = null;
     // SDK async : un calcul plus tardif peut finir plus tôt, seul le dernier dessine.
     let generationCalque = 0;
+    // 0.29.00 — état d'un point : hors commune, puis à corriger, puis l'état de base.
+    function etatPoint(a, base) { return a.horsCom != null ? 'horsCom' : aCorriger(a) ? 'corriger' : base; }
+    function lblPoint(a) { const c = aCorriger(a) ? corrDe(a) : null; return c ? c.avant + ' \u2192 ' + c.apres : a.brut; }
     function majCalque() {
         majCalqueAsync().catch(e => log('calque : ' + e.message));
     }
@@ -6950,8 +7302,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             // Après un Ctrl+clic sur le bouton de carte, fenêtre fermée : manquants, trouvés et en trop, sans réglage à faire.
             if (opts.carte || carteSeule) {
                 let tous = [];
-                voies.forEach(v => v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && !vuRpp(a)) tous.push({ lon: a.lon, lat: a.lat, etat: 'manquant', lbl: a.brut, ad: a, voie: v }); }));
-                if (opts.trouves || carteSeule) voies.forEach(v => v.adresses.forEach(a => { if (a.trouve || (vuRpp(a) && !a.hnPose)) tous.push({ lon: a.lon, lat: a.lat, etat: 'present', lbl: a.brut, ad: a, voie: v }); }));
+                // Hors commune (0.28.13) : toujours montrée, trouvée ou non, comme une manquante.
+                // À corriger (0.29.00) : toujours montrée aussi, trouvée (forme du numéro) ou non (autre numéro à sa place).
+                voies.forEach(v => v.adresses.forEach(a => { if (!a.hnPose && ((!a.trouve && !vuRpp(a)) || a.horsCom != null || aCorriger(a))) tous.push({ lon: a.lon, lat: a.lat, etat: etatPoint(a, 'manquant'), lbl: lblPoint(a), ad: a, voie: v }); }));
+                if (opts.trouves || carteSeule) voies.forEach(v => v.adresses.forEach(a => { if (a.horsCom == null && !aCorriger(a) && (a.trouve || (vuRpp(a) && !a.hnPose))) tous.push({ lon: a.lon, lat: a.lat, etat: 'present', lbl: a.brut, ad: a, voie: v }); }));
                 if (!vue.deleguee) resultat.enTrop.forEach(x => tous.push({ lon: x.lon, lat: x.lat, etat: 'trop', lbl: x.brut, trop: x }));
                 if (tous.length > MAX_POINTS) {
                     // Trop de points : un sur k RÉPARTI sur la vue (couper la fin viderait des rues entières), et on le dit.
@@ -6974,7 +7328,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && vuRpp(a)) { const x = rppVus.get(a); pts.unshift({ ligne: [[a.lon, a.lat], [x.lon, x.lat]], etat: 'lien' }); } });
                 v.adresses.forEach(a => { if (!a.trouve && !a.hnPose && !vuRpp(a) && a.plon != null) pts.unshift({ ligne: [[a.lon, a.lat], [a.plon, a.plat]], etat: 'lienManq' }); });
                 v.adresses.forEach(a => { if (a.trouve && arretLoin(a)) pts.unshift({ ligne: [[a.wlon, a.wlat], [a.alon, a.alat]], etat: 'lienArret' }); });
-                v.adresses.forEach(a => { const ok = a.trouve || (vuRpp(a) && !a.hnPose); if ((ok && !((opts.carte || carteSeule) && (opts.trouves || carteSeule))) || (!ok && !a.hnPose && !(opts.carte || carteSeule))) pts.push({ lon: a.lon, lat: a.lat, etat: ok ? 'present' : 'manquant', lbl: a.brut, ad: a, voie: v }); });
+                v.adresses.forEach(a => { const hc = a.horsCom != null, ok = !hc && (a.trouve || (vuRpp(a) && !a.hnPose)); if ((ok && !((opts.carte || carteSeule) && (opts.trouves || carteSeule))) || (!ok && !a.hnPose && !(opts.carte || carteSeule))) pts.push({ lon: a.lon, lat: a.lat, etat: etatPoint(a, ok ? 'present' : 'manquant'), lbl: lblPoint(a), ad: a, voie: v }); });
             }
             if (tropMontre) pts.push({ lon: tropMontre.lon, lat: tropMontre.lat, etat: 'trop', lbl: tropMontre.brut, trop: tropMontre });
             voies.forEach(w => w.adresses.forEach(a => { if (a.hnPose && (!a.trouve || a.rppHn || a.hnVersRpp)) pts.push({ lon: a.lon, lat: a.lat, etat: 'pose', lbl: a.brut, ad: a, voie: w }); }));
@@ -7800,7 +8154,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     function majInterrupteurs() {
         const e = ovEl && $('#wbc-switchs-vue');
         if (!e) return;
-        const h = resultat ? interrupteur('wbc-carte', opts.carte, t('layerSwitch'), t('layerSwitchTip') + ' — ' + t('legMiss') + ', ' + t('legExtra'), false, pastille('manquant') + pastille('trop')) +
+        const h = resultat ? interrupteur('wbc-carte', opts.carte, t('layerSwitch'), t('layerSwitchTip') + ' — ' + t('legMiss') + ', ' + t('legExtra') + ', ' + t('legHorsCom') + ', ' + t('legCorr'), false, pastille('manquant') + pastille('trop') + pastille('horsCom') + pastille('corriger')) +
                 interrupteur('wbc-trouves', opts.trouves, t('showFound'), t('showFoundTip') + ' — ' + t('legFound'), !opts.carte, pastille('present'))
             : resDep ? interrupteur('wbc-carte-dep', opts.carteDep, t('depMap'), t('depMapTip')) : '';
         if (e.dataset.h !== h) { e.innerHTML = h; e.dataset.h = h; }
@@ -7928,6 +8282,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 else if (p) window.open(Core.lienCarteBan(p.lon, p.lat, 18), '_blank', 'noopener');
             }
             else if (a === 'hnvoie' && resultat && vue.ouverte != null && droitGeste('voie')) ajouterHnVoie(vue.ouverte);
+            else if (a === 'corrvoie' && resultat && vue.ouverte != null && droitGeste('voie')) corrigerHnVoie(vue.ouverte);
             else if (a === 'contour') { opts.contour = !opts.contour; ecrireOpts(); rendre(); }
             else if (a === 'hnstop' && hnEnCours) { hnStop = true; act.disabled = true; statut(t('ajHnStopping')); }
             else if (a === 'noms' && resultat) exporterEcarts([resultat], 'ban-wme_noms_' + resultat.commune.code);
@@ -8000,6 +8355,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             else if (Core.lienCarteBan(ad.lon, ad.lat)) window.open(Core.lienCarteBan(ad.lon, ad.lat, 19), '_blank', 'noopener');
             return;
         }
+        const cr = ev.target.closest('[data-corr]');
+        if (cr && resultat) {
+            const [i, k] = cr.dataset.corr.split(':').map(Number);
+            if (droitGeste('hn1') && !hnEnCours) { vue.curseur = k; corrigerHnVoie(i, k); }
+            return;
+        }
         const h1 = ev.target.closest('[data-hn1]');
         if (h1 && resultat) {
             const [i, k] = h1.dataset.hn1.split(':').map(Number);
@@ -8045,7 +8406,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         if (b) b.focus({ preventScroll: false });
     }
 
-    const hnPosable = a => !!a && !a.trouve && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && !!Core.numeroHn(a.brut);
+    const hnPosable = a => !!a && !a.trouve && !a.corr && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && !!Core.numeroHn(a.brut);
     const rppConvertible = a => !!a && a.trouve === 'RPP' && !a.rppHn && a.wlon != null;
     const posablesHn = v => v.adresses.filter(hnPosable).length;
     const nomOkHn = v => v.statutNom === 'identique' || v.statutNom === 'alternatif' || !!(v.apercuHn && v.apercuHn.rpp);
@@ -8627,6 +8988,172 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     }
     // ==/WBC-DROITSEG==
 
+    // ==WBC-CORR== — 0.29.00 : réécrire un numéro de segment existant (HouseNumbers.updateHouseNumber : même point, une action
+    // WME par numéro, à relire puis enregistrer ou annuler dans WME). Deux cas, un seul geste « ↻ » :
+    //  · autre numéro à l'emplacement d'une adresse BAN manquante (rue renumérotée, milkyway35 23/11) : il prend le numéro BAN ;
+    //  · numéro trouvé mais écrit autrement (« 2bis » ⇒ « 2 bis », Ju2P0mme 22/11, forme mesurée le 20/11) : il prend la forme attendue.
+    // Hors quota (décision de l'auteur, 23/11) : rien n'est réservé ni compté. Un numéro : tout éditeur connecté (« ↻ ») ;
+    // la voie entière : habilitation, comme « Ajouter les numéros » (règle du 18/11 : sous L6, adresse par adresse).
+    function corrDe(a) {
+        if (!a) return null;
+        // Depuis 0.29.03 la forme fautive (« 21bis ») arrive aussi par a.corr (forme: true) : un seul chemin.
+        if (a.corr && !a.trouve) { const n = Core.numeroHn(a.brut); return n ? { id: a.corr.id, seg: a.corr.seg, lon: a.corr.lon, lat: a.corr.lat, avant: a.corr.brut, apres: n, loin: a.corr.loin, forme: !!a.corr.forme } : null; }
+        return null;
+    }
+    const aCorriger = a => !a.corrPose && !a.hnPose && !!corrDe(a);
+    const nCorr = v => v.adresses.filter(aCorriger).length;
+    const nSeulsManquants = v => v.adresses.filter(a => !a.trouve && !enCorrection(a)).length;
+    function boutonCorr(a, i, k) {
+        if (!aCorriger(a) || !droitGeste('hn1') || hnEnCours) return '';
+        const c = corrDe(a), lib = t('corrTip', c.avant, c.apres);
+        return '<button type="button" class="wbc-num-plus corr" data-corr="' + i + ':' + k + '" title="' + esc(lib + (c.loin ? ' ' + t('corrLoin', c.loin) : '')) + '" aria-label="' + esc(lib) + '">&#x21BB;</button>';
+    }
+    function boutonCorrVoie(v) {
+        const n = nCorr(v);
+        return n ? boutonOutil('corrvoie', 'corr', t('corrAdd', nb(n)), t('corrAddTip'), n, hnEnCours) : '';
+    }
+    // 0.29.03 — « Posés mais incorrects » : en tête du détail de la voie, les numéros WME à corriger (autre numéro à l'emplacement,
+    // ou même numéro mal écrit), qui ne figurent plus parmi les manquants (demande de l'auteur, 24/11 : les mettre en avant).
+    const enCorrection = a => !a.trouve && (!!a.corrPose || aCorriger(a));
+    function htmlFormes(v, i) {
+        const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => enCorrection(x.a));
+        if (!liste.length) return '';
+        return '<h4 class="wbc-h-corr">' + esc(t('formeT', nb(liste.length))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) => {
+            const cp = !!a.corrPose, c = cp ? null : corrDe(a), tip = cp ? t('corrPoseTip') : t('corrTip', c.avant, c.apres);
+            const num = '<button type="button" class="wbc-num ' + (cp ? 'pose' : 'corriger') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '" aria-label="' + esc(a.brut + ' — ' + tip) + '">' +
+                esc(cp ? a.corrApres : c.avant + ' → ' + c.apres) + (cp ? '<span class="wbc-num-etat" aria-hidden="true">&#x21BB;</span>' : '') + '</button>';
+            return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + boutonCorr(a, i, k) + '</span>';
+        }).join('') + '</div>';
+    }
+    async function corrigerHnVoie(i, k) {
+        if (hnEnCours || !resultat) return;
+        const v = resultat.voies[i], seule = k != null;
+        const liste = (seule ? [v.adresses[k]] : v.adresses).filter(a => a && aCorriger(a));
+        if (!liste.length) return;
+        if (!(await lireDroitGeste(seule ? 'hn1' : 'voie'))) { rendre(); statut(t(seule ? 'ajHn1Rights' : 'ajHnRights'), true); return; }
+        // Un numéro qui prend la valeur d'un autre en cours de correction attend que celui-ci ait changé ; un échange
+        // circulaire (12 ⇄ 14) est laissé à la main.
+        const reste = liste.map(a => ({ a, c: corrDe(a) })), ordre = [], refus = [];
+        while (reste.length) {
+            const j = reste.findIndex(x => !reste.some(y => y !== x && Core.normNum(y.c.avant) === Core.normNum(x.c.apres)));
+            if (j < 0) { reste.forEach(x => refus.push(x.a.brut)); break; }
+            ordre.push(reste.splice(j, 1)[0]);
+        }
+        if (!ordre.length) { vue.hnMsg = { i, txt: t('corrNone', refus.join(', ')), err: true }; rendre(); return; }
+        if (!await rappelAccepte()) { statut(''); return; }
+        hnEnCours = true;
+        majArrierePlan(true);
+        statut(t('corrRunning'));
+        let msg = null, faits = 0;
+        try {
+            for (const { a, c } of ordre) {
+                if ((await assurerVue(c.lon, c.lat)) === 'zoom') { msg = [t('ajZoom17'), true]; break; }
+                if (c.seg != null && !(await hnPermis(c.seg))) { refus.push(a.brut); continue; }
+                const ecrire = () => sdk.DataModel.HouseNumbers.updateHouseNumber({ houseNumberId: String(c.id), number: c.apres });
+                try {
+                    try { await ecrire(); }
+                    catch (e) {
+                        // Numéro pas encore dans le modèle de WME (chargé au zoom 18) : on s'en approche, puis un seul nouvel essai.
+                        if (!e || e.name !== 'DataModelNotFoundError') throw e;
+                        await sdk.Map.setMapCenter({ lonLat: { lon: c.lon, lat: c.lat }, zoomLevel: Math.max(18, await sdk.Map.getZoomLevel()) });
+                        await new Promise(r => setTimeout(r, 2500));
+                        await ecrire();
+                    }
+                    // corrRang : profondeur de la pile WME juste après cette écriture (suivi des annulations, 0.29.01).
+                    Object.assign(a, { corrPose: true, corrApres: c.apres, corrSeg: c.seg, corrForme: !!c.forme, corrRang: await rangPile() });
+                    faits++;
+                } catch (e) { log('correction ' + c.avant + ' → ' + c.apres + ' : ' + e.message); refus.push(a.brut); }
+            }
+            if (!msg) msg = faits ? [t('corrDone', nb(faits)) + (refus.length ? ' ' + t('corrRefus', refus.join(', ')) : ''), false] : [t('corrNone', refus.join(', ')), true];
+        } catch (e) { log('correction : ' + e.message); msg = [t('rhnErr', e.message), true]; }
+        finally {
+            hnEnCours = false;
+            majArrierePlan();
+            if (msg) { vue.hnMsg = { i, txt: msg[0], err: msg[1] }; statut(msg[0], msg[1]); }
+            rendre();
+            appliquerVisibilite();
+        }
+    }
+    // Après un enregistrement : relu sur le serveur. Écrit ⇒ l'adresse passe trouvée (ou la forme est réglée) ;
+    // sinon (annulé dans WME, refusé) le « ↻ » revient.
+    async function majCorrections() {
+        if (!resultat) return;
+        const l = [];
+        resultat.voies.forEach(v => v.adresses.forEach(a => { if (a.corrPose) l.push({ v, a }); }));
+        if (!l.length) return;
+        const segs = [...new Set(l.map(x => x.a.corrSeg).filter(s => s != null))], lus = new Map();
+        for (let k = 0; k < segs.length; k += 250) {
+            const lot = segs.slice(k, k + 250);
+            for (const h of (await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: lot })) || []) {
+                const c = String(h.segmentId);
+                if (!lus.has(c)) lus.set(c, new Set());
+                lus.get(c).add(String(h.number));
+            }
+        }
+        const T = resultat.totaux;
+        for (const { v, a } of l) {
+            const ecrit = (lus.get(String(a.corrSeg)) || new Set()).has(a.corrApres);
+            a.corrPose = false;
+            delete a.corrRang;
+            if (!ecrit) continue;
+            Object.assign(a, { trouve: 'HN', wlon: a.corr.lon, wlat: a.corr.lat, dm: a.corr.dm, wid: null, wseg: a.corrSeg, wbrut: a.corrApres, seg: null, plon: null, plat: null, pd: null });
+            v.hn++;
+            v.presents++;
+            if (v.corrigeables) v.corrigeables--;
+            if (T.corrigeables) T.corrigeables--;
+            const j = v.manquants.indexOf(a.brut);
+            if (j >= 0) v.manquants.splice(j, 1);
+            T.hn++;
+            T.presents++;
+            T.manquants--;
+            if (v.presents === v.ban) T.voiesCompletes++;
+        }
+        rendre();
+        appliquerVisibilite();
+    }
+    // 0.29.01 — suivre « Annuler » / « Rétablir » de WME (mesuré le 24/11, v2.378) : chaque édition, rétablissement compris,
+    // émet wme-after-edit ; chaque annulation wme-after-undo ; une NOUVELLE édition vide la pile de rétablissement
+    // (wme-after-redo-clear, émis avant wme-after-edit). Une correction est en place tant que la pile non enregistrée
+    // est au moins aussi profonde qu'au moment où elle a été écrite (pile LIFO). Sans cela, annuler dans WME laissait
+    // la pastille « posée » et retirait le « ↻ » jusqu'à une nouvelle analyse (rien à enregistrer, donc pas de relecture).
+    // SDK en mode async : le compte est une PROMESSE (0.29.01 sans await : comparaison toujours fausse, vu en direct le 24/11).
+    async function rangPile() { try { return await sdk.Editing.getUnsavedChangesCount(); } catch (e) { return null; } }
+    // Après un enregistrement la pile non enregistrée repart de zéro : les rangs notés n'y correspondent plus.
+    function oublierRangs() { if (resultat) resultat.voies.forEach(v => v.adresses.forEach(a => { delete a.corrRang; delete a.hnRang; delete a.hnSuspendu; })); }
+    async function suivrePile(vider) {
+        if (!resultat) return;
+        // Pile de rétablissement vidée (y compris par nos propres écritures, « ↻ » ou « + ») : une correction annulée ne
+        // reviendra plus, son rang est oublié — sinon une édition ultérieure de même profondeur la ferait croire en place.
+        if (vider) {
+            resultat.voies.forEach(v => v.adresses.forEach(a => {
+                if (a.corrRang != null && !a.corrPose) delete a.corrRang;
+                if (a.hnRang != null && !a.hnPose) { delete a.hnRang; delete a.hnSuspendu; }
+            }));
+            return;
+        }
+        if (hnEnCours) return;
+        const n = await rangPile();
+        if (n == null || !resultat || hnEnCours) return;
+        let modifs = 0, annules = 0;
+        resultat.voies.forEach(v => v.adresses.forEach(a => {
+            if (a.corrRang != null) {
+                const enPlace = n >= a.corrRang;
+                if (enPlace !== !!a.corrPose) { a.corrPose = enPlace; modifs++; if (!enPlace) annules++; }
+            }
+            // « + » (0.29.03, demande de l'auteur) : même suivi. Annulé ⇒ l'adresse redevient à poser (le quota n'est relu
+            // qu'à l'enregistrement, comme avant) ; rétabli ⇒ elle reprend son état de pose, gardé dans hnSuspendu.
+            if (a.hnRang != null) {
+                const enPlace = n >= a.hnRang;
+                if (!enPlace && a.hnPose) { a.hnSuspendu = { rppHn: !!a.rppHn, hnVersRpp: !!a.hnVersRpp }; Object.assign(a, { hnPose: false, rppHn: false, hnVersRpp: false }); modifs++; annules++; }
+                else if (enPlace && !a.hnPose && a.hnSuspendu) { Object.assign(a, a.hnSuspendu, { hnPose: true }); delete a.hnSuspendu; modifs++; }
+            }
+        }));
+        // « 1 numéro posé… » ne vaut plus après Annuler (0.29.04).
+        if (annules && vue.hnMsg) { vue.hnMsg = null; statut(''); }
+        if (modifs) { rendre(); appliquerVisibilite(); }
+    }
+    // ==/WBC-CORR==
+
     async function ajouterHnVoie(i, k) {
         if (hnEnCours) return;
         const v = resultat.voies[i], commune = resultat.commune.nom;
@@ -8713,6 +9240,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                     p.adresse.hnPose = true;
                     p.adresse.hnSeg = p.segmentId;
                     p.adresse.hnNum = p.number;
+                    p.adresse.hnRang = await rangPile();
                 }
                 return plan;
             };
@@ -8734,7 +9262,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if (refusRappel) { statut(''); return; }
             // Une voie plus longue que la vue se parcourt par zones ; une zone sans progrès n'est pas retentée.
             if (!seule && plan.ecartes.loin && Core.quotaHn(horo, Date.now()).reste && !hnStop) {
-                const restantes = () => v.adresses.filter(a => !a.trouve && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && Core.numeroHn(a.brut));
+                const restantes = () => v.adresses.filter(a => !a.trouve && !a.corr && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && Core.numeroHn(a.brut));
                 const zones = Core.zonesHn(restantes(), 400, 220);
                 for (const z of zones) {
                     if (hnStop || !Core.quotaHn(horo, Date.now()).reste || err && err.name === 'InvalidStateError') break;
@@ -8906,7 +9434,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             horo.push({ t: Date.now(), s: seg, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN });
             if (!doublon) horo.push({ t: Date.now() + 1, s: seg, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN });
             ecrireHorodatages(horo);
-            Object.assign(a, { rppHn: true, hnPose: true, hnSeg: seg, hnNum: number });
+            Object.assign(a, { rppHn: true, hnPose: true, hnSeg: seg, hnNum: number, hnRang: await rangPile() });
             attenteWbc = (await enAttente()) || 0;
             const reste = nb(Core.quotaHn(horo, Date.now()).reste);
             msg = [(doublon ? t('rhnDoneDbl', number, reste) : t('rhnDone', number, reste)) + (suggRpp ? ' ' + t('rhnLock', suggRpp) : rpp.verrou ? ' ' + t('rhnLockInfo', rpp.verrou + 1) : '') + (suggSeg ? ' ' + t('rhnSegLock', suggSeg.n) : '') + ' ' + t('ajHnSee', 1), false];
@@ -8990,7 +9518,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 horo.push(Object.assign(entreeRppQ, { t: Date.now() + 1 }));
             }
             ecrireHorodatages(horo);
-            Object.assign(a, { hnVersRpp: true, hnRpp: true, hnPose: true, hnSeg: hn.seg, hnNum: hn.number, hnId: null, hnLon: hn.pos[0], hnLat: hn.pos[1] });
+            Object.assign(a, { hnVersRpp: true, hnRpp: true, hnPose: true, hnSeg: hn.seg, hnNum: hn.number, hnId: null, hnLon: hn.pos[0], hnLat: hn.pos[1], hnRang: await rangPile() });
             try { await sdk.Editing.setSelection({ selection: { ids: [String(r.id)], objectType: 'venue' } }); } catch (e) { log('sélection du RPP : ' + e.message); }
             msg = [t('rhnVersRppDone', hn.number, nb(Core.quotaHn(horo, Date.now()).reste)), false];
         } catch (e) { log('numéro → RPP : ' + e.message); msg = [t('rhnErr', e.message), true]; }
@@ -9427,7 +9955,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     <p class="wbc-sb-hint">${esc(t('sbArretHint'))}</p>
     <p class="wbc-sb-lbl">${esc(t('sbColors'))}</p>
     <div class="wbc-couleurs">
-        ${['manquant', 'present', 'trop', 'carte'].map(e => `<label class="wbc-couleur"><input type="color" data-couleur="${e}" value="${couleur(e)}" title="${esc(t(e === 'carte' ? 'tipColMap' : 'tipColPoint'))}"> ${esc(t(e === 'manquant' ? 'legMiss' : e === 'present' ? 'legFound' : e === 'trop' ? 'legExtra' : 'legColMap'))}</label>`).join('')}
+        ${['manquant', 'present', 'trop', 'horsCom', 'corriger', 'carte'].map(e => `<label class="wbc-couleur"><input type="color" data-couleur="${e}" value="${couleur(e)}" title="${esc(t(e === 'carte' ? 'tipColMap' : 'tipColPoint'))}"> ${esc(t(e === 'manquant' ? 'legMiss' : e === 'present' ? 'legFound' : e === 'trop' ? 'legExtra' : e === 'horsCom' ? 'legHorsCom' : e === 'corriger' ? 'legCorr' : 'legColMap'))}</label>`).join('')}
     </div>
     <p style="margin:6px 0 0"><button type="button" class="wbc-btn wbc-btn-neutral" id="wbc-couleurs-def" title="${esc(t('tipColorsReset'))}">${esc(t('sbColorsReset'))}</button></p>
     <div class="wbc-sb-sec">&#x1F4BE; ${esc(t('secMemo'))}</div>
@@ -9677,8 +10205,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             document.querySelectorAll('#wbc-sidebar [data-rpplot]').forEach(e => { e.hidden = !droitGeste('voie'); });
             rendre();
             lancerRapprochement(false);
-            try { sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: r => { if (r && r.success) lancerRapprochement(true); } }); }
+            try { sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: r => { if (r && r.success) { oublierRangs(); lancerRapprochement(true); setTimeout(() => { majCorrections().catch(e => log('corrections : ' + e.message)); }, 1500); } } }); }
             catch (e) { log('événement d\'enregistrement : ' + e.message); }
+            [['wme-after-undo', false], ['wme-after-edit', false], ['wme-after-redo-clear', true]].forEach(([ev, vider]) => {
+                try { sdk.Events.on({ eventName: ev, eventHandler: () => { suivrePile(vider).catch(e => log('pile : ' + e.message)); } }); } catch (e) { log(ev + ' : ' + e.message); }
+            });
         });
         try { sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: () => { if (calqueSuitLaVue) majCalque(); } }); }
         catch (e) { log('événement de déplacement : ' + e.message); }

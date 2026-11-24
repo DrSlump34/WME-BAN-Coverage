@@ -56,7 +56,17 @@
     "0.28.09": "f26be317c4e3191243c36e2fa04991bc4da4f0c00e50d13cda45d4fc48802a7b",
     "0.28.10": "14d8f84b5ac484370430b8485fe27fb3b5d18ef00ee1890e2133bd471850b40e",
     "0.28.11": "37fc1eb4092ec9129a98b3ff48ee299b236dce3b0aaa180dd03dd9ee9bb79c1c",
-    "0.28.12": "7cecf2be97bbfbbe02975a079c228e8ca2853edb1e56254ac7942d71ab8efa4e"
+    "0.28.12": "7cecf2be97bbfbbe02975a079c228e8ca2853edb1e56254ac7942d71ab8efa4e",
+    "0.28.13": "e0c9d0f05c2dc50ecd24afe6ab1a90c5f934e9f1eec7390569cfd1faf9fd55b0",
+    "0.29.00": "488d88a9b192694404068da415e6a63bc7c7dab5da50cd33df76db6eae9d8206",
+    "0.29.01": "aa4c893872ad9c58aa2017f601650e6c540ea780c453e023905ec17c4aaad455",
+    "0.29.02": "51deadccdd146166c2cc2f6e36947ce8ec7dcc65874bf654825afa498770e959",
+    "0.29.03": "62454bbbbc81a2c16abeda761a5ae789820b2364c12e63849171ef65e2653838",
+    "0.29.04": "ec0378ebace91d72395cb41686109adcd71c0d3a4c777e26bb1a09b7cfe1716a",
+    "0.29.05": "8e678f87fb4080bdc46768b11d58ba25227fb885703b137633b033aeb158c0c1",
+    "0.29.06": "5f04af99152ecaf9eabee7ad4c04d24744e1812f959280ba882a4e47327b2924",
+    "0.29.07": "61e655c2059d94af21df6a2b0ce49bbfacd48f2db36b87e04a100e319b540474",
+    "0.29.08": "8e51c188cdf53d9b16950b503a86b6a2244389054bfad0cbbf598408c0e7faba"
   },
   "_lisezmoi": "Version minimale autorisée et empreinte SHA-256 du code de chaque version publiée (texte de l’enveloppe _wmeIntegre, fins de ligne LF). Une version plus ancienne, une copie modifiée ou une version absente ne démarre pas."
 }
