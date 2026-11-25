@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.30.07
+// @version      0.30.09
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -453,6 +453,12 @@
             corrDone: n => n + ' number(s) corrected: review, then save or undo in WME.',
             corrRefus: l => 'Left as they are: ' + l + ' (number not found or circular swap).',
             corrLockSkip: n => n + (un1(n) ? ' number' : ' numbers') + ' not corrected: segment that WME does not let you edit (lock or editable areas). Correct them one at a time with “↻”: each becomes a suggestion when you save.',
+            ajHnZoom18: 'Zoom in to at least level 18: WME only loads house numbers from that zoom.',
+            ajHnAmenerAttente: 'Save (or undo) the pending edits first: moving the map now could make WME unload their segment.',
+            corrHorsVue: n => n + (un1(n) ? ' number' : ' numbers') + ' outside the view not corrected yet: save first, then run it again (WME unloads the segments you leave, and a pending fix on an unloaded segment makes the save fail).',
+            corrSegDecharge: l => 'WME unloaded the segment of a pending WBC edit (' + l + '): go back to that area before saving, or save area by area.',
+            tagHnTrouves: n => 'Numbers of this street (' + n + ') — “⇄” to an RPP',
+            tagHnGoTip: 'Centre the map on this number.',
             corrNone: l => 'No number corrected' + (l ? ': ' + l : '') + '.',
             corrPoseTip: 'Corrected by WBC, not saved yet.',
             formeT: n => 'Placed but incorrect (' + n + ')',
@@ -881,6 +887,12 @@
             corrDone: n => n + ' numéro(s) corrigé(s)\xa0: relisez, puis enregistrez ou annulez dans WME.',
             corrRefus: l => 'Laissés tels quels\xa0: ' + l + ' (numéro introuvable ou échange circulaire).',
             corrLockSkip: n => n + (un(n) ? ' numéro non corrigé' : ' numéros non corrigés') + '\u00a0: segment que WME ne vous laisse pas modifier (verrou ou zones d’édition). Corrigez-les un par un avec «\u00a0↻\u00a0»\u00a0: chacun deviendra une suggestion à l’enregistrement.',
+            ajHnZoom18: 'Zoomez au moins au niveau 18\u00a0: WME ne charge les numéros de rue qu’à partir de ce zoom.',
+            ajHnAmenerAttente: 'Enregistrez (ou annulez) d’abord les modifications en attente\u00a0: déplacer la carte maintenant pourrait faire décharger leur segment par WME.',
+            corrHorsVue: n => n + (un(n) ? ' numéro hors de la vue pas encore corrigé' : ' numéros hors de la vue pas encore corrigés') + '\u00a0: enregistrez d’abord, puis relancez (WME décharge les segments qu’on quitte, et une correction en attente sur un segment déchargé fait échouer l’enregistrement).',
+            corrSegDecharge: l => 'WME a déchargé le segment d’une modification WBC en attente (' + l + ')\u00a0: revenez sur cette zone avant d’enregistrer, ou enregistrez zone par zone.',
+            tagHnTrouves: n => 'Numéros de cette voie (' + n + ') — «\u00a0⇄\u00a0» en RPP',
+            tagHnGoTip: 'Centrer la carte sur ce numéro.',
             corrNone: l => 'Aucun numéro corrigé' + (l ? '\xa0: ' + l : '') + '.',
             corrPoseTip: 'Corrigé par WBC, pas encore enregistré.',
             formeT: n => 'Posés mais incorrects (' + n + ')',
@@ -1309,6 +1321,12 @@
             corrDone: n => n + ' Nummer(n) korrigiert: prüfen, dann im WME speichern oder rückgängig machen.',
             corrRefus: l => 'Unverändert gelassen: ' + l + ' (Nummer nicht gefunden oder Ringtausch).',
             corrLockSkip: n => n + (un1(n) ? ' Nummer nicht korrigiert' : ' Nummern nicht korrigiert') + ': Segment, das WME Sie nicht bearbeiten lässt (Sperre oder Bearbeitungsgebiete). Einzeln mit „↻“ korrigieren: jede wird beim Speichern zu einem Vorschlag.',
+            ajHnZoom18: 'Mindestens auf Stufe 18 zoomen: WME lädt Hausnummern erst ab diesem Zoom.',
+            ajHnAmenerAttente: 'Zuerst die offenen Änderungen speichern (oder verwerfen): die Karte jetzt zu bewegen, könnte WME ihr Segment entladen lassen.',
+            corrHorsVue: n => n + (un1(n) ? ' Nummer' : ' Nummern') + ' außerhalb der Ansicht noch nicht korrigiert: zuerst speichern, dann erneut starten (WME entlädt verlassene Segmente, und eine offene Korrektur auf einem entladenen Segment lässt das Speichern scheitern).',
+            corrSegDecharge: l => 'WME hat das Segment einer offenen WBC-Änderung entladen (' + l + '): vor dem Speichern zu diesem Bereich zurückkehren oder bereichsweise speichern.',
+            tagHnTrouves: n => 'Nummern dieser Straße (' + n + ') — „⇄“ zu RPP',
+            tagHnGoTip: 'Karte auf diese Nummer zentrieren.',
             corrNone: l => 'Keine Nummer korrigiert' + (l ? ': ' + l : '') + '.',
             corrPoseTip: 'Von WBC korrigiert, noch nicht gespeichert.',
             formeT: n => 'Gesetzt, aber falsch (' + n + ')',
@@ -1737,6 +1755,12 @@
             corrDone: n => n + ' número(s) corregido(s): revise y luego guarde o deshaga en WME.',
             corrRefus: l => 'Dejados tal cual: ' + l + ' (número no encontrado o intercambio circular).',
             corrLockSkip: n => n + (un1(n) ? ' número no corregido' : ' números no corregidos') + ': segmento que WME no le deja modificar (bloqueo o zonas de edición). Corríjalos uno a uno con «↻»: cada uno se convertirá en una sugerencia al guardar.',
+            ajHnZoom18: 'Acérquese al menos al nivel 18: WME solo carga los números a partir de ese zoom.',
+            ajHnAmenerAttente: 'Guarde (o deshaga) primero las ediciones pendientes: mover el mapa ahora podría hacer que WME descargue su segmento.',
+            corrHorsVue: n => n + (un1(n) ? ' número' : ' números') + ' fuera de la vista sin corregir aún: guarde primero y vuelva a lanzarlo (WME descarga los segmentos que se dejan, y una corrección pendiente en un segmento descargado hace fallar el guardado).',
+            corrSegDecharge: l => 'WME descargó el segmento de una edición de WBC pendiente (' + l + '): vuelva a esa zona antes de guardar, o guarde zona por zona.',
+            tagHnTrouves: n => 'Números de esta calle (' + n + ') — «⇄» a RPP',
+            tagHnGoTip: 'Centrar el mapa en este número.',
             corrNone: l => 'Ningún número corregido' + (l ? ': ' + l : '') + '.',
             corrPoseTip: 'Corregido por WBC, aún sin guardar.',
             formeT: n => 'Colocados pero incorrectos (' + n + ')',
@@ -2165,6 +2189,12 @@
             corrDone: n => n + ' numero/i corretto/i: rileggi, poi salva o annulla in WME.',
             corrRefus: l => 'Lasciati invariati: ' + l + ' (numero non trovato o scambio circolare).',
             corrLockSkip: n => n + (un1(n) ? ' numero non corretto' : ' numeri non corretti') + ': segmento che WME non ti lascia modificare (blocco o aree di modifica). Correggili uno alla volta con «↻»: ognuno diventerà un suggerimento al salvataggio.',
+            ajHnZoom18: 'Zooma almeno al livello 18: WME carica i numeri civici solo da quel livello.',
+            ajHnAmenerAttente: 'Salva (o annulla) prima le modifiche in attesa: spostare la mappa ora potrebbe far scaricare a WME il loro segmento.',
+            corrHorsVue: n => n + (un1(n) ? ' numero' : ' numeri') + ' fuori vista non ancora corretti: salva prima, poi rilancia (WME scarica i segmenti che lasci, e una correzione in attesa su un segmento scaricato fa fallire il salvataggio).',
+            corrSegDecharge: l => 'WME ha scaricato il segmento di una modifica WBC in attesa (' + l + '): torna su quella zona prima di salvare, o salva zona per zona.',
+            tagHnTrouves: n => 'Numeri di questa via (' + n + ') — «⇄» in RPP',
+            tagHnGoTip: 'Centra la mappa su questo numero.',
             corrNone: l => 'Nessun numero corretto' + (l ? ': ' + l : '') + '.',
             corrPoseTip: 'Corretto da WBC, non ancora salvato.',
             formeT: n => 'Presenti ma errati (' + n + ')',
@@ -2593,6 +2623,12 @@
             corrDone: n => n + ' número(s) corrigido(s): revise e depois salve ou desfaça no WME.',
             corrRefus: l => 'Deixados como estão: ' + l + ' (número não encontrado ou troca circular).',
             corrLockSkip: n => n + (un1(n) ? ' número não corrigido' : ' números não corrigidos') + ': segmento que o WME não deixa você editar (bloqueio ou áreas de edição). Corrija um por um com “↻”: cada um vira uma sugestão ao salvar.',
+            ajHnZoom18: 'Aproxime ao menos até o nível 18: o WME só carrega os números a partir desse zoom.',
+            ajHnAmenerAttente: 'Salve (ou desfaça) primeiro as edições pendentes: mover o mapa agora pode fazer o WME descarregar o segmento delas.',
+            corrHorsVue: n => n + (un1(n) ? ' número' : ' números') + ' fora da vista ainda não corrigido(s): salve primeiro e rode de novo (o WME descarrega os segmentos que você deixa, e uma correção pendente num segmento descarregado faz o salvamento falhar).',
+            corrSegDecharge: l => 'O WME descarregou o segmento de uma edição do WBC pendente (' + l + '): volte a essa área antes de salvar, ou salve área por área.',
+            tagHnTrouves: n => 'Números desta rua (' + n + ') — “⇄” para RPP',
+            tagHnGoTip: 'Centralizar o mapa neste número.',
             corrNone: l => 'Nenhum número corrigido' + (l ? ': ' + l : '') + '.',
             corrPoseTip: 'Corrigido pelo WBC, ainda não salvo.',
             formeT: n => 'Presentes mas incorretos (' + n + ')',
@@ -3021,6 +3057,12 @@
             corrDone: n => n + ' número(s) corrigido(s): reveja e depois guarde ou anule no WME.',
             corrRefus: l => 'Deixados como estão: ' + l + ' (número não encontrado ou troca circular).',
             corrLockSkip: n => n + (un1(n) ? ' número não corrigido' : ' números não corrigidos') + ': segmento que o WME não o deixa editar (bloqueio ou áreas de edição). Corrija-os um a um com «↻»: cada um passará a sugestão ao guardar.',
+            ajHnZoom18: 'Aproxime pelo menos até ao nível 18: o WME só carrega os números a partir desse zoom.',
+            ajHnAmenerAttente: 'Guarde (ou anule) primeiro as edições pendentes: mover o mapa agora pode fazer o WME descarregar o segmento delas.',
+            corrHorsVue: n => n + (un1(n) ? ' número' : ' números') + ' fora da vista ainda não corrigido(s): guarde primeiro e volte a lançar (o WME descarrega os segmentos que deixa, e uma correção pendente num segmento descarregado faz falhar a gravação).',
+            corrSegDecharge: l => 'O WME descarregou o segmento de uma edição do WBC pendente (' + l + '): volte a essa zona antes de guardar, ou guarde zona a zona.',
+            tagHnTrouves: n => 'Números desta rua (' + n + ') — «⇄» para RPP',
+            tagHnGoTip: 'Centrar o mapa neste número.',
             corrNone: l => 'Nenhum número corrigido' + (l ? ': ' + l : '') + '.',
             corrPoseTip: 'Corrigido pelo WBC, ainda não guardado.',
             formeT: n => 'Presentes mas incorrectos (' + n + ')',
@@ -3449,6 +3491,12 @@
             corrDone: n => n + ' מספרים תוקנו: יש לבדוק ואז לשמור או לבטל ב־WME.',
             corrRefus: l => 'נשארו כפי שהם: ' + l + ' (מספר שלא נמצא או החלפה מעגלית).',
             corrLockSkip: n => n + (un1(n) ? ' מספר לא תוקן' : ' מספרים לא תוקנו') + ': מקטע ש־WME אינו מאפשר לך לערוך (נעילה או אזורי עריכה). תקנו אותם אחד אחד עם „↻”: כל אחד יהפוך להצעה בשמירה.',
+            ajHnZoom18: 'הגדילו לפחות לרמה 18: WME טוען מספרי בתים רק מרמה זו.',
+            ajHnAmenerAttente: 'שמרו (או בטלו) קודם את העריכות הממתינות: הזזת המפה עכשיו עלולה לגרום ל-WME לפרוק את המקטע שלהן.',
+            corrHorsVue: n => n + (un1(n) ? ' מספר' : ' מספרים') + ' מחוץ לתצוגה עוד לא תוקנו: שמרו קודם ואז הריצו שוב (WME פורק מקטעים שעוזבים, ותיקון ממתין על מקטע שנפרק מכשיל את השמירה).',
+            corrSegDecharge: l => 'WME פרק את המקטע של עריכת WBC ממתינה (' + l + '): חזרו לאזור הזה לפני השמירה, או שמרו אזור אחר אזור.',
+            tagHnTrouves: n => 'מספרי הרחוב (' + n + ') — „⇄” ל-RPP',
+            tagHnGoTip: 'מרכזו את המפה על מספר זה.',
             corrNone: l => 'לא תוקן אף מספר' + (l ? ': ' + l : '') + '.',
             corrPoseTip: 'תוקן על ידי WBC, טרם נשמר.',
             formeT: n => 'קיימים אך שגויים (' + n + ')',
@@ -5400,14 +5448,39 @@
     // (donc l'enregistrement n'est pas passé). Cause NON établie : les écouteurs de WBC sur l'enregistrement sont différés
     // et protégés. En attendant de la reproduire : un enregistrement EN ÉCHEC alors que des corrections « ↻ » attendent
     // le dit dans WBC (lesquelles), et le résultat brut de WME part dans la console pour le diagnostic.
-    function surEnregistrement(r) {
+    // Corrections en attente dont WME a déchargé le segment (0.30.08) : « missing segment » à l'enregistrement.
+    async function correctionsDechargees() {
+        const l = [];
+        if (!resultat) return l;
+        for (const v of resultat.voies) for (const a of v.adresses)
+            if (a.corrPose && a.corrSeg != null && !(await segmentCharge(a.corrSeg))) l.push({ a, seg: a.corrSeg });
+            // « Ajouter les numéros » d'une voie longue parcourt aussi la carte par zones : même risque (non signalé à ce jour).
+            else if (a.hnPose && a.hnSeg != null && !(await segmentCharge(a.hnSeg))) l.push({ a, seg: a.hnSeg });
+        return l;
+    }
+    async function surEnregistrement(r) {
         if (r && r.success) return;
         const l = [];
         if (resultat) resultat.voies.forEach(v => v.adresses.forEach(a => { if (a.corrPose) l.push((a.corr && a.corr.brut ? a.corr.brut : a.brut) + ' → ' + a.corrApres); }));
+        const dech = await correctionsDechargees();
         let brut = '';
         try { brut = JSON.stringify(r).slice(0, 400); } catch (e) { brut = String(r); }
-        log('enregistrement en échec' + (l.length ? ' avec ' + l.length + ' correction(s) ↻ en attente (' + l.join(', ') + ')' : '') + ' : ' + brut);
-        if (l.length) statut(t('corrSaveFail', nb(l.length), l.slice(0, 5).join(', ')), true);
+        log('enregistrement en échec' + (l.length ? ' avec ' + l.length + ' correction(s) ↻ en attente (' + l.join(', ') + ')' : '') +
+            (dech.length ? ' — segment non chargé : ' + dech.map(x => x.seg).join(', ') : '') + ' : ' + brut);
+        if (l.length) statut(t('corrSaveFail', nb(l.length), l.slice(0, 5).join(', ')) + (dech.length ? ' ' + t('corrSegDecharge', dech.map(x => x.seg).join(', ')) : ''), true);
+    }
+    // Après un déplacement de la carte (geste de l'éditeur) : prévenir AVANT l'enregistrement si une correction en attente a
+    // perdu son segment. Hypothèse non mesurée : revenir sur la zone le recharge.
+    let alerteDechargePrevue = null;
+    function verifierDecharges() {
+        clearTimeout(alerteDechargePrevue);
+        alerteDechargePrevue = setTimeout(async () => {
+            if (hnEnCours || !resultat || !resultat.voies.some(v => v.adresses.some(x => x.corrPose || x.hnPose))) return;
+            const dech = await correctionsDechargees();
+            if (!dech.length) return;
+            log('corrections en attente sur un segment non chargé : ' + dech.map(x => x.seg).join(', '));
+            statut(t('corrSegDecharge', dech.map(x => x.seg).join(', ')), true);
+        }, 800);
     }
     // « input » et non « change » : la carte suit le sélecteur de couleur pendant qu'on le règle.
     function brancherCouleurs(racine) {
@@ -5962,11 +6035,24 @@
         await new Promise(r => setTimeout(r, BULLE_ATTENTE_MS));
         return dernierSelObjet < t0;
     }
-    // wme-selection-changed : un objet sélectionné ferme la bulle ; une désélection (clic dans le vide) ne la ferme pas.
+    // wme-selection-changed : la sélection d'un NUMÉRO ou d'un RPP ferme la bulle (et l'empêche de s'ouvrir pendant le geste).
+    // 0.30.08 — Narbonne, 44 et 48 Rue Demoge (25/11) : le point BAN tombe DANS un lieu en zone (commerce) ; le clic le
+    // sélectionnait, et la bulle ne s'ouvrait plus (ni « + », ni RPP). La demande d'origine ne visait que les numéros et
+    // les RPP : un lieu non résidentiel, un segment, etc. sélectionnés n'empêchent plus la bulle. Une désélection non plus.
+    const selectionNumeroOuRpp = async sel => {
+        if (!sel || !sel.ids || !sel.ids.length) return false;
+        const ty = String(sel.objectType || '');
+        if (/house/i.test(ty)) return true;
+        if (ty !== 'venue') return false;
+        for (const id of sel.ids) {
+            try { const v = await sdk.DataModel.Venues.getById({ venueId: String(id) }); if (v && v.isResidential) return true; } catch (e) { }
+        }
+        return false;
+    };
     async function surSelectionWme() {
         let sel = null;
         try { sel = await sdk.Editing.getSelection(); } catch (e) { return; }
-        if (!sel || !sel.ids || !sel.ids.length) return;
+        if (!(await selectionNumeroOuRpp(sel))) return;
         dernierSelObjet = Date.now();
         fermerBulle();
     }
@@ -6587,6 +6673,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-tag.wbc-tag-corr { background: #e8eaf6; color: #283593; }
 .wbc-table th.rep, .wbc-table td.rep { padding-inline: 4px; }
 /* Nom WME et statut lisibles : retour à la ligne permis, sans ellipse ; une seule ligne quand la colonne n'a que des ✓. */
+.wbc-hn-trouves { margin: 6px 0 0; }
+.wbc-hn-trouves > summary { cursor: pointer; font-size: 11px; font-weight: 700; color: var(--wbc-text, #2d3748); }
 .wbc-table td.wme { white-space: normal; overflow-wrap: break-word; text-overflow: clip; }
 .wbc-table.wme-court td.wme { white-space: nowrap; text-overflow: ellipsis; }
 .wbc-reperes.empile { flex-direction: column; align-items: flex-start; }
@@ -7246,6 +7334,18 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             return '<span class="wbc-num-g' + courant + '">' + num + (conv && !a.rppHn ? '<button type="button" class="wbc-num-plus rpp" data-rpphn="' + i + ':' + k + '" title="' + esc(t('rhnConv') + ' — ' + t('rhnConvTip')) + '" aria-label="' + esc(t('rhnConv') + ' ' + a.brut) + '">&#x21C4;</button>' : '') + '</span>';
         }).join('') + '</div>';
     }
+    // 0.30.08 — « ⇄ numéro → RPP » sans passer par la carte : depuis 0.30.01, un clic sur le marqueur d'un numéro est laissé à
+    // WME (pas de bulle), et la bulle était le seul accès. Section repliable des numéros de la voie (trouvés, ou posés par
+    // WBC et convertibles) : la pastille centre la carte, « ⇄ » (au survol) le transforme en RPP. Repliée par défaut.
+    function htmlHnTrouves(v, i) {
+        const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => hnConvertible(x.a));
+        if (!liste.length) return '';
+        const conv = !hnEnCours && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
+        return '<details class="wbc-hn-trouves" data-hntrouves="' + i + '"' + (vue.hnTrouvesOuvert === i ? ' open' : '') + '><summary>' + esc(t('tagHnTrouves', nb(liste.length))) + '</summary><div class="wbc-nums">' +
+            liste.map(({ a, k }) => '<span class="wbc-num-g"><button type="button" class="wbc-num enregistre" data-hngo="' + i + ':' + k + '" title="' + esc(t('tagHnGoTip')) + '">' + esc(a.wbrut || a.brut) + '</button>' +
+                (conv ? '<button type="button" class="wbc-num-plus rpp" data-hnrpp="' + i + ':' + k + '" title="' + esc(t('rhnVersRpp') + ' — ' + t('rhnVersRppTip')) + '" aria-label="' + esc(t('rhnVersRpp') + ' ' + a.brut) + '">&#x21C4;</button>' : '') + '</span>').join('') +
+            '</div></details>';
+    }
     function htmlArrets(v, i) {
         const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => x.a.trouve && arretLoin(x.a));
         if (!liste.length) return '';
@@ -7388,7 +7488,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     (nSeulsManquants(v) || !v.manquants.length ? '<h4>' + esc(t('missingT')) +
                     (v.manquants.length ? ' <button type="button" class="wbc-btn wbc-btn-neutral wbc-suivant" data-act="suivant" title="' + esc(t('tipNext')) + '">' + esc(t('nextMissing')) + ' <span class="wbc-fl">&#x25B6;</span></button>' : '') + '</h4>' +
                     (v.manquants.length ? htmlNums(v, i)
-                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') : '') + (droitGeste('conv') ? htmlRpps(v, i) : '') + htmlArrets(v, i) + htmlSigVoie(v, r) + '</td></tr>';
+                        : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') : '') + (droitGeste('conv') ? htmlRpps(v, i) + htmlHnTrouves(v, i) : '') + htmlArrets(v, i) + htmlSigVoie(v, r) + '</td></tr>';
             }
             h += '</tbody></table>';
         }
@@ -8771,6 +8871,26 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if (droitGeste('conv') && !hnEnCours) { vue.curseurRpp = i + ':' + k; convertirRppVoie(i, k); }
             return;
         }
+        const sm = ev.target.closest('[data-hntrouves] > summary');
+        if (sm && resultat) { const i = Number(sm.parentElement.dataset.hntrouves); vue.hnTrouvesOuvert = sm.parentElement.open ? null : i; return; }
+        const hr = ev.target.closest('[data-hnrpp]');
+        if (hr && resultat) {
+            const [i, k] = hr.dataset.hnrpp.split(':').map(Number);
+            if (droitGeste('conv') && !hnEnCours) { vue.curseur = k; convertirHnRpp(i, k); }
+            return;
+        }
+        const hg = ev.target.closest('[data-hngo]');
+        if (hg && resultat) {
+            const [i, k] = hg.dataset.hngo.split(':').map(Number), a = resultat.voies[i].adresses[k];
+            vue.curseur = k;
+            const lon = a.wlon != null ? a.wlon : a.lon, lat = a.wlon != null ? a.wlat : a.lat;
+            // Même règle que le « ⇄ » : la carte ne bouge pas tant qu'une modification attend.
+            (async () => {
+                if ((await enAttente()) > 0 && !(await dansVue(lon, lat))) { statut(t('ajHnAmenerAttente'), true); return; }
+                centrerLibre(lon, lat, 19);
+            })().catch(e => log('centrage : ' + e.message));
+            return;
+        }
         const rg = ev.target.closest('[data-rppgo]');
         if (rg && resultat) {
             const [i, k] = rg.dataset.rppgo.split(':').map(Number), a = resultat.voies[i].adresses[k];
@@ -9490,6 +9610,19 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + boutonCorr(a, i, k) + '</span>';
         }).join('') + '</div>';
     }
+    // 0.30.08 — cause probable du plantage signalé par Guillaumrs (Caluire-et-Cuire, Rue Pasteur, 8 « ↻ ») : console
+    // « Error: missing segment: 339332188 » levée DANS WME à l'enregistrement. La carte se déplaçait d'un numéro à l'autre
+    // (assurerVue, recentrage au zoom 18) ; WME décharge les segments qu'on quitte (seule la sélection les protège, cf.
+    // wme-sdk-pieges), y compris celui d'une correction en attente ⇒ l'enregistrement cherche un segment absent.
+    // Règle : dès qu'une correction attend (dans ce passage ou avant), la carte ne bouge PLUS ; seuls les numéros de la vue
+    // sont corrigés, les autres sont comptés et le message demande d'enregistrer avant de continuer (pagination).
+    const correctionsEnAttente = () => !!resultat && resultat.voies.some(v => v.adresses.some(a => a.corrPose));
+    async function dansVue(lon, lat) {
+        try { const e = await sdk.Map.getMapExtent(); return !!e && lon >= e[0] && lon <= e[2] && lat >= e[1] && lat <= e[3]; } catch (e) { return false; }
+    }
+    async function segmentCharge(id) {
+        try { return !!(await sdk.DataModel.Segments.getById({ segmentId: Number(id) })); } catch (e) { return false; }
+    }
     async function corrigerHnVoie(i, k) {
         if (hnEnCours || !resultat) return;
         const v = resultat.voies[i], seule = k != null;
@@ -9519,14 +9652,17 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             statut(txt);
             rendre();
         };
-        let msg = null, faits = 0, nVerrou = 0, sugg = null, suggRetiree = false, arrete = false, n = 0;
+        let msg = null, faits = 0, nVerrou = 0, sugg = null, suggRetiree = false, arrete = false, n = 0, horsVue = 0;
         try {
             for (const { a, c } of ordre) {
                 if (hnStop) { arrete = true; break; }
                 n++;
                 vue.curseur = v.adresses.indexOf(a);
                 avance(n, c.avant + ' \u2192 ' + c.apres);
-                if ((await assurerVue(c.lon, c.lat)) === 'zoom') { msg = [t('ajZoom17'), true]; break; }
+                // La carte peut bouger seulement si rien n'attend encore d'être enregistré.
+                const libre = faits === 0 && !correctionsEnAttente();
+                if (!libre && !(await dansVue(c.lon, c.lat))) { horsVue++; continue; }
+                if (libre && (await assurerVue(c.lon, c.lat)) === 'zoom') { msg = [t('ajZoom17'), true]; break; }
                 // 0.30.00 — Ju2P0mme (chat WME, 24/11) : « les corrections de bis ne passent pas en MS ». Le segment sans droit
                 // direct était refusé, alors que le « + » d'un numéro en fait une suggestion (décision du 18/11). Même règle ici :
                 // un seul numéro ⇒ écrit, WME en fera une suggestion à l'enregistrement ; la voie entière saute ces segments
@@ -9547,6 +9683,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                     catch (e) {
                         // Numéro pas encore dans le modèle de WME (chargé au zoom 18) : on s'en approche, puis un seul nouvel essai.
                         if (!e || e.name !== 'DataModelNotFoundError') throw e;
+                        // Pas chargé (zoom < 18) : s'en approcher déplacerait la carte ⇒ seulement si rien n'attend.
+                        if (!(faits === 0 && !correctionsEnAttente())) { horsVue++; continue; }
                         avance(n, '', true);
                         await sdk.Map.setMapCenter({ lonLat: { lon: c.lon, lat: c.lat }, zoomLevel: Math.max(18, await sdk.Map.getZoomLevel()) });
                         await new Promise(r => setTimeout(r, 2500));
@@ -9564,7 +9702,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                     majCalque();
                 } catch (e) { log('correction ' + c.avant + ' → ' + c.apres + ' : ' + e.message); refus.push(a.brut); }
             }
-            const verrous = nVerrou ? ' ' + t('corrLockSkip', nb(nVerrou)) : '';
+            const verrous = (nVerrou ? ' ' + t('corrLockSkip', nb(nVerrou)) : '') + (horsVue ? ' ' + t('corrHorsVue', nb(horsVue)) : '');
             if (!msg && suggRetiree && !faits) msg = [t('suggAttente'), true];
             const stop = arrete ? ' ' + t('ajHnStopped') : '';
             if (!msg) msg = faits ? [t('corrDone', nb(faits)) + (sugg ? ' ' + t('ajHn1Lock', sugg.num, sugg.niveau) : '') + (refus.length ? ' ' + t('corrRefus', refus.join(', ')) : '') + verrous + stop, false]
@@ -9958,6 +10096,20 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // Quota : un numéro de WBC en attente change de nature ; un numéro enregistré compte 2.
     const hnConvertible = a => !!a && !a.hnVersRpp && !a.rppHn && !a.hnRpp && !!Core.numeroHn(a.brut) &&
         ((a.trouve === 'HN' && a.wlon != null) || (!a.trouve && a.hnPose && a.hnId != null && a.hnSeg != null));
+    // 0.30.09 — essai du 25/11 (Narbonne, Rue Demoge) : « ⇄ » de la liste sur le 44 ⇒ « segmentHouseNumber … not found in
+    // data model ». La voie dépliée cadre la carte au zoom 17, où WME ne charge pas les numéros de rue (à partir du 18).
+    // Avant d'agir : la carte va sur le numéro au zoom ≥ 18 — sauf si une modification attend (règle 0.30.08 : la carte ne
+    // bouge pas, WME déchargerait son segment) ou si le geste part de la carte (elle ne doit pas bouger sous le clic).
+    async function amenerSurNumero(lon, lat) {
+        let z = 0;
+        try { z = await sdk.Map.getZoomLevel(); } catch (e) { }
+        if (z >= 18 && (await dansVue(lon, lat))) return 'ok';
+        if (gesteCarte) return 'zoom';
+        if ((await enAttente()) > 0) return 'attente';
+        await sdk.Map.setMapCenter({ lonLat: { lon, lat }, zoomLevel: Math.max(18, z) });
+        await new Promise(r => setTimeout(r, 2500));
+        return 'ok';
+    }
     async function convertirHnRpp(i, k) {
         if (hnEnCours) return;
         const v = resultat.voies[i], a = v && v.adresses[k], commune = resultat.commune.nom, code = resultat.commune.code;
@@ -9973,7 +10125,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const n0 = await enAttente();
         try {
             const lon0 = enAtt ? a.lon : a.wlon, lat0 = enAtt ? a.lat : a.wlat;
-            if ((await assurerVue(lon0, lat0)) === 'zoom') { msg = [t('ajZoom17'), true]; return; }
+            const am = await amenerSurNumero(lon0, lat0);
+            if (am === 'zoom') { msg = [t('ajHnZoom18'), true]; return; }
+            if (am === 'attente') { msg = [t('ajHnAmenerAttente'), true]; return; }
             const autour = await segmentsAutour(lon0, lat0);
             let hn = null;
             if (enAtt) hn = { id: String(a.hnId), seg: a.hnSeg, number: a.hnNum, pos: [a.lon, a.lat] };
@@ -10795,13 +10949,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             document.querySelectorAll('#wbc-sidebar [data-rpplot]').forEach(e => { e.hidden = !droitGeste('voie'); });
             rendre();
             lancerRapprochement(false);
-            try { sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: r => { try { surEnregistrement(r); } catch (e) { log('enregistrement : ' + e.message); } if (r && r.success) { oublierRangs(); lancerRapprochement(true); setTimeout(() => { majCorrections().catch(e => log('corrections : ' + e.message)); }, 1500); } } }); }
+            try { sdk.Events.on({ eventName: 'wme-save-finished', eventHandler: r => { surEnregistrement(r).catch(e => log('enregistrement : ' + e.message)); if (r && r.success) { oublierRangs(); lancerRapprochement(true); setTimeout(() => { majCorrections().catch(e => log('corrections : ' + e.message)); }, 1500); } } }); }
             catch (e) { log('événement d\'enregistrement : ' + e.message); }
             [['wme-after-undo', false], ['wme-after-edit', false], ['wme-after-redo-clear', true]].forEach(([ev, vider]) => {
                 try { sdk.Events.on({ eventName: ev, eventHandler: () => { suivrePile(vider).catch(e => log('pile : ' + e.message)); } }); } catch (e) { log(ev + ' : ' + e.message); }
             });
         });
-        try { sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: () => { if (calqueSuitLaVue) majCalque(); } }); }
+        try { sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: () => { if (calqueSuitLaVue) majCalque(); verifierDecharges(); } }); }
         catch (e) { log('événement de déplacement : ' + e.message); }
         try { sdk.Events.on({ eventName: 'wme-selection-changed', eventHandler: () => { surSelectionWme().catch(e => log('bulle : ' + e.message)); suivreSelection().catch(e => log('suivi de sélection : ' + e.message)); } }); }
         catch (e) { log('événement de sélection : ' + e.message); }
