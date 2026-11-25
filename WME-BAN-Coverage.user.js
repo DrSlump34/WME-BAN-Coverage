@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.30.09
+// @version      0.30.10
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -358,6 +358,8 @@
             ajHnNomEcart: (w, b) => 'No number can be added automatically: the segments of this street are named “' + w + '” in WME, not “' + b + '” as in the BAN. Give them the BAN name.',
             ajHnQuota: h => 'Limit reached (500 numbers per hour): next adding possible at ' + h + '.',
             ajHnRunning: 'Adding the house numbers…',
+            rhnToRppRunning: 'Converting the house number into an RPP…',
+            rhnRunning: 'Converting the RPP into a house number…',
             bgTab: 'Tab in the background: Chrome slows the work in progress down (up to 3 times longer). Keep this tab in front.',
             bgTabTip: 'Chrome throttles the timers of a hidden tab (one per second, then one per minute after 5 minutes) and lowers its priority. Measured on 29/09/2026: a department took 41 min in the background against 13 min in front.',
             ajHnDone: (n, r) => n + (un1(n) ? ' number placed — check it' : ' numbers placed — check them') + ', then save in WME. Left in the quota: ' + r + '.',
@@ -460,6 +462,15 @@
             tagHnTrouves: n => 'Numbers of this street (' + n + ') — “⇄” to an RPP',
             tagHnGoTip: 'Centre the map on this number.',
             corrNone: l => 'No number corrected' + (l ? ': ' + l : '') + '.',
+            corrRppNom: 'has a name',
+            corrRppPhoto: 'has a photo',
+            corrRppVille: v => 'attached to “' + v + '”, not to the commune',
+            corrRppRue: r => 'street “' + r + '”, not the BAN name',
+            corrRppVerrou: n => 'locked at level ' + n + ', above your rank',
+            corrRppAbsent: 'not found in WME (zoom 18, Places layer shown?)',
+            corrRppChange: 'changed since the analysis',
+            corrRppSkip: l => 'RPPs left as they are (to check by hand): ' + l + '.',
+            corrRppTip: 'Residential place (RPP): only its number changes; street, city, entry point and lock are kept.',
             corrPoseTip: 'Corrected by WBC, not saved yet.',
             formeT: n => 'Placed but incorrect (' + n + ')',
             fCorr: 'To fix',
@@ -792,6 +803,8 @@
             ajHnNomEcart: (w, b) => 'Aucun numéro à ajouter automatiquement\u00a0: dans WME, les segments de cette voie s’appellent «\u00a0' + w + '\u00a0», et non «\u00a0' + b + '\u00a0» comme dans la BAN. Donne-leur le nom de la BAN.',
             ajHnQuota: h => 'Quota atteint (500 numéros par heure)\xa0: prochain ajout possible à ' + h + '.',
             ajHnRunning: 'Ajout des numéros…',
+            rhnToRppRunning: 'Conversion du numéro en RPP…',
+            rhnRunning: 'Conversion du RPP en numéro…',
             bgTab: 'Onglet passé en arrière-plan\xa0: Chrome ralentit le travail en cours (jusqu’à 3 fois plus long). Gardez cet onglet au premier plan.',
             bgTabTip: 'Chrome bride les minuteries d’un onglet caché (une par seconde, puis une par minute après 5 minutes) et baisse sa priorité. Mesuré le 29/09/2026\xa0: un département en 41\xa0min en arrière-plan, contre 13\xa0min au premier plan.',
             ajHnDone: (n, r) => n + (un(n) ? ' numéro posé — vérifiez-le' : ' numéros posés — vérifiez-les') + ', puis enregistrez dans WME. Reste au quota\xa0: ' + r + '.',
@@ -894,6 +907,15 @@
             tagHnTrouves: n => 'Numéros de cette voie (' + n + ') — «\u00a0⇄\u00a0» en RPP',
             tagHnGoTip: 'Centrer la carte sur ce numéro.',
             corrNone: l => 'Aucun numéro corrigé' + (l ? '\xa0: ' + l : '') + '.',
+            corrRppNom: 'porte un nom',
+            corrRppPhoto: 'a une photo',
+            corrRppVille: v => 'rattaché à «\xa0' + v + '\xa0», pas à la commune',
+            corrRppRue: r => 'rue «\xa0' + r + '\xa0», pas le nom BAN',
+            corrRppVerrou: n => 'verrouillé au niveau ' + n + ', au-dessus de votre rang',
+            corrRppAbsent: 'introuvable dans WME (zoom 18, calque Lieux affiché\xa0?)',
+            corrRppChange: 'modifié depuis l’analyse',
+            corrRppSkip: l => 'RPP laissés tels quels (à voir à la main)\xa0: ' + l + '.',
+            corrRppTip: 'Lieu résidentiel (RPP)\xa0: seul son numéro change\xa0; rue, ville, point d’entrée et verrou restent.',
             corrPoseTip: 'Corrigé par WBC, pas encore enregistré.',
             formeT: n => 'Posés mais incorrects (' + n + ')',
             fCorr: 'À corriger',
@@ -1226,6 +1248,8 @@
             ajHnNomEcart: (w, b) => 'Keine Nummer automatisch hinzuzufügen: Die Segmente dieser Straße heißen im WME „' + w + '“, nicht „' + b + '“ wie in der BAN. Gib ihnen den BAN-Namen.',
             ajHnQuota: h => 'Kontingent erreicht (500 Nummern pro Stunde): nächstes Hinzufügen um ' + h + ' möglich.',
             ajHnRunning: 'Hausnummern werden hinzugefügt…',
+            rhnToRppRunning: 'Hausnummer wird in einen RPP umgewandelt…',
+            rhnRunning: 'RPP wird in eine Hausnummer umgewandelt…',
             bgTab: 'Tab im Hintergrund: Chrome verlangsamt die laufende Arbeit (bis zu 3-mal länger). Diesen Tab im Vordergrund lassen.',
             bgTabTip: 'Chrome drosselt die Timer eines verborgenen Tabs (einer pro Sekunde, nach 5 Minuten einer pro Minute) und senkt seine Priorität. Gemessen am 29.09.2026: ein Département 41 Min. im Hintergrund gegen 13 Min. im Vordergrund.',
             ajHnDone: (n, r) => n + (un1(n) ? ' Nummer gesetzt' : ' Nummern gesetzt') + ' — prüfen, dann in WME speichern. Verbleibendes Kontingent: ' + r + '.',
@@ -1328,6 +1352,15 @@
             tagHnTrouves: n => 'Nummern dieser Straße (' + n + ') — „⇄“ zu RPP',
             tagHnGoTip: 'Karte auf diese Nummer zentrieren.',
             corrNone: l => 'Keine Nummer korrigiert' + (l ? ': ' + l : '') + '.',
+            corrRppNom: 'hat einen Namen',
+            corrRppPhoto: 'hat ein Foto',
+            corrRppVille: v => 'gehört zu „' + v + '“, nicht zur Gemeinde',
+            corrRppRue: r => 'Straße „' + r + '“, nicht der BAN-Name',
+            corrRppVerrou: n => 'auf Stufe ' + n + ' gesperrt, über Ihrem Rang',
+            corrRppAbsent: 'in WME nicht gefunden (Zoom 18, Ebene Orte eingeblendet?)',
+            corrRppChange: 'seit der Analyse geändert',
+            corrRppSkip: l => 'RPP unverändert gelassen (von Hand prüfen): ' + l + '.',
+            corrRppTip: 'Wohnort (RPP): nur seine Nummer ändert sich; Straße, Ort, Einfahrtspunkt und Sperre bleiben.',
             corrPoseTip: 'Von WBC korrigiert, noch nicht gespeichert.',
             formeT: n => 'Gesetzt, aber falsch (' + n + ')',
             fCorr: 'Zu korrigieren',
@@ -1660,6 +1693,8 @@
             ajHnNomEcart: (w, b) => 'Ningún número se puede añadir automáticamente: en WME los segmentos de esta calle se llaman «' + w + '», no «' + b + '» como en la BAN. Dales el nombre de la BAN.',
             ajHnQuota: h => 'Cuota alcanzada (500 números por hora): próxima adición posible a las ' + h + '.',
             ajHnRunning: 'Añadiendo los números…',
+            rhnToRppRunning: 'Convirtiendo el número en RPP…',
+            rhnRunning: 'Convirtiendo el RPP en número…',
             bgTab: 'Pestaña en segundo plano: Chrome ralentiza el trabajo en curso (hasta 3 veces más largo). Mantenga esta pestaña en primer plano.',
             bgTabTip: 'Chrome frena los temporizadores de una pestaña oculta (uno por segundo y, tras 5 minutos, uno por minuto) y baja su prioridad. Medido el 29/09/2026: un departamento en 41 min en segundo plano frente a 13 min en primer plano.',
             ajHnDone: (n, r) => n + (un1(n) ? ' número colocado — compruébelo' : ' números colocados — compruébelos') + ' y luego guarde en WME. Cuota restante: ' + r + '.',
@@ -1762,6 +1797,15 @@
             tagHnTrouves: n => 'Números de esta calle (' + n + ') — «⇄» a RPP',
             tagHnGoTip: 'Centrar el mapa en este número.',
             corrNone: l => 'Ningún número corregido' + (l ? ': ' + l : '') + '.',
+            corrRppNom: 'tiene un nombre',
+            corrRppPhoto: 'tiene una foto',
+            corrRppVille: v => 'vinculado a «' + v + '», no al municipio',
+            corrRppRue: r => 'calle «' + r + '», no el nombre BAN',
+            corrRppVerrou: n => 'bloqueado en el nivel ' + n + ', por encima de su rango',
+            corrRppAbsent: 'no encontrado en WME (zoom 18, ¿capa Lugares visible?)',
+            corrRppChange: 'modificado desde el análisis',
+            corrRppSkip: l => 'RPP dejados tal cual (revisar a mano): ' + l + '.',
+            corrRppTip: 'Lugar residencial (RPP): solo cambia su número; calle, ciudad, punto de entrada y bloqueo se mantienen.',
             corrPoseTip: 'Corregido por WBC, aún sin guardar.',
             formeT: n => 'Colocados pero incorrectos (' + n + ')',
             fCorr: 'A corregir',
@@ -2094,6 +2138,8 @@
             ajHnNomEcart: (w, b) => 'Nessun numero da aggiungere automaticamente: in WME i segmenti di questa via si chiamano «' + w + '», non «' + b + '» come nella BAN. Dai loro il nome della BAN.',
             ajHnQuota: h => 'Quota raggiunta (500 numeri all’ora): prossima aggiunta possibile alle ' + h + '.',
             ajHnRunning: 'Aggiunta dei numeri…',
+            rhnToRppRunning: 'Conversione del numero in RPP…',
+            rhnRunning: 'Conversione del RPP in numero…',
             bgTab: 'Scheda in secondo piano: Chrome rallenta il lavoro in corso (fino a 3 volte più lungo). Tieni questa scheda in primo piano.',
             bgTabTip: 'Chrome rallenta i timer di una scheda nascosta (uno al secondo, poi uno al minuto dopo 5 minuti) e ne abbassa la priorità. Misurato il 29/09/2026: un dipartimento in 41 min in secondo piano contro 13 min in primo piano.',
             ajHnDone: (n, r) => n + (un1(n) ? ' numero inserito — controllalo' : ' numeri inseriti — controllali') + ', poi salva in WME. Quota residua: ' + r + '.',
@@ -2196,6 +2242,15 @@
             tagHnTrouves: n => 'Numeri di questa via (' + n + ') — «⇄» in RPP',
             tagHnGoTip: 'Centra la mappa su questo numero.',
             corrNone: l => 'Nessun numero corretto' + (l ? ': ' + l : '') + '.',
+            corrRppNom: 'ha un nome',
+            corrRppPhoto: 'ha una foto',
+            corrRppVille: v => 'collegato a «' + v + '», non al comune',
+            corrRppRue: r => 'via «' + r + '», non il nome BAN',
+            corrRppVerrou: n => 'bloccato al livello ' + n + ', sopra il tuo grado',
+            corrRppAbsent: 'non trovato in WME (zoom 18, livello Luoghi visibile?)',
+            corrRppChange: 'modificato dopo l’analisi',
+            corrRppSkip: l => 'RPP lasciati come sono (da verificare a mano): ' + l + '.',
+            corrRppTip: 'Luogo residenziale (RPP): cambia solo il numero; via, città, punto di ingresso e blocco restano.',
             corrPoseTip: 'Corretto da WBC, non ancora salvato.',
             formeT: n => 'Presenti ma errati (' + n + ')',
             fCorr: 'Da correggere',
@@ -2528,6 +2583,8 @@
             ajHnNomEcart: (w, b) => 'Nenhum número a adicionar automaticamente: no WME, os segmentos desta rua chamam-se «' + w + '», e não «' + b + '» como na BAN. Dê-lhes o nome da BAN.',
             ajHnQuota: h => 'Cota atingida (500 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'Adicionando os números…',
+            rhnToRppRunning: 'Convertendo o número em RPP…',
+            rhnRunning: 'Convertendo o RPP em número…',
             bgTab: 'Aba em segundo plano: o Chrome deixa o trabalho em andamento mais lento (até 3 vezes mais longo). Mantenha esta aba em primeiro plano.',
             bgTabTip: 'O Chrome limita os temporizadores de uma aba oculta (um por segundo, depois um por minuto após 5 minutos) e reduz sua prioridade. Medido em 29/09/2026: um departamento em 41 min em segundo plano contra 13 min em primeiro plano.',
             ajHnDone: (n, r) => n + (un1(n) ? ' número colocado' : ' números colocados') + ' — confira e depois salve no WME. Cota restante: ' + r + '.',
@@ -2630,6 +2687,15 @@
             tagHnTrouves: n => 'Números desta rua (' + n + ') — “⇄” para RPP',
             tagHnGoTip: 'Centralizar o mapa neste número.',
             corrNone: l => 'Nenhum número corrigido' + (l ? ': ' + l : '') + '.',
+            corrRppNom: 'tem um nome',
+            corrRppPhoto: 'tem uma foto',
+            corrRppVille: v => 'vinculado a “' + v + '”, não ao município',
+            corrRppRue: r => 'rua “' + r + '”, não o nome BAN',
+            corrRppVerrou: n => 'bloqueado no nível ' + n + ', acima do seu nível',
+            corrRppAbsent: 'não encontrado no WME (zoom 18, camada Lugares visível?)',
+            corrRppChange: 'alterado desde a análise',
+            corrRppSkip: l => 'RPP deixados como estão (verificar à mão): ' + l + '.',
+            corrRppTip: 'Lugar residencial (RPP): só o número muda; rua, cidade, ponto de entrada e bloqueio são mantidos.',
             corrPoseTip: 'Corrigido pelo WBC, ainda não salvo.',
             formeT: n => 'Presentes mas incorretos (' + n + ')',
             fCorr: 'A corrigir',
@@ -2962,6 +3028,8 @@
             ajHnNomEcart: (w, b) => 'Nenhum número a adicionar automaticamente: no WME, os segmentos desta rua chamam-se «' + w + '», e não «' + b + '» como na BAN. Dê-lhes o nome da BAN.',
             ajHnQuota: h => 'Quota atingida (500 números por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'A adicionar os números…',
+            rhnToRppRunning: 'A converter o número em RPP…',
+            rhnRunning: 'A converter o RPP em número…',
             bgTab: 'Separador em segundo plano: o Chrome abranda o trabalho em curso (até 3 vezes mais longo). Mantenha este separador em primeiro plano.',
             bgTabTip: 'O Chrome limita os temporizadores de um separador oculto (um por segundo, depois um por minuto após 5 minutos) e baixa a sua prioridade. Medido a 29/09/2026: um departamento em 41 min em segundo plano contra 13 min em primeiro plano.',
             ajHnDone: (n, r) => n + (un1(n) ? ' número colocado' : ' números colocados') + ' — verifique e depois guarde no WME. Quota restante: ' + r + '.',
@@ -3064,6 +3132,15 @@
             tagHnTrouves: n => 'Números desta rua (' + n + ') — «⇄» para RPP',
             tagHnGoTip: 'Centrar o mapa neste número.',
             corrNone: l => 'Nenhum número corrigido' + (l ? ': ' + l : '') + '.',
+            corrRppNom: 'tem um nome',
+            corrRppPhoto: 'tem uma fotografia',
+            corrRppVille: v => 'associado a «' + v + '», não ao município',
+            corrRppRue: r => 'rua «' + r + '», não o nome BAN',
+            corrRppVerrou: n => 'bloqueado no nível ' + n + ', acima do seu nível',
+            corrRppAbsent: 'não encontrado no WME (zoom 18, camada Locais visível?)',
+            corrRppChange: 'alterado desde a análise',
+            corrRppSkip: l => 'RPP deixados como estão (verificar à mão): ' + l + '.',
+            corrRppTip: 'Local residencial (RPP): só o número muda; rua, cidade, ponto de entrada e bloqueio mantêm-se.',
             corrPoseTip: 'Corrigido pelo WBC, ainda não guardado.',
             formeT: n => 'Presentes mas incorrectos (' + n + ')',
             fCorr: 'A corrigir',
@@ -3396,6 +3473,8 @@
             ajHnNomEcart: (w, b) => 'לא ניתן להוסיף מספרים אוטומטית: ב-WME המקטעים של רחוב זה נקראים "' + w + '" ולא "' + b + '" כמו ב-BAN. תנו להם את השם של ה-BAN.',
             ajHnQuota: h => 'המכסה נוצלה (500 מספרים בשעה): ההוספה הבאה אפשרית בשעה ' + h + '.',
             ajHnRunning: 'מוסיף את המספרים…',
+            rhnToRppRunning: 'ממיר את המספר ל-RPP…',
+            rhnRunning: 'ממיר את ה-RPP למספר…',
             bgTab: 'הלשונית ברקע: Chrome מאט את העבודה הנוכחית (עד פי 3). כדאי להשאיר את הלשונית הזו בחזית.',
             bgTabTip: 'Chrome מגביל את הטיימרים של לשונית מוסתרת (אחד בשנייה, ואחרי 5 דקות אחד בדקה) ומוריד את העדיפות שלה. נמדד ב־29/09/2026: מחוז שלם ב־41 דקות ברקע לעומת 13 דקות בחזית.',
             ajHnDone: (n, r) => (un1(n) ? 'מספר אחד הוצב' : n + ' מספרים הוצבו') + ' — יש לבדוק ואז לשמור ב-WME. יתרת המכסה: ' + r + '.',
@@ -3498,6 +3577,15 @@
             tagHnTrouves: n => 'מספרי הרחוב (' + n + ') — „⇄” ל-RPP',
             tagHnGoTip: 'מרכזו את המפה על מספר זה.',
             corrNone: l => 'לא תוקן אף מספר' + (l ? ': ' + l : '') + '.',
+            corrRppNom: 'יש לו שם',
+            corrRppPhoto: 'יש לו תמונה',
+            corrRppVille: v => 'משויך ל„' + v + '”, לא לרשות',
+            corrRppRue: r => 'רחוב „' + r + '”, לא שם ה־BAN',
+            corrRppVerrou: n => 'נעול ברמה ' + n + ', מעל הדרגה שלך',
+            corrRppAbsent: 'לא נמצא ב־WME (זום 18, שכבת המקומות מוצגת?)',
+            corrRppChange: 'השתנה מאז הניתוח',
+            corrRppSkip: l => 'RPP שנותרו כפי שהם (לבדיקה ידנית): ' + l + '.',
+            corrRppTip: 'מקום מגורים (RPP): רק המספר משתנה; רחוב, עיר, נקודת כניסה ונעילה נשמרים.',
             corrPoseTip: 'תוקן על ידי WBC, טרם נשמר.',
             formeT: n => 'קיימים אך שגויים (' + n + ')',
             fCorr: 'לתיקון',
@@ -4221,11 +4309,15 @@
             // 0.29.03 — Numéro WME de la bonne adresse mais mal écrit (« 21bis » pour « 21 bis ») : traité comme un autre numéro posé à
             // la place de l'adresse (décision de l'auteur, 24/11 : « comme un 67 qui doit devenir 27 »). L'adresse n'est plus « trouvée »,
             // elle est à corriger au même point. Après la recherche des renumérotations : ce numéro y est déjà pris par sa propre adresse.
+            // 0.30.10 — Ju2P0mme (25/11) : même chose pour un RPP (« 2bis » ⇒ « 2 bis »), avec les garde-fous des numéros : RPP de la
+            // MÊME rue (son nom, pas la seule proximité d'un segment), et seul objet WME de ce numéro sur la voie (sinon la correction
+            // ferait un doublon). Même numéro, donc même parité. Nom, photo, ville et verrou se lisent dans WME, au moment du « ↻ ».
             for (const v of voies.values()) for (const a of v.adresses) {
                 a.corrForme = false;
-                if (a.trouve !== 'HN' || !a.wme || a.wme.id == null) continue;
+                if ((a.trouve !== 'HN' && a.trouve !== 'RPP') || !a.wme || a.wme.id == null) continue;
                 const n = numeroHn(a.brut);
                 if (!n || n === a.wme.brut || !formeAttendueHn(a.wme.brut)) continue;
+                if (a.trouve === 'RPP' && (!memeNom(a.wme, v) || wme.some(x => x !== a.wme && x.num === a.wme.num && memeNom(x, v)))) continue;
                 Object.assign(a, { corr: a.wme, corrDm: a.dm, corrForme: true, trouve: null, loin: false, ea: null });
             }
             // Non certifiées : rapprochées comme les autres, retirées seulement ici des comptes, voies et manquants.
@@ -4271,7 +4363,7 @@
                         horsCom: a.horsCom != null ? Math.round(a.horsCom) : null,
                         wbrut: a.trouve ? a.wme.brut : null, formeHn: a.trouve === 'HN' ? formeAttendueHn(a.wme.brut) : null,
                         wid: a.trouve === 'HN' && a.wme.id != null ? String(a.wme.id) : null, wseg: a.trouve === 'HN' && a.wme.seg ? a.wme.seg.id : null,
-                        corr: a.corr ? { id: String(a.corr.id), brut: a.corr.brut, seg: a.corr.seg ? a.corr.seg.id : null, lon: a.corr.lon, lat: a.corr.lat,
+                        corr: a.corr ? { id: String(a.corr.id), brut: a.corr.brut, type: a.corr.type, seg: a.corr.type === 'HN' && a.corr.seg ? a.corr.seg.id : null, lon: a.corr.lon, lat: a.corr.lat,
                             dm: Math.round(a.corrDm), forme: !!a.corrForme, loin: !a.corrForme && loinDe.has(a.corr) ? loinDe.get(a.corr).brut : null } : null })),
                     bbox: v.bbox,
                     segs: v.segsVoie.map(x => x.id),
@@ -9582,7 +9674,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     function corrDe(a) {
         if (!a) return null;
         // Depuis 0.29.03 la forme fautive (« 21bis ») arrive aussi par a.corr (forme: true) : un seul chemin.
-        if (a.corr && !a.trouve) { const n = Core.numeroHn(a.brut); return n ? { id: a.corr.id, seg: a.corr.seg, lon: a.corr.lon, lat: a.corr.lat, avant: a.corr.brut, apres: n, loin: a.corr.loin, forme: !!a.corr.forme } : null; }
+        if (a.corr && !a.trouve) { const n = Core.numeroHn(a.brut); return n ? { id: a.corr.id, seg: a.corr.seg, lon: a.corr.lon, lat: a.corr.lat, avant: a.corr.brut, apres: n, loin: a.corr.loin, forme: !!a.corr.forme, rpp: a.corr.type === 'RPP' } : null; }
         return null;
     }
     const aCorriger = a => !a.corrPose && !a.hnPose && !!corrDe(a);
@@ -9590,7 +9682,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     const nSeulsManquants = v => v.adresses.filter(a => !a.trouve && !enCorrection(a)).length;
     function boutonCorr(a, i, k) {
         if (!aCorriger(a) || !droitGeste('hn1') || hnEnCours) return '';
-        const c = corrDe(a), lib = t('corrTip', c.avant, c.apres);
+        const c = corrDe(a), lib = t('corrTip', c.avant, c.apres) + (c.rpp ? ' ' + t('corrRppTip') : '');
         return '<button type="button" class="wbc-num-plus corr" data-corr="' + i + ':' + k + '" title="' + esc(lib + (c.loin ? ' ' + t('corrLoin', c.loin) : '')) + '" aria-label="' + esc(lib) + '">&#x21BB;</button>';
     }
     function boutonCorrVoie(v) {
@@ -9604,7 +9696,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => enCorrection(x.a));
         if (!liste.length) return '';
         return '<h4 class="wbc-h-corr">' + esc(t('formeT', nb(liste.length))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) => {
-            const cp = !!a.corrPose, c = cp ? null : corrDe(a), tip = cp ? t('corrPoseTip') : t('corrTip', c.avant, c.apres);
+            const cp = !!a.corrPose, c = cp ? null : corrDe(a), tip = cp ? t('corrPoseTip') : t('corrTip', c.avant, c.apres) + (c.rpp ? ' ' + t('corrRppTip') : '');
             const num = '<button type="button" class="wbc-num ' + (cp ? 'pose' : 'corriger') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '" aria-label="' + esc(a.brut + ' — ' + tip) + '">' +
                 esc(cp ? a.corrApres : c.avant + ' → ' + c.apres) + (cp ? '<span class="wbc-num-etat" aria-hidden="true">&#x21BB;</span>' : '') + '</button>';
             return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + boutonCorr(a, i, k) + '</span>';
@@ -9622,6 +9714,29 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     }
     async function segmentCharge(id) {
         try { return !!(await sdk.DataModel.Segments.getById({ segmentId: Number(id) })); } catch (e) { return false; }
+    }
+    // 0.30.10 — RPP à réécrire : lu dans WME juste avant (null = pas chargé). Refusé (raison) s'il porte un nom ou une photo,
+    // s'il est rattaché à une autre commune ou à une autre rue, s'il a changé depuis l'analyse, ou s'il est verrouillé au-dessus
+    // du rang : ce dernier cas n'est pas mesurable (une suggestion ? un refus ?), donc refusé (décision de l'auteur, 25/11).
+    async function lireRppCorr(c) {
+        try {
+            const p = await sdk.DataModel.Venues.getById({ venueId: String(c.id) });
+            const ad = p ? await sdk.DataModel.Venues.getAddress({ venueId: String(c.id) }) : null;
+            return p && ad ? { p, ad } : null;
+        } catch (e) { return null; }
+    }
+    async function refusRppCorr(lu, c, v) {
+        const { p, ad } = lu;
+        if (!p.isResidential) return t('corrRppAbsent');
+        if (String(ad.houseNumber == null ? '' : ad.houseNumber).trim() !== c.avant) return t('corrRppChange');
+        if ((p.name || '').trim()) return t('corrRppNom');
+        if ((p.images || []).length) return t('corrRppPhoto');
+        const ville = (ad.city && ad.city.name) || '', rue = (ad.street && ad.street.name) || '';
+        if (!Core.villeHnOk(ville, resultat.commune.nom)) return t('corrRppVille', ville || '—');
+        if (Core.nomSouple(rue) !== Core.nomSouple(v.nom)) return t('corrRppRue', rue || '—');
+        const rang = (await _hp()).n;
+        if (typeof p.lockRank === 'number' && (rang == null || rang < 0 || p.lockRank > rang)) return t('corrRppVerrou', p.lockRank + 1);
+        return null;
     }
     async function corrigerHnVoie(i, k) {
         if (hnEnCours || !resultat) return;
@@ -9653,6 +9768,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             rendre();
         };
         let msg = null, faits = 0, nVerrou = 0, sugg = null, suggRetiree = false, arrete = false, n = 0, horsVue = 0;
+        const refusRpp = [];
         try {
             for (const { a, c } of ordre) {
                 if (hnStop) { arrete = true; break; }
@@ -9663,6 +9779,19 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 const libre = faits === 0 && !correctionsEnAttente();
                 if (!libre && !(await dansVue(c.lon, c.lat))) { horsVue++; continue; }
                 if (libre && (await assurerVue(c.lon, c.lat)) === 'zoom') { msg = [t('ajZoom17'), true]; break; }
+                if (c.rpp) {
+                    let lu = await lireRppCorr(c);
+                    if (!lu && libre) {
+                        // Lieu pas encore chargé : on s'en approche (carte libre seulement), puis une seule relecture.
+                        avance(n, '', true);
+                        await sdk.Map.setMapCenter({ lonLat: { lon: c.lon, lat: c.lat }, zoomLevel: Math.max(18, await sdk.Map.getZoomLevel()) });
+                        await new Promise(r => setTimeout(r, 2500));
+                        lu = await lireRppCorr(c);
+                    }
+                    if (!lu && !libre) { horsVue++; continue; }
+                    const raison = lu ? await refusRppCorr(lu, c, v) : t('corrRppAbsent');
+                    if (raison) { log('correction RPP ' + c.avant + ' → ' + c.apres + ' : ' + raison); refusRpp.push(c.avant + ' (' + raison + ')'); continue; }
+                }
                 // 0.30.00 — Ju2P0mme (chat WME, 24/11) : « les corrections de bis ne passent pas en MS ». Le segment sans droit
                 // direct était refusé, alors que le « + » d'un numéro en fait une suggestion (décision du 18/11). Même règle ici :
                 // un seul numéro ⇒ écrit, WME en fera une suggestion à l'enregistrement ; la voie entière saute ces segments
@@ -9677,7 +9806,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                     sugg = { niveau: niv, num: c.apres };
                 }
                 const avant = enSugg ? await enAttente() : null;
-                const ecrire = () => sdk.DataModel.HouseNumbers.updateHouseNumber({ houseNumberId: String(c.id), number: c.apres });
+                // RPP : appel À PLAT, numéro seul (mesuré par l'auteur le 25/11 sur « 7 ter Rue de la Chanterie ») : rue, ville et leurs
+                // identifiants, point d'entrée, position, verrou, nom et photos gardés ; une action WME, défaite par UNE annulation.
+                const ecrire = async () => {
+                    if (c.rpp) await sdk.DataModel.Venues.updateAddress({ venueId: String(c.id), houseNumber: c.apres });
+                    else await sdk.DataModel.HouseNumbers.updateHouseNumber({ houseNumberId: String(c.id), number: c.apres });
+                };
                 try {
                     try { await ecrire(); }
                     catch (e) {
@@ -9697,12 +9831,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                         if (avant == null || apres == null || apres <= avant) { suggRetiree = true; sugg = null; log('correction ' + c.avant + ' → ' + c.apres + ' : suggestion retirée par WME'); continue; }
                     }
                     // corrRang : profondeur de la pile WME juste après cette écriture (suivi des annulations, 0.29.01).
-                    Object.assign(a, { corrPose: true, corrApres: c.apres, corrSeg: c.seg, corrForme: !!c.forme, corrRang: await rangPile() });
+                    Object.assign(a, { corrPose: true, corrApres: c.apres, corrSeg: c.seg, corrForme: !!c.forme, corrRpp: !!c.rpp, corrRang: await rangPile() });
                     faits++;
                     majCalque();
                 } catch (e) { log('correction ' + c.avant + ' → ' + c.apres + ' : ' + e.message); refus.push(a.brut); }
             }
-            const verrous = (nVerrou ? ' ' + t('corrLockSkip', nb(nVerrou)) : '') + (horsVue ? ' ' + t('corrHorsVue', nb(horsVue)) : '');
+            const verrous = (nVerrou ? ' ' + t('corrLockSkip', nb(nVerrou)) : '') + (refusRpp.length ? ' ' + t('corrRppSkip', refusRpp.join(', ')) : '') + (horsVue ? ' ' + t('corrHorsVue', nb(horsVue)) : '');
             if (!msg && suggRetiree && !faits) msg = [t('suggAttente'), true];
             const stop = arrete ? ' ' + t('ajHnStopped') : '';
             if (!msg) msg = faits ? [t('corrDone', nb(faits)) + (sugg ? ' ' + t('ajHn1Lock', sugg.num, sugg.niveau) : '') + (refus.length ? ' ' + t('corrRefus', refus.join(', ')) : '') + verrous + stop, false]
@@ -9724,7 +9858,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const l = [];
         resultat.voies.forEach(v => v.adresses.forEach(a => { if (a.corrPose) l.push({ v, a }); }));
         if (!l.length) return;
-        const segs = [...new Set(l.map(x => x.a.corrSeg).filter(s => s != null))], lus = new Map();
+        const segs = [...new Set(l.filter(x => !x.a.corrRpp).map(x => x.a.corrSeg).filter(s => s != null))], lus = new Map();
         for (let k = 0; k < segs.length; k += 250) {
             const lot = segs.slice(k, k + 250);
             for (const h of (await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: lot })) || []) {
@@ -9735,18 +9869,25 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         }
         const T = resultat.totaux;
         for (const { v, a } of l) {
-            const ecrit = (lus.get(String(a.corrSeg)) || new Set()).has(a.corrApres);
+            // RPP (0.30.10) : relu dans le modèle de WME, à jour après l'enregistrement (pas de lecture serveur des lieux dans le SDK).
+            let ecrit;
+            if (a.corrRpp) {
+                let num = null;
+                try { num = ((await sdk.DataModel.Venues.getAddress({ venueId: String(a.corr.id) })) || {}).houseNumber; } catch (e) { }
+                ecrit = String(num == null ? '' : num).trim() === a.corrApres;
+            } else ecrit = (lus.get(String(a.corrSeg)) || new Set()).has(a.corrApres);
+            const rpp = !!a.corrRpp;
             a.corrPose = false;
             delete a.corrRang;
+            delete a.corrRpp;
             if (!ecrit) continue;
-            Object.assign(a, { trouve: 'HN', wlon: a.corr.lon, wlat: a.corr.lat, dm: a.corr.dm, dmMarq: dmMarqDe({ lon: a.lon, lat: a.lat, wlon: a.corr.lon, wlat: a.corr.lat }), wid: null, wseg: a.corrSeg, wbrut: a.corrApres, seg: null, plon: null, plat: null, pd: null });
-            v.hn++;
+            Object.assign(a, { trouve: rpp ? 'RPP' : 'HN', wlon: a.corr.lon, wlat: a.corr.lat, dm: a.corr.dm, dmMarq: dmMarqDe({ lon: a.lon, lat: a.lat, wlon: a.corr.lon, wlat: a.corr.lat }), wid: null, wseg: rpp ? null : a.corrSeg, wbrut: a.corrApres, seg: null, plon: null, plat: null, pd: null });
+            if (rpp) { v.rpp++; T.rpp++; } else { v.hn++; T.hn++; }
             v.presents++;
             if (v.corrigeables) v.corrigeables--;
             if (T.corrigeables) T.corrigeables--;
             const j = v.manquants.indexOf(a.brut);
             if (j >= 0) v.manquants.splice(j, 1);
-            T.hn++;
             T.presents++;
             T.manquants--;
             if (v.presents === v.ban) T.voiesCompletes++;
@@ -10002,7 +10143,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         if (n0 !== 0 && (n0 == null || n0 !== attenteWbc)) { vue.hnMsg = { i, txt: t('rhnUnsaved'), err: true }; statut(t('rhnUnsaved'), true); return; }
         hnEnCours = true;
         majArrierePlan(true);
-        statut(t('ajHnRunning'));
+        statut(t('rhnRunning'));
         let msg = null;
         try {
             if ((await assurerVue(a.wlon, a.wlat)) === 'zoom') { msg = [t('ajZoom17'), true]; return; }
@@ -10120,7 +10261,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         if (!enAtt && q.reste < 2) { statut(t('ajHnQuota', heureCourte(Core.quotaHn(q.garder.concat([Date.now()]), Date.now()).libre)), true); return; }
         hnEnCours = true;
         majArrierePlan(true);
-        statut(t('ajHnRunning'));
+        statut(t('rhnToRppRunning'));
         let msg = null;
         const n0 = await enAttente();
         try {
