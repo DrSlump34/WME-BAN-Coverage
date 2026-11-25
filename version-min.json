@@ -66,7 +66,13 @@
     "0.29.05": "8e678f87fb4080bdc46768b11d58ba25227fb885703b137633b033aeb158c0c1",
     "0.29.06": "5f04af99152ecaf9eabee7ad4c04d24744e1812f959280ba882a4e47327b2924",
     "0.29.07": "61e655c2059d94af21df6a2b0ce49bbfacd48f2db36b87e04a100e319b540474",
-    "0.29.08": "8e51c188cdf53d9b16950b503a86b6a2244389054bfad0cbbf598408c0e7faba"
+    "0.29.08": "8e51c188cdf53d9b16950b503a86b6a2244389054bfad0cbbf598408c0e7faba",
+    "0.30.00": "ba766483c72395a067e73acdd017cc6aa1ba3b4865fae46c9b62eaed89cc9e2e",
+    "0.30.01": "f438981dab12f8119826393c59c2d281b2d74907ccff2d528305c79724bf4674",
+    "0.30.02": "f7aa26e14d95b4a9e5804d5e69cf39e5dea0e0e326bdf94ad4b9a41bd70ad55d",
+    "0.30.03": "b3a68fbcddf74a492d26cdaff0a813edf5583956cc3937d8d7604dafb589c633",
+    "0.30.04": "2dfa10859e8480cd28baaace2a0fd1be35ab2e3e4bcecf1ac09f5d501917b575",
+    "0.30.05": "32f1d353974e38067d205c23c0d59f13888ee315a2007514dde7dff3d9cb19c2"
   },
   "_lisezmoi": "Version minimale autorisée et empreinte SHA-256 du code de chaque version publiée (texte de l’enveloppe _wmeIntegre, fins de ligne LF). Une version plus ancienne, une copie modifiée ou une version absente ne démarre pas."
 }
