@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.30.29
+// @version      0.30.30
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -401,6 +401,7 @@
             rhnDoneDbl: (n, q) => 'No. ' + n + ' was already on the street: the duplicate RPP is removed — check, then save in WME. Left in the quota: ' + q + '.',
             rhnNotFound: 'RPP not found in WME at this spot (moved, changed or deleted since the analysis?): run the analysis again.',
             rhnNoPlaces: 'No place is loaded in WME: the “Places” layer is probably hidden. Show it, then try again.',
+            rhnNoPlacesVue: 'WME has loaded no place around this number: WBC cannot check that an RPP with the same number does not already exist. Nothing was done; move the map slightly, then try again.',
             rhnNamed: 'This RPP has a name: it is not converted (to be checked by hand).',
             rhnPhoto: 'This RPP has a photo: it is not converted (someone went there; to be checked by hand).',
             rhnCity: v => 'This RPP belongs to “' + v + '”, not to the commune: it is not converted.',
@@ -872,6 +873,7 @@
             rhnDoneDbl: (n, q) => 'Le n°\xa0' + n + ' était déjà posé sur la rue\xa0: le RPP en doublon est retiré — vérifiez, puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
             rhnNotFound: 'RPP introuvable dans WME à cet endroit (déplacé, modifié ou supprimé depuis l’analyse\xa0?)\xa0: relancez l’analyse.',
             rhnNoPlaces: 'Aucun lieu n’est chargé dans WME\xa0: le calque «\xa0Lieux\xa0» est sans doute masqué. Affichez-le, puis recommencez.',
+            rhnNoPlacesVue: 'WME n’a chargé aucun lieu autour de ce numéro : WBC ne peut pas vérifier qu’un RPP du même numéro n’existe pas déjà. Rien n’a été fait ; déplacez un peu la carte, puis recommencez.',
             rhnNamed: 'Ce RPP porte un nom\xa0: il n’est pas converti (à voir à la main).',
             rhnPhoto: 'Ce RPP a une photo\xa0: il n’est pas converti (quelqu’un est venu sur place\xa0; à voir à la main).',
             rhnCity: v => 'Ce RPP est rattaché à «\xa0' + v + '\xa0», pas à la commune\xa0: il n’est pas converti.',
@@ -1343,6 +1345,7 @@
             rhnDoneDbl: (n, q) => 'Nr. ' + n + ' war schon an der Straße: der doppelte RPP wird entfernt — prüfen, dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
             rhnNotFound: 'RPP an dieser Stelle in WME nicht gefunden (seit der Analyse verschoben, geändert oder gelöscht?): Analyse neu starten.',
             rhnNoPlaces: 'Im WME ist kein Ort geladen: Die Ebene „Orte“ ist vermutlich ausgeblendet. Einblenden und erneut versuchen.',
+            rhnNoPlacesVue: 'WME hat um diese Hausnummer keinen Ort geladen: WBC kann nicht prüfen, ob bereits ein RPP mit derselben Nummer existiert. Nichts wurde geändert; Karte leicht verschieben und erneut versuchen.',
             rhnNamed: 'Dieser RPP hat einen Namen: er wird nicht umgewandelt (von Hand prüfen).',
             rhnPhoto: 'Dieser RPP hat ein Foto: er wird nicht umgewandelt (jemand war vor Ort; von Hand prüfen).',
             rhnCity: v => 'Dieser RPP gehört zu „' + v + '“, nicht zur Gemeinde: er wird nicht umgewandelt.',
@@ -1814,6 +1817,7 @@
             rhnDoneDbl: (n, q) => 'El n.º ' + n + ' ya estaba en la calle: se retira el RPP duplicado — compruebe y luego guarde en WME. Cuota restante: ' + q + '.',
             rhnNotFound: 'RPP no encontrado en WME en este lugar (¿movido, modificado o borrado desde el análisis?): vuelva a analizar.',
             rhnNoPlaces: 'No hay ningún lugar cargado en WME: la capa «Lugares» probablemente está oculta. Muéstrela y vuelva a intentarlo.',
+            rhnNoPlacesVue: 'WME no ha cargado ningún lugar alrededor de este número: WBC no puede comprobar que no exista ya un RPP con el mismo número. No se ha hecho nada; mueva un poco el mapa y vuelva a intentarlo.',
             rhnNamed: 'Este RPP tiene nombre: no se convierte (a revisar a mano).',
             rhnPhoto: 'Este RPP tiene una foto: no se convierte (alguien estuvo allí; a revisar a mano).',
             rhnCity: v => 'Este RPP pertenece a «' + v + '», no al municipio: no se convierte.',
@@ -2285,6 +2289,7 @@
             rhnDoneDbl: (n, q) => 'Il n. ' + n + ' era già sulla via: l’RPP doppio viene rimosso — controlla, poi salva in WME. Quota residua: ' + q + '.',
             rhnNotFound: 'RPP non trovato in WME in questo punto (spostato, modificato o cancellato dopo l’analisi?): rilancia l’analisi.',
             rhnNoPlaces: 'Nessun luogo caricato in WME: il livello «Luoghi» è probabilmente nascosto. Mostralo, poi riprova.',
+            rhnNoPlacesVue: 'WME non ha caricato alcun luogo intorno a questo numero: WBC non può verificare che non esista già un RPP con lo stesso numero. Non è stato fatto nulla; sposta un po’ la mappa, poi riprova.',
             rhnNamed: 'Questo RPP ha un nome: non viene convertito (da vedere a mano).',
             rhnPhoto: 'Questo RPP ha una foto: non viene convertito (qualcuno è venuto sul posto; da vedere a mano).',
             rhnCity: v => 'Questo RPP appartiene a «' + v + '», non al comune: non viene convertito.',
@@ -2756,6 +2761,7 @@
             rhnDoneDbl: (n, q) => 'O nº ' + n + ' já estava na rua: o RPP duplicado é removido — confira e depois salve no WME. Cota restante: ' + q + '.',
             rhnNotFound: 'RPP não encontrado no WME neste local (movido, alterado ou excluído desde a análise?): rode a análise de novo.',
             rhnNoPlaces: 'Nenhum lugar carregado no WME: a camada “Lugares” provavelmente está oculta. Exiba-a e tente de novo.',
+            rhnNoPlacesVue: 'O WME não carregou nenhum lugar ao redor deste número: o WBC não pode verificar se já existe um RPP com o mesmo número. Nada foi feito; mova um pouco o mapa e tente de novo.',
             rhnNamed: 'Este RPP tem nome: não é convertido (verificar à mão).',
             rhnPhoto: 'Este RPP tem foto: não é convertido (alguém esteve no local; verificar à mão).',
             rhnCity: v => 'Este RPP pertence a “' + v + '”, não ao município: não é convertido.',
@@ -3227,6 +3233,7 @@
             rhnDoneDbl: (n, q) => 'O n.º ' + n + ' já estava na rua: o RPP duplicado é retirado — verifique e depois guarde no WME. Quota restante: ' + q + '.',
             rhnNotFound: 'RPP não encontrado no WME neste local (movido, alterado ou apagado desde a análise?): volte a analisar.',
             rhnNoPlaces: 'Nenhum local carregado no WME: a camada «Locais» está provavelmente oculta. Mostre-a e tente de novo.',
+            rhnNoPlacesVue: 'O WME não carregou nenhum local à volta deste número: o WBC não pode verificar se já existe um RPP com o mesmo número. Nada foi feito; mova um pouco o mapa e tente de novo.',
             rhnNamed: 'Este RPP tem nome: não é convertido (verificar à mão).',
             rhnPhoto: 'Este RPP tem fotografia: não é convertido (alguém esteve no local; verificar à mão).',
             rhnCity: v => 'Este RPP pertence a «' + v + '», não ao município: não é convertido.',
@@ -3698,6 +3705,7 @@
             rhnDoneDbl: (n, q) => 'מס׳ ' + n + ' כבר היה ברחוב: ה־RPP הכפול הוסר — יש לבדוק ואז לשמור ב-WME. יתרת המכסה: ' + q + '.',
             rhnNotFound: 'ה־RPP לא נמצא ב־WME במקום הזה (הוזז, שונה או נמחק מאז הניתוח?): יש להריץ שוב את הניתוח.',
             rhnNoPlaces: 'לא נטען אף מקום ב־WME: שכבת „מקומות” כנראה מוסתרת. יש להציג אותה ולנסות שוב.',
+            rhnNoPlacesVue: 'WME לא טען אף מקום סביב מספר זה: WBC אינו יכול לוודא שלא קיים כבר RPP עם אותו מספר. לא בוצע דבר; יש להזיז מעט את המפה ולנסות שוב.',
             rhnNamed: 'ל־RPP הזה יש שם: הוא לא מומר (לבדיקה ידנית).',
             rhnPhoto: 'ל־RPP הזה יש תמונה: הוא לא מומר (מישהו היה במקום; לבדיקה ידנית).',
             rhnCity: v => 'ה־RPP הזה שייך ל„' + v + '”, לא לרשות: הוא לא מומר.',
@@ -11019,7 +11027,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if ((await assurerVue(a.wlon, a.wlat)) === 'zoom') { msg = [t('ajZoom17'), true]; return; }
             const rpp = await trouverRpp(a);
             if (!rpp) { msg = [t('rhnNotFound'), true]; return; }
-            if (rpp.aucunLieu) { msg = [t('rhnNoPlaces'), true]; return; }
+            if (rpp.aucunLieu) { msg = [motifAucunLieu(), true]; return; }
             if (rpp.nom) { msg = [t('rhnNamed'), true]; return; }
             if (rpp.photos) { msg = [t('rhnPhoto'), true]; return; }
             if (!Core.villeHnOk(rpp.ville, commune)) { msg = [t('rhnCity', rpp.ville || '—'), true]; return; }
@@ -11124,13 +11132,24 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         await new Promise(r => setTimeout(r, 2500));
         return 'ok';
     }
+    // 0.30.30 — auteur (27/11) : numéros posés au « + » d'une voie, puis l'un d'eux sélectionné pour le déplacer ⇒ sous le
+    // bouton « ⇄ », « le calque Lieux est sans doute masqué »… alors qu'il était affiché. Une liste de lieux vide ne prouve pas
+    // un calque masqué : la case de WME est lue ; cochée, le message dit seulement qu'aucun lieu n'est chargé autour.
+    function calqueLieuxMasque() {
+        return ['layer-switcher-group_places', 'layer-switcher-item_residential_places'].some(id => { const el = document.getElementById(id); return !!el && !el.checked; });
+    }
+    function motifAucunLieu() {
+        const masque = calqueLieuxMasque();
+        log('aucun lieu dans le modèle de WME (case Lieux/Résidentiel ' + (masque ? 'décochée' : 'cochée') + ')');
+        return t(masque ? 'rhnNoPlaces' : 'rhnNoPlacesVue');
+    }
     // 0.30.22 (audit, rang 17) : RPP du même numéro et de la même rue, en attente compris, à RPP_DOUBLON_M au plus de (lon, lat)
     // ⇒ { dist } du plus proche ; aucun ⇒ null. Lieux illisibles, ou aucun lieu chargé (calque masqué) ⇒ { erreur } : sans
     // cette lecture, « ⇄ » pourrait créer un doublon ; il est refusé.
     async function rppMemeNumero(numero, rue, lon, lat) {
         let liste;
         try { liste = (await sdk.DataModel.Venues.getAll()) || []; } catch (e) { log('lieux chargés : ' + e.message); return { erreur: t('illisibleRpp') }; }
-        if (!liste.length) return { erreur: t('rhnNoPlaces') };
+        if (!liste.length) return { erreur: motifAucunLieu(), aucunLieu: true };
         const m = Core.normNum(numero), nr = Core.nomSouple(rue), kx = Math.cos(lat * Math.PI / 180) * 111320;
         let proche = null;
         for (const p of liste) {
@@ -11417,6 +11436,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             // Rang 17 : les deux refus de la conversion, dits d'avance (modification en attente, RPP du même numéro tout près).
             if (a.trouve) { const n0 = await enAttente(); if (n0 !== 0 && (n0 == null || n0 !== attenteWbc)) return { motif: t('rhnUnsaved') }; }
             const dbl = await rppMemeNumero(a.brut, c.voie.nom, a.trouve ? a.wlon : a.lon, a.trouve ? a.wlat : a.lat);
+            // 0.30.30 : aucun lieu chargé n'est pas un refus d'avance — l'éditeur a peut-être sélectionné le numéro pour le
+            // déplacer. Le bouton reste offert, sans bulle ; la conversion refait la lecture et refuse, motif à l'appui, au clic.
+            if (dbl && dbl.aucunLieu) return {};
             if (dbl) return { motif: dbl.erreur || t('rhnVersRppDbl', a.brut, nb(Math.round(dbl.dist))) };
             return {};
         }
