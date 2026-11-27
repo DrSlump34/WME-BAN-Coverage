@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.30.30
+// @version      0.30.32
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -873,7 +873,7 @@
             rhnDoneDbl: (n, q) => 'Le n°\xa0' + n + ' était déjà posé sur la rue\xa0: le RPP en doublon est retiré — vérifiez, puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
             rhnNotFound: 'RPP introuvable dans WME à cet endroit (déplacé, modifié ou supprimé depuis l’analyse\xa0?)\xa0: relancez l’analyse.',
             rhnNoPlaces: 'Aucun lieu n’est chargé dans WME\xa0: le calque «\xa0Lieux\xa0» est sans doute masqué. Affichez-le, puis recommencez.',
-            rhnNoPlacesVue: 'WME n’a chargé aucun lieu autour de ce numéro : WBC ne peut pas vérifier qu’un RPP du même numéro n’existe pas déjà. Rien n’a été fait ; déplacez un peu la carte, puis recommencez.',
+            rhnNoPlacesVue: 'WME n’a chargé aucun lieu autour de ce numéro\u00a0: WBC ne peut pas vérifier qu’un RPP du même numéro n’existe pas déjà. Rien n’a été fait\u00a0; déplacez un peu la carte, puis recommencez.',
             rhnNamed: 'Ce RPP porte un nom\xa0: il n’est pas converti (à voir à la main).',
             rhnPhoto: 'Ce RPP a une photo\xa0: il n’est pas converti (quelqu’un est venu sur place\xa0; à voir à la main).',
             rhnCity: v => 'Ce RPP est rattaché à «\xa0' + v + '\xa0», pas à la commune\xa0: il n’est pas converti.',
@@ -5642,6 +5642,13 @@
             return ba % 2 ? xb - xa : xa - xb;
         });
     }
+    // 0.30.31 — carreaux du cache qui rendent ces segments. Le SDK ne connaît que les segments chargés autour de la vue : une voie
+    // traitée puis quittée gardait, au recalcul suivant, son carreau d'avant les poses (hasHNs faux) ⇒ numéros « manquants ».
+    function carreauxDuCache(cache, ids) {
+        const voulus = new Set([...ids].map(String)), cles = new Set();
+        for (const [k, v] of cache.carreaux) if ((v.segments || []).some(sg => voulus.has(String(sg.id)))) cles.add(k);
+        return cles;
+    }
     // ==/WBC-CARREAUX==
     // garder(i, j) : carreau à lire ou non (absent : tout le rectangle).
     async function lireWme(bbox, cache, jeton, prog, sansNumeros, garder) {
@@ -5836,8 +5843,13 @@
     let calqueContourOk = false, contourSig = '';
     async function poserCalqueContour() {
         try {
+            // 0.30.32 — le tireté violet foncé (#4a148c) seul se perdait sur l'imagerie satellite (« quasi invisible ») : chaque
+            // morceau est dessiné deux fois, un liseré blanc large dessous, un tireté magenta vif dessus (lisible sur fond clair ou sombre).
             await sdk.Map.addLayer({ layerName: LAYER_CONTOUR,
-                styleRules: [{ style: { fillOpacity: 0, strokeColor: '#4a148c', strokeWidth: 3, strokeOpacity: 0.9, strokeDashstyle: 'dash', pointerEvents: 'none' } }] });
+                styleRules: [
+                    { predicate: p => !!(p && p.halo), style: { fillOpacity: 0, strokeColor: '#ffffff', strokeWidth: 8, strokeOpacity: 0.8, strokeDashstyle: 'solid', pointerEvents: 'none' } },
+                    { predicate: p => !(p && p.halo), style: { fillOpacity: 0, strokeColor: '#e040fb', strokeWidth: 4, strokeOpacity: 1, strokeDashstyle: 'dash', pointerEvents: 'none' } },
+                ] });
             calqueContourOk = true;
         } catch (e) { log('calque du contour : ' + e.message); }
     }
@@ -5853,7 +5865,9 @@
                 if (!c) return;
                 // Le SDK refuse les MultiPolygon : un Polygon par morceau.
                 const pgs = c.contour.type === 'MultiPolygon' ? c.contour.coordinates.map(x => ({ type: 'Polygon', coordinates: x })) : [c.contour];
-                await sdk.Map.addFeaturesToLayer({ layerName: LAYER_CONTOUR, features: pgs.map((g, k) => ({ type: 'Feature', id: 'wbc-ct' + c.code + '-' + k, geometry: g, properties: {} })) });
+                // Liseré d'abord : dessiné dessous.
+                const morceaux = halo => pgs.map((g, k) => ({ type: 'Feature', id: 'wbc-ct' + c.code + '-' + k + (halo ? 'h' : ''), geometry: g, properties: { halo } }));
+                await sdk.Map.addFeaturesToLayer({ layerName: LAYER_CONTOUR, features: morceaux(true).concat(morceaux(false)) });
             } catch (e) { log('contour : ' + e.message); if (contourSig === sig) contourSig = '?'; }
         });
     }
@@ -8604,6 +8618,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 if (typeof x.lon === 'number' && typeof x.lat === 'number') cles.add(Math.floor(x.lon / CARREAU) + ':' + Math.floor(x.lat / CARREAU));
             }
             for (const k of await carreauxDesSegments(segs)) cles.add(k);
+            for (const k of carreauxDuCache(g.cache, segs)) cles.add(k);
             for (const k of cles) g.cache.carreaux.delete(k);
             for (const id of segs) g.cache.hn.delete(id);
         }
@@ -10554,8 +10569,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const { p, ad } = lu;
         if (!p.isResidential) return t('corrRppAbsent');
         if (String(ad.houseNumber == null ? '' : ad.houseNumber).trim() !== c.avant) return t('corrRppChange');
-        if ((p.name || '').trim()) return t('corrRppNom');
-        if ((p.images || []).length) return t('corrRppPhoto');
+        // 0.30.31 — simple forme (« 2bis » → « 2 bis ») : même porte, le nom et la photo du lieu ne sont pas en cause.
+        const formeSeule = !!c.forme && Core.normNum(c.avant) === Core.normNum(c.apres);
+        if (!formeSeule && (p.name || '').trim()) return t('corrRppNom');
+        if (!formeSeule && (p.images || []).length) return t('corrRppPhoto');
         const ville = (ad.city && ad.city.name) || '', rue = (ad.street && ad.street.name) || '';
         if (!Core.villeHnOk(ville, commune || resultat.commune.nom)) return t('corrRppVille', ville || '—');
         if (Core.nomSouple(rue) !== Core.nomSouple(v.nom)) return t('corrRppRue', rue || '—');
