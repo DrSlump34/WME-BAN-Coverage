@@ -1,5 +1,5 @@
 {
-  "min": "0.14.03",
+  "min": "0.30.27",
   "empreintes": {
     "0.14.03": "d343c61dade44260db0a9233a9691c5920ad807abdb64355e1ccbcbc4db52808",
     "0.15.00": "0a1a9764afd77d928153f9d0ae738f58aaba7265fcb42db24f60f2916858f92e",
@@ -81,7 +81,8 @@
     "0.30.11": "b546568087eebf90f34d56938712aa08226212c99a27cd52ec31d44a81b3d26b",
     "0.30.12": "1376a969500bef2f9af28d8810cae86c6d9d892dc3a365b3e728fbd0851e50ea",
     "0.30.13": "6d992e3adf6167472b47639da4193f7a41cbffdac5df91d2f55c704b59849029",
-    "0.30.14": "4aef7eda8057bb681b004bea1f8a90e247e59583ead8b5030480af37854d9401"
+    "0.30.14": "4aef7eda8057bb681b004bea1f8a90e247e59583ead8b5030480af37854d9401",
+    "0.30.27": "622d050bd2e70a1b2b4d2c231051f3e029f283e26ce83790e61394af3091b18c"
   },
   "_lisezmoi": "Version minimale autorisée et empreinte SHA-256 du code de chaque version publiée (texte de l’enveloppe _wmeIntegre, fins de ligne LF). Une version plus ancienne, une copie modifiée ou une version absente ne démarre pas."
 }

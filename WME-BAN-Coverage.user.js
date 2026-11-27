@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.30.14
+// @version      0.30.27
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -47,9 +47,11 @@
 // @run-at       document-idle
 // ==/UserScript==
 
-// La BAN est le référentiel. Rien n'est envoyé ailleurs que vers les sources lues (BAN, Géoplateforme, geo.api.gouv.fr, signalements BAN) ;
-// la carte n'est modifiée que sur geste de l'éditeur (le « + » d'une adresse : tout rang ; voie entière, ⇄ et numéro → RPP :
-// L6), jamais enregistrée par le script : l'éditeur enregistre avec WME.
+// La BAN est le référentiel. Requêtes du script : les sources lues (BAN, Géoplateforme, geo.api.gouv.fr, signalements BAN) ;
+// GitHub (raw.githubusercontent.com, version-min.json) et GreasyFork (version publiée), en lecture seule ; et, sur le site
+// même de WME (www.waze.com), le serveur de WME et /discuss (groupes et session de l'éditeur, lus sur le même site).
+// La carte n'est modifiée que sur geste de l'éditeur (« + », « ⇄ » et « ↻ » d'une adresse : tout rang ; « Ajouter les
+// numéros » et « Corriger les numéros » d'une voie entière : L6), jamais enregistrée par le script : l'éditeur enregistre avec WME.
 
 (function _wmeIntegre() {
     'use strict';
@@ -69,7 +71,6 @@
 
     // Au-delà de ~0,08° de côté, WME rend une zone ALLÉGÉE sans le dire : carreaux de 0,05° sur une grille fixe, réutilisables d'une commune à l'autre.
     const CARREAU = 0.05;
-    const CARREAUX_GARDES = 48;
     const PARALLELE = 3;
     const ROAD_TYPES = '1,2,3,4,5,6,7,8,9,10,15,16,17,18,19,20,22';
 
@@ -81,6 +82,10 @@
 
     let sdk = null;
     const log = m => console.log('[WBC] ' + m);
+    // 0.30.26 — audit du 26/11 (rang 47) : un repère de la page WME (carte, boutons, calques) absent faisait replier le script en
+    // silence. Dit UNE fois par session dans la console, pour qu'un changement de WME se voie avant les signalements.
+    const reperesAbsents = new Set();
+    const repereWme = (nom, el) => { if (!el && !reperesAbsents.has(nom)) { reperesAbsents.add(nom); log('repère WME introuvable : ' + nom); } return el; };
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 
@@ -95,14 +100,14 @@
             sbOpen: 'Open the window',
             sbHelp: 'Help',
             hWhatT: 'What is compared',
-            hWhatB: "<p>The <b>BAN</b> is the reference: every address it lists should exist in WME, either as a house number on a segment (HN) or as a residential place (RPP).</p><p><b>Sources</b>, read live: the <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, French State; Licence Ouverte Etalab 2.0; the revision date of each commune is shown); the commune boundaries and lists of <b>geo.api.gouv.fr</b> (Découpage administratif API, INSEE and IGN data, Licence Ouverte Etalab 2.0); the public <b>BAN reports API</b> (signalement.adresse.data.gouv.fr) for the state of reports; and WME from the same servers as the editor. The area does not need to be displayed or loaded. Since 12/11/2026, Waze accredits the BAN for France (display and assisted creation of house numbers, Map Data Attribution page); adding a whole street stays an L6 gesture; one number at a time is open to all ranks; all under quota.</p><p><b>What leaves the browser</b>: to geo.api.gouv.fr, in “Map centre” mode, the map centre ROUNDED to 3 decimals (about 100 m), and your commune searches — no identity, no cookie; to the BAN and the reports API, the municipality code; at startup, GitHub (version-min.json, the minimum version: a withdrawn version does not start) and GreasyFork (new version) are only read. To data.geopf.fr (IGN Géoplateforme), with the WBC box of the Layers menu ticked: the extent of the view, from zoom 18, without cookie. Nothing else; your user name goes to no third party (only to Waze’s own Discuss, for the Copy button).</p><p><b>Report to the BAN</b>: opens the official tool (signalement.adresse.data.gouv.fr) in a new tab, on the street or the number; WBC sends nothing, you fill in and send the form. For a WME number the BAN lacks, the prefilled comment carries the address read in Waze (“Address present in Waze: …”): check, change or clear it before sending.</p><p><b>BAN of the view</b>: with the WBC box of the Layers menu ticked and no analysis shown there, the BAN addresses of the view appear from zoom 18, in grey (read only); circled in green when WME already has the same number on the same street or within 30 m (saved house numbers, residential places). <b>Ctrl+click</b> (Cmd+click on Mac) on the map button: the commune at the centre is analysed, or its recent scan reopened, and shown on the map without opening the window. While the WBC window is open, the WME layers “House numbers” and “Residential” are shown; closing it puts them back as they were.</p>",
+            hWhatB: "<p>The <b>BAN</b> is the reference: every address it lists should exist in WME, either as a house number on a segment (HN) or as a residential place (RPP).</p><p><b>Sources</b>, read live: the <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, French State; Licence Ouverte Etalab 2.0; the revision date of the commune’s Base Adresse Locale is shown under its name when the BAN publishes one); the commune boundaries and lists of <b>geo.api.gouv.fr</b> (Découpage administratif API, INSEE and IGN data, Licence Ouverte Etalab 2.0); the public <b>BAN reports API</b> (signalement.adresse.data.gouv.fr) for the state of reports; and WME from the same servers as the editor. The area does not need to be displayed or loaded. Since 12/11/2026, Waze accredits the BAN for France (display and assisted creation of house numbers, Map Data Attribution page); adding a whole street stays an L6 gesture; one number at a time is open to all ranks; all under quota.</p><p><b>What leaves the browser</b>: to geo.api.gouv.fr, in “Map centre” mode, the map centre ROUNDED to 3 decimals (about 100 m), and your commune searches — no identity, no cookie; to the BAN and the reports API, the municipality code; at startup, at most once a day, GitHub (version-min.json, the minimum version: a withdrawn version does not start) and GreasyFork (new version) are only read. To data.geopf.fr (IGN Géoplateforme), with the WBC box of the Layers menu ticked: the extent of the view, from zoom 18, without cookie. Nothing else; your user name goes to no third party (only to Waze’s own Discuss, for the Copy button).</p><p><b>Report to the BAN</b>: opens the official tool (signalement.adresse.data.gouv.fr) in a new tab, on the street or the number; WBC sends nothing, you fill in and send the form. For a WME number the BAN lacks, the prefilled comment carries the address read in Waze (“Address present in Waze: …”): check, change or clear it before sending.</p><p><b>BAN of the view</b>: with the WBC box of the Layers menu ticked and no analysis shown there, the BAN addresses of the view appear from zoom 18, in grey (read only); circled in green when WME already has the same number on the same street or within 30 m (saved house numbers, residential places). <b>Ctrl+click</b> (Cmd+click on Mac) on the map button: the commune at the centre is analysed, or its recent scan reopened, and shown on the map without opening the window. While the WBC window is open, the WME layers “House numbers” and “Residential” are shown; closing it puts them back as they were.</p>",
             hMatchT: 'When is a number found',
             hMatchB: '<p>A BAN address is found when WME has the same number (suffixes included: <i>bis</i>, <i>ter</i>, letters) less than 150 m away, and:</p><table class="wbc-help-table"><tr><td>1</td><td>on a street with the same name (main or alternate name), or one that differs only by an article (“Avenue Sembrancher” = “Avenue de Sembrancher”; the name gap is still reported);</td></tr><tr><td>2</td><td>or on a segment that carries this street\'s addresses, <b>named or not</b>;</td></tr><tr><td>3</td><td>or less than 30 m from the address.</td></tr></table><p>Rule 1 is tried first everywhere, then 2, then 3. A WME number is used only once.</p>',
             hNamesT: 'The «\u00a0WME street\u00a0» column',
             hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>the segments near the addresses carry the BAN name.</td></tr><tr><td><i>name</i></td><td>they carry another name: the name to check.</td></tr><tr><td><i>no name</i></td><td>they carry no name.</td></tr><tr><td><i>no segment</i></td><td>no segment less than 80 m from the addresses.</td></tr><tr><td>&#x2713; alt</td><td>the BAN name is carried as an <b>alternate</b> name; the main name is shown next to it.</td></tr><tr><td>road no.</td><td>the main name is a road number and the BAN name is missing from the alternate names: add it.</td></tr><tr><td>type</td><td>only the street type differs (Rue / Chemin…).</td></tr><tr><td>article · spelling · partial</td><td>close names: an article, a letter or two, or a shortened form. <i>missing from WME</i>: the street is not in WME, the name shown is the neighbouring one.</td></tr><tr><td>&#x2713; parking</td><td>no named segment, but a parking lot place nearby carries the BAN name: nothing to rename.</td></tr><tr><td>&#x2713; BAN spelling</td><td>same name but for a hyphen or a dot (“Rue Paul-Louis Courier” / “Rue Paul Louis Courier”): nothing to rename.</td></tr></table><p>A missing number shown in orange with <b>≠</b> exists in WME with another suffix (12 b / 12bis): to check. If WME only has the bare number (32 / 32 B), it is placed anyway and the warning stays.</p><p>&#x26A0; marks a BAN name that no segment of the commune carries.</p>',
             hLimitsT: 'Good to know',
-            hLimitsB: "<p>A whole département takes a few minutes: the BAN is read commune by commune, WME in squares of about 5 km. The button Stop interrupts it; what is done stays displayed, and failed communes can be retried alone.</p><p>Paris, Marseille and Lyon are read district by district. Scans are kept in this browser only (IndexedDB), never elsewhere, with your preferences (area, switches, window position, point colours); they are flagged when the BAN or WME changed since.</p>",
-            hSafeB: "The script changes the map only at an editor’s request: the “+” of one address (a number or an RPP, all ranks); and, for an L6, “Add the house numbers” (street by street: numbers, and RPP at the end of a driveway), “⇄” (one RPP replaced by a number) and “Turn this number into an RPP” — 500 per sliding hour at most, for each editor; it never saves. Its results stay in this browser.",
+            hLimitsB: "<p>A whole département takes a few minutes: the BAN is read commune by commune, WME in squares of about 5 km. The button Stop interrupts it; what is done stays displayed, and failed communes can be retried alone.</p><p>Paris, Marseille and Lyon are read district by district. Scans are kept in this browser only (IndexedDB), never elsewhere, with your preferences (area, switches, window position, point colours); they are flagged when the BAN or WME changed since.</p><p><b>Detached window</b> (⧉ in the header, Chrome and Edge only): the WBC window moves into a window of its own, on a second screen for instance; ⧉ or closing that window puts it back into WME. The map, its bubbles and notices stay in the WME window, and WME shortcuts (Ctrl+Z…) do not work in the detached window.</p>",
+            hSafeB: "The script changes the map only at an editor’s request. All ranks: the “+” of one address (a number or an RPP), “⇄” (an RPP replaced by a number, or a number turned into an RPP) and “↻” (one number rewritten). For an L6: “Add the house numbers” and “Correct the numbers” of a whole street. At most 500 edits per sliding hour, for each editor (“↻” outside the quota); it never saves. Its results stay in this browser.",
             remTitle: "You remain responsible for your edits",
             remBody: "<p>WME BAN Coverage <b>proposes</b>: it never saves anything by itself.</p><p>Each house number, RPP or “⇄” conversion reaches WME as a pending edit. Check it on the map, then save it or undo it in WME.</p><p>What you save is your edit, just as if you had made it by hand.</p>",
             remNote: "This reminder is shown once per browser; you can see it again from the script tab.",
@@ -118,11 +123,13 @@
             modeCommune: 'Other commune',
             modeDep: 'Département',
             modeLbl: 'Area',
+            filtreLbl: 'Streets shown',
             hereHint: 'The commune under the centre of the map, taken when the analysis starts.',
             searchPh: 'Name, postcode or INSEE code',
             searchNone: 'No commune found',
             depChoose: 'Choose a département',
             analyse: 'Analyse',
+            analyseCom: c => 'Analyse ' + c,
             stop: 'Stop',
             stLocate: 'Finding the commune…',
             stBan: 'BAN: reading…',
@@ -162,7 +169,7 @@
             filterPh: 'Filter streets',
             filterClear: 'Clear the filter',
             filterCount: (n, m) => n + (un1(n) ? ' street of ' : ' streets of ') + m,
-            layerSwitch: 'Gaps',
+            layerSwitch: 'To do',
             exportCsv: 'Export CSV',
             thStreetBan: 'BAN street',
             thStreetWme: 'WME street',
@@ -170,6 +177,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'Gap',
+            thGapCourt: 'Gap',
             thRep: 'Marks',
             thRepTip: '↻ numbers to correct · ↔ numbers found off their BAN point · RPP duplicating a number. Hover a mark for details.',
             thCommune: 'Commune',
@@ -211,6 +219,8 @@
             hovWmeStreet: r => 'WME street: ' + r,
             sizeTip: "Enlarge / restore the window",
             smallTip: "Small window (original size)",
+            detachTip: "Detach into its own window (e.g. a second screen). WME shortcuts (Ctrl+Z…) do not work from that window.",
+            attachTip: "Put the window back into WME",
             searching: "Searching…",
             tipAnalyse: "Analyse the chosen area. If it was already scanned, its date is shown first, with Open or Run again.",
             tipAnalyseCom: c => "Analyse " + c + " again, the commune shown, and update its line in the département. To scan the whole département, go back to it first.",
@@ -272,7 +282,9 @@
             stDoneErr: (s, n) => 'Done in ' + s + ' s — ' + n + (un1(n) ? ' commune failed' : ' communes failed'),
             noCert: n => 'None of the ' + n + ' BAN addresses of this commune is certified.',
             errSession: "WME session expired: reload the page.",
+            errWmeSerie: (n, m) => 'Département stopped: WME failed for ' + n + ' communes in a row (' + m + '). The communes left are marked failed; retry them later.',
             errFormat: src => src + ' answered in an unexpected format: the script needs an update.',
+            ecrCoupee: 'Writing is suspended by the script’s author until a fixed version is published; reading and analysis still work.',
             delNote: "not attributable to a delegated commune",
             mapCap: (a, b) => 'Map: ' + a + ' points shown out of ' + b + ' in view (zoom in to see them all)',
             legExtra: "extra in WME",
@@ -306,11 +318,11 @@
             kSuf: n => 'incl. ' + n + (un1(n) ? ' suffix to check' : ' suffixes to check'),
             tipSuf: w => "WME has " + w + ": check the suffix",
             kFar: n => 'incl. ' + n + ' far from the BAN point',
-            kArret: n => n + ' arrival point(s) far off',
-            hovArret: d => 'Arrival point ' + d + ' m too far from the address',
-            arrT: (n, s) => 'Arrival points far off (' + n + ', beyond ' + s + ' m)',
-            arrTip: d => 'The arrival point is ' + d + ' m further than the street next to the WME number: check it in WME',
-            sbArret: 'Flag arrival points far off beyond',
+            kArret: n => n + (un1(n) ? ' entry point far off' : ' entry points far off'),
+            hovArret: d => 'Entry point ' + d + ' m too far from the address',
+            arrT: (n, s) => 'Entry points far off (' + n + ', beyond ' + s + ' m)',
+            arrTip: d => 'The entry point is ' + d + ' m further than the street next to the WME number: check it in WME',
+            sbArret: 'Flag entry points far off beyond',
             sbArretHint: 'Distance between the WME number and where Waze guides, minus its distance to its street. Applied straight away, no new analysis.',
             tipFar: d => 'Placed ' + d + ' m from the BAN address',
             certOnly: 'Certified',
@@ -351,13 +363,13 @@
             nextStreet: n => 'Next street (' + n + ' to add)',
             tipNextStreet: 'Opens the street of the commune where “Add” has the most numbers to place (BAN name as primary or alternate), skipping the streets already opened with this button.',
             nextStreetNone: 'No other street ready: the streets left have their numbers placed, or a name to fix first.',
-            ajHnAddTip: r => 'L6 only: places in WME the missing numbers of this street, on the segments whose primary name is the BAN name (accents, case, hyphens and dots tolerated) and whose city is the commune or “Village (Commune)”; an address at the end of a driveway becomes an RPP. At most 500 edits per sliding hour, counted when saved (left: ' + r + '). Nothing is saved: check, then save in WME. Out-of-town addresses become RPP too.',
+            ajHnAddTip: r => 'L6 only: places in WME the missing numbers of this street, on the segments whose primary name is the BAN name (accents, case, hyphens and dots tolerated) and whose city is the commune or “Village (Commune)”; an address at the end of a driveway becomes an RPP. At most 500 edits per sliding hour, reserved when placed, given back if not saved (left: ' + r + '). Nothing is saved: check, then save in WME. Out-of-town addresses become RPP too.',
             ajHnNoName: 'The WME name of this street is not the BAN name: automatic adding needs a primary name identical to the BAN.',
             ajHnNone: 'No number can be added automatically on this street.',
-            ajHnLoin: n => 'No number can be added automatically: ' + n + ' address(es) more than 80 m from the street as drawn in WME. Move the segment closer if it is misplaced.',
+            ajHnLoin: n => 'No number can be added automatically: ' + n + (un1(n) ? ' address' : ' addresses') + ' more than 80 m from the street as drawn in WME. Move the segment closer if it is misplaced.',
             ajHnNomEcart: (w, b) => 'No number can be added automatically: the segments of this street are named “' + w + '” in WME, not “' + b + '” as in the BAN. Give them the BAN name.',
             ajHnRenommer: (w, b) => 'Nothing placed, and no RPP created instead: this street exists in WME as “' + w + '”, not “' + b + '” (name to check). Rename the street in WME first, save, then try again.',
-            ajHnQuota: h => 'Limit reached (500 numbers per hour): next adding possible at ' + h + '.',
+            ajHnQuota: h => 'Limit reached (500 edits per hour): next adding possible at ' + h + '.',
             ajHnRunning: 'Adding the house numbers…',
             rhnToRppRunning: 'Converting the house number into an RPP…',
             rhnRunning: 'Converting the RPP into a house number…',
@@ -394,7 +406,7 @@
             rhnCity: v => 'This RPP belongs to “' + v + '”, not to the commune: it is not converted.',
             rhnStreet: r => 'This RPP carries the street “' + r + '”, not the BAN name of the street: it is not converted.',
             rhnNoSeg: 'No segment of the street (BAN name as primary name, commune as city) within 80 m: the RPP is probably out of town, it stays.',
-            rhnLegit: v => 'The RPP access point opens onto “' + v + '”, not onto its own street: the RPP expresses an offset a segment number cannot, it stays.',
+            rhnLegit: v => 'The RPP entry point opens onto “' + v + '”, not onto its own street: the RPP expresses an offset a segment number cannot, it stays.',
             rhnUnsure: 'Nothing clear-cut (another street just as close, or too far from any street): the RPP stays, to be checked by hand.',
             rhnFormat: n => 'The number “' + n + '” is not written like a segment number: to be checked by hand.',
             rhnErr: m => 'Replacement stopped: ' + m,
@@ -404,6 +416,10 @@
             rhnSelVersHn: 'to number',
             rhnVersRppTip: 'Removes this number from the segment and creates an RPP in its place (same number, same street), entry point on the nearest unnamed segment or driveway (private road, parking lot road); the RPP is then selected so you can adjust its entry. Counts in the quota; nothing is saved.',
             rhnVersRppDone: (n, q) => 'No. ' + n + ' turned into an RPP — adjust its entry point if needed (it is selected), then save in WME. Left in the quota: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'An RPP No. ' + n + ' of this street already exists ' + d + ' m away: nothing changed.',
+            rhnVersRppEntree: (v, d) => v ? 'Entry point on “' + v + '”, ' + d + ' m away.' : 'Entry point on an unnamed road, ' + d + ' m away.',
+            illisibleRpp: 'The existing RPPs could not be read in WME: nothing is placed or changed.',
+            occupeGeste: 'A WBC edit is in progress: wait for it to finish.',
             rhnVersRppAbsent: n => 'Number ' + n + ' not found in WME (segment not loaded, or number already removed): nothing changed.',
             rhnVersRppTipPose: 'Turned into an RPP (not saved yet).',
             ajHnSkip: n => n + (un1(n) ? ' address skipped' : ' addresses skipped') + ' (details in the console).',
@@ -415,11 +431,11 @@
             ajHnSee: n => (un1(n) ? 'It is' : 'They are') + ' circled in turquoise on the map.',
             ajHnPoseTip: 'Placed by WBC, not saved yet: click to centre the map on it.',
             ajZoom17: 'Zoom to level 17 or more: below it, WME does not load residential places. The map is left where it is.',
-            ajHnSaved: (c, r, q) => 'Save: ' + c + (un1(c) ? ' number counted' : ' numbers counted') + ', ' + r + ' given back to the quota (removed before saving). Quota left: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'Save: ' + c + (un1(c) ? ' edit counted' : ' edits counted') + ', ' + r + ' given back to the quota (removed before saving). Quota left: ' + q + '.',
             ajHnSavedTip: 'Placed by WBC and saved.',
             hHnT: 'Adding house numbers',
-            hHnB: '<p><i>Add the house numbers</i> for a whole street: <b>L6</b> editors only. <b>One number at a time</b> and the <b>⇄</b> conversions (number → RPP, RPP → number) are open to <b>all ranks</b>, with the same checks and the same quota; without the right on the segment or the RPP (lock above your rank), WME turns the edit into a suggestion when you save — provided no direct edit is pending, and for a conversion only if both objects are in the same case. In the expanded row of a street, <i>Add the house numbers</i> places its missing addresses in WME — <b>one street at a time</b>, never a whole commune. For a single number: the “+” on its chip (on hover), or a click on its point on the map. WME’s own rights apply: for one number or a conversion, a segment locked above your rank (or outside your editable areas) gives a suggestion when you save; <i>Add the house numbers</i> for a whole street skips such segments, and the message says so.</p><p><b>Conditions</b>: the primary name of the segments is the BAN name (accents, case, apostrophes, spaces, hyphens and dots tolerated; a different spelling is only flagged) and their city is the commune or “Village (Commune)”. Each number goes to the nearest admitted segment (80 m at most); a number already present, even pending in this tab, is never placed again; a different (12 b / 12bis) or numeric suffix is left to the editor, unless WME only has the bare number (32 for 32 B): it is then placed, with a warning.</p><p><b>Nothing is saved</b>: placed numbers are circled in turquoise on the map (even with the window closed) and marked ✚ in the street; check them, then save or undo in WME.</p><p><b>Quota</b>: 500 numbers per sliding hour. A number is reserved when placed, then counted if it is found on the server after saving; removed or changed before, it is given back. Numbers typed by hand never count. Once saved, they become “found” without running the analysis again; an older saved scan says so (“run again”). The &#x271A; badge in the window header shows what is left: orange below 20 %, red below 5 %.</p><p><b>RPP</b>: an address at the end of a driveway (private road or parking lot road within 80 m, its street within 250 m) becomes a residential place (RPP), the street button included. An out-of-town address (segment whose primary name has no city, carrying the BAN name with the commune as an alternate) becomes an RPP, through the street button as with the “+”. The RPP is created at the BAN position, with its address and its entry point on the nearest segment (or driveway); a refused address removes the place. Its lock is the one WME gives by default (no France table sets one for an RPP). RPP count in the quota. An address with no segment carrying the BAN name within 80 m, but near a drivable road of another name, also becomes an RPP: address “BAN name / commune”, entry on that road. Not when the street exists in WME under a name to check (article, spelling, type…): rename it first; no RPP is created in its place (0.30.14).</p><p><b>Number → RPP</b>: in the bubble of a number’s map point (saved, or placed by WBC and not saved yet), “⇄ Turn this number into an RPP” removes the number and creates an RPP in its place (same number, same street), entry point on the nearest unnamed segment or driveway (roundabout, private road…); the RPP is then selected so you can adjust its entry. A number placed by WBC only changes kind in the quota; a saved number counts 2.</p><p><b>RPP → number</b>: in the expanded street, the RPP of the street have their own chips; on hover, “⇄” replaces ONE RPP with a number on the nearest segment of its own street — the RPP’s street and city are the BAN name and the commune, so there is no ambiguity: another street nearer, or an access point on another street, no longer blocks (0.30.14). The same number already on the street within 150 m makes the RPP a duplicate, simply removed. No segment of the street within 80 m: it stays. Refused if the RPP has a name or a photo, another city or another street. Also by a click on its point on the map. Same quota; nothing is saved. The RPP lock is read: above your rank, the replacement becomes a suggestion when you save; otherwise the message says it. No change may be waiting to be saved (WME no longer lets scripts read pending changes); a replacement counts 2 in the quota (RPP removed, number placed). Also by selecting the RPP’s triangle in WME (WBC window open).</p><p><b>Stop</b>: while a long street is being filled (the map moves from area to area), the Stop button interrupts the pass; what is placed stays, to be checked. A failed placement is counted in the message. <b>Limit</b>: a number typed by hand and not yet saved is not seen as a duplicate — save before adding on the same street. Two WME tabs open at the same time do not see each other’s pending placements: place from a single tab.</p>',
-            ajHnQuotaTip: 'Sliding hour: a number counts for one hour from when it was placed. Only numbers placed by this button and actually saved are counted.',
+            hHnB: '<p><i>Add the house numbers</i> for a whole street: <b>L6</b> editors only. <b>One number at a time</b> and the <b>⇄</b> conversions (number → RPP, RPP → number) are open to <b>all ranks</b>, with the same checks and the same quota; without the right on the segment or the RPP (lock above your rank), WME turns the edit into a suggestion when you save — provided no direct edit is pending, and for a conversion only if both objects are in the same case. In the expanded row of a street, <i>Add the house numbers</i> places its missing addresses in WME — <b>one street at a time</b>, never a whole commune. For a single number: the “+” on its chip (on hover), or a click on its point on the map. WME’s own rights apply: for one number or a conversion, a segment locked above your rank (or outside your editable areas) gives a suggestion when you save; <i>Add the house numbers</i> for a whole street skips such segments, and the message says so.</p><p><b>Conditions</b>: the primary name of the segments is the BAN name (accents, case, apostrophes, spaces, hyphens and dots tolerated; a different spelling is only flagged) and their city is the commune or “Village (Commune)”. Each number goes to the nearest admitted segment (80 m at most); a number already present, even pending in this tab, is never placed again; a different (12 b / 12bis) or numeric suffix is left to the editor, unless WME only has the bare number (32 for 32 B): it is then placed, with a warning.</p><p><b>Nothing is saved</b>: placed numbers are circled in turquoise on the map (even with the window closed) and marked ✚ in the street; check them, then save or undo in WME.</p><p><b>Quota</b>: 500 edits per sliding hour, per editor and in this browser: numbers and RPP placed by WBC (“+”, <i>Add the house numbers</i>), “⇄” included (“↻” is outside the quota). Each edit is reserved when placed, then counted if it is found on the server after saving; removed or changed before, it is given back. Edits made by hand never count. Once saved, the numbers and RPP become “found” without running the analysis again; an older saved scan says so (“run again”). The &#x271A; badge in the window header shows what is left: orange below 20 %, red below 5 %.</p><p><b>RPP</b>: an address at the end of a driveway (private road or parking lot road within 80 m, its street within 250 m) becomes a residential place (RPP), the street button included. An out-of-town address (segment whose primary name has no city, carrying the BAN name with the commune as an alternate) becomes an RPP, through the street button as with the “+”. The RPP is created at the BAN position, with its address and its entry point on the nearest segment (or driveway); a refused address removes the place. Its lock is the one WME gives by default (no France table sets one for an RPP). RPP count in the quota. An address with no segment carrying the BAN name within 80 m, but near a drivable road of another name, also becomes an RPP: address “BAN name / commune”, entry on that road. Not when the street exists in WME under a name to check (article, spelling, type…): rename it first; no RPP is created in its place (0.30.14).</p><p><b>Number → RPP</b>: in the bubble of a number’s map point (saved, or placed by WBC and not saved yet), “⇄ Turn this number into an RPP” removes the number and creates an RPP in its place (same number, same street), entry point on the nearest unnamed segment or driveway (roundabout, private road…); the RPP is then selected so you can adjust its entry. A number placed by WBC only changes kind in the quota; a saved number counts 2.</p><p><b>RPP → number</b>: in the expanded street, the RPP of the street have their own chips; on hover, “⇄” replaces ONE RPP with a number on the nearest segment of its own street — the RPP’s street and city are the BAN name and the commune, so there is no ambiguity: another street nearer, or an entry point on another street, no longer blocks (0.30.14). The same number already on the street within 150 m makes the RPP a duplicate, simply removed. No segment of the street within 80 m: it stays. Refused if the RPP has a name or a photo, another city or another street. Also by a click on its point on the map. Same quota; nothing is saved. The RPP lock is read: above your rank, the replacement becomes a suggestion when you save; otherwise the message says it. No change may be waiting to be saved (WME no longer lets scripts read pending changes); a replacement counts 2 in the quota (RPP removed, number placed). Also by selecting the RPP’s triangle in WME (WBC window open).</p><p><b>Stop</b>: while a long street is being filled (the map moves from area to area), the Stop button interrupts the pass; what is placed stays, to be checked. A failed placement is counted in the message. <b>Limit</b>: a number typed by hand and not yet saved is not seen as a duplicate — save before adding on the same street. Two WME tabs open at the same time do not see each other’s pending placements: place from a single tab.</p>',
+            ajHnQuotaTip: '500 edits per sliding hour, per editor, in this browser: each number or RPP placed by WBC counts 1, “⇄” counts up to 2. The slot is reserved when placed, kept if the edit is found on the server after saving, given back otherwise. “↻” is outside the quota; edits made by hand never count.',
             ajHnLeft: n => 'Quota: ' + n + ' left this hour',
             ajHnFull: h => 'Quota reached — next adding at ' + h,
             ajHn1: 'Add this number',
@@ -434,28 +450,33 @@
             legTipDecale: 'number found, but its marker is off its BAN point',
             legTipRppDbl: 'RPP duplicating a number already on the street',
             legTipFound: 'BAN address found in WME',
-            corrSaveFail: (n, l) => 'WME did not save, with ' + n + ' “↻” correction(s) pending: ' + l + '. Reload the page: pending edits are kept. Please report it in the WBC thread.',
+            corrSaveFail: (n, l) => 'WME did not save, with ' + n + (un1(n) ? ' “↻” correction pending: ' : ' “↻” corrections pending: ') + l + '. Reload the page: pending edits are kept. Please report it in the WBC thread.',
+            ajHnSaveFail: n => 'WME did not save, with ' + n + (un1(n) ? ' WBC edit' : ' WBC edits') + ' pending (“+”, “⇄”). Reload the page: pending edits are kept. Please report it in the WBC thread.',
             legPose: 'placed or corrected by WBC, not saved yet',
-            legArret: 'line to a far-off arrival point',
+            legArret: 'line to a far-off entry point',
             corrProgress: (n, N, l) => 'Correcting ' + n + '/' + N + (l ? ': ' + l : '') + '…',
             corrZone: (n, N) => 'Correcting ' + n + '/' + N + ': loading the area of this number…',
             hovDecale: (m, s) => 'Found ' + m + ' m from its BAN point (beyond ' + s + ' m): check where it is placed',
             hovDup: 'Duplicate: this BAN address is already covered by another WME number',
             tagDecale: n => n + ' off',
-            tagDecaleTip: (n, s) => n + ' number(s) of this street found more than ' + s + ' m from their BAN point',
+            tagDecaleTip: (n, s) => n + (un1(n) ? ' number of this street found more than ' : ' numbers of this street found more than ') + s + (un1(n) ? ' m from its BAN point' : ' m from their BAN point'),
             tagRppDbl: n => 'RPP duplicate (' + n + ')',
             tagRppDblTip: l => 'RPP duplicating a number already on this street: ' + l + '. In the street, “⇄” on the RPP removes it.',
             kDecale: (n, s) => n + ' off by more than ' + s + ' m',
             kDecaleOld: 'off numbers: run the analysis again (older scan)',
             sbDecaleActif: 'Flag numbers off their BAN point',
             sbDecale: 'Flag numbers found off their BAN point beyond',
-            sbDecaleHint: 'Off by default. A help to spot a number placed far from its house, not a placement rule: a number may sit in the middle of the building — what matters for navigation is its stop point. Distance between the WME number and its BAN address; applied straight away, no new analysis.',
+            sbDecaleHint: 'Off by default. A help to spot a number placed far from its house, not a placement rule: a number may sit in the middle of the building — what matters for navigation is its entry point. Distance between the WME number and its BAN address; applied straight away, no new analysis.',
             corrTip: (o, n) => 'Correct: WME number “' + o + '” becomes “' + n + '” (same point). Outside the quota; nothing is saved.',
             corrLoin: b => 'It was matched from afar to BAN number “' + b + '”, which will become missing again.',
+            corrEntropTip: n => '“' + n + '” does not exist in the BAN: it may be a recent address. Check on the ground before correcting; “+” stays available.',
+            tropCorr: (w, b) => 'proposed for “↻” to become BAN “' + b + '”, or a recent address? Check before correcting or reporting.',
+            ajHnVille: (c, v, m) => 'Nothing placed and no RPP created: the “' + v + '” segment nearby belongs to the city “' + c + '” in WME, not “' + m + '”. Check the segment city, save, then try again.',
+            ajHnHorsCom: n => n + (un1(n) ? ' address' : ' addresses') + ' outside the municipality skipped: no RPP created on the neighbouring territory.',
             corrAdd: n => 'Correct the numbers (' + n + ')',
             corrAddTip: 'Rewrites at once the WME numbers of this street placed where another BAN address is (renumbered street) or written differently from the expected form (“2bis” ⇒ “2 bis”). Outside the quota. Nothing is saved: review, then save or undo in WME.',
             corrRunning: 'Correcting the numbers…',
-            corrDone: n => n + ' number(s) corrected: review, then save or undo in WME.',
+            corrDone: n => n + (un1(n) ? ' number corrected' : ' numbers corrected') + ': review, then save or undo in WME.',
             corrRefus: l => 'Left as they are: ' + l + ' (number not found or circular swap).',
             corrLockSkip: n => n + (un1(n) ? ' number' : ' numbers') + ' not corrected: segment that WME does not let you edit (lock or editable areas). Correct them one at a time with “↻”: each becomes a suggestion when you save.',
             ajHnZoom18: 'Zoom in to at least level 18: WME only loads house numbers from that zoom.',
@@ -473,6 +494,11 @@
             corrRppAbsent: 'not found in WME (zoom 18, Places layer shown?)',
             corrRppChange: 'changed since the analysis',
             corrRppSkip: l => 'RPPs left as they are (to check by hand): ' + l + '.',
+            corrHnAbsent: 'no longer on its segment (fixed or removed since the analysis?)',
+            corrHnChange: n => 'now reads “' + n + '”',
+            corrHnDeplace: d => 'moved by ' + d + ' m since the analysis',
+            corrHnNonRelu: 'could not be read again in WME',
+            corrHnSkip: l => 'Numbers left as they are (run the analysis again): ' + l + '.',
             corrRppTip: 'Residential place (RPP): only its number changes; street, city, entry point and lock are kept.',
             corrPoseTip: 'Corrected by WBC, not saved yet.',
             formeT: n => 'Placed but incorrect (' + n + ')',
@@ -481,7 +507,7 @@
             kCorr: n => 'incl. ' + n + ' to fix (↻)',
             corrBtn: (o, n) => 'Fix: ' + o + ' → ' + n,
             hovCorr: (o, n) => 'At this spot, WME has number “' + o + '”: “↻” changes it to “' + n + '”.',
-            corrTag: n => n + ' number(s) to correct in this street (↻)',
+            corrTag: n => n + (un1(n) ? ' number to correct in this street (↻)' : ' numbers to correct in this street (↻)'),
             ajHn1Exists: n => 'Number ' + n + ' is already in WME on this street: nothing placed.',
             ajHn1Rights: 'WME has not identified you as an editor (username and rank unreadable): reload WME, then try again.',
             ajHn1Lock: (n, v) => 'Number ' + n + ' will become a suggestion when you save: ' + (v ? 'its segment is locked at level ' + v + ', above your rank' : 'WME does not let you edit the house numbers of its segment directly') + '; an editor of sufficient rank will approve it.',
@@ -498,11 +524,11 @@
             cmpCert: 'The export used another “certified only” setting: the figures do not compare.',
             thDelta: 'Δ',
             thDeltaTip: d => 'Change in WME since the export of ' + d,
-            namesCsv: 'Gaps (CSV)',
+            namesCsv: 'Names to check (CSV)',
             namesCsvTip: 'The streets whose WME name differs from the BAN, with their segments and a WME link: to fix or to report.',
             namesNone: 'No name gap to export.',
             hTrackT: 'Following up and reporting',
-            hTrackB: '<p><b>Département map</b>: after a département, each commune is coloured by coverage (light = little, dark = much). Hover it for its figures; zoomed out, a click opens it.</p><p><b>Missing number</b>: with its street open, a dotted line goes to the segment that should probably carry it; its id is in the CSV.</p><p><b>Select the segments</b> of a street from its row: its segments are selected in WME.</p><p><b>Progress</b>: the CSV export is also a snapshot. Later, <i>Compare</i> reads it back and gives the change street by street (or commune by commune). Nothing is stored anywhere else.</p><p><b>Gaps (CSV)</b>: the streets to rename, with a WME link each, to fix or to send to the area managers.</p><p><b>Street tools</b>: in the expanded row of a street, icons with a counter — select the segments, add the house numbers, next street, report to the BAN or contact the town hall; the name of each shows on hover.</p><p><b>Commune boundary</b>: the polygon icon next to the exports draws the administrative boundary of the commune on the map; the choice is kept.</p>',
+            hTrackB: '<p><b>Département map</b>: after a département, each commune is coloured by coverage (light = little, dark = much). Hover it for its figures; zoomed out, a click opens it.</p><p><b>Missing number</b>: with its street open, a dotted line goes to the segment that should probably carry it; its id is in the CSV.</p><p><b>Select the segments</b> of a street from its row: its segments are selected in WME.</p><p><b>Progress</b>: the CSV export is also a snapshot. Later, <i>Compare</i> reads it back and gives the change street by street (or commune by commune). Nothing is stored anywhere else.</p><p><b>Names to check (CSV)</b>: the streets to rename, with a WME link each, to fix or to send to the area managers.</p><p><b>Street tools</b>: in the expanded row of a street, icons with a counter — select the segments, add the house numbers, next street, report to the BAN or contact the town hall; the name of each shows on hover.</p><p><b>Commune boundary</b>: the polygon icon next to the exports draws the administrative boundary of the commune on the map; the choice is kept.</p>',
             certOnlyTip: "Certified addresses only",
             layerSwitchTip: "Missing and extra numbers on the map",
             showFoundTip: "Also show found addresses",
@@ -513,6 +539,8 @@
             memoBanProg: (i, n) => 'BAN: checking ' + i + '/' + n,
             memoBanOk: 'BAN unchanged',
             memoBanMaj: d => 'BAN updated' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · revision of ' + d : ''),
+            srcBanTip: 'Revision date of the commune’s Base Adresse Locale, read from the BAN; none when the commune has published no BAL. Source to cite when you share figures or an export.',
             memoBanMajN: n => 'BAN updated: ' + n,
             memoBanErr: 'BAN: check failed',
             dejaHnDepuis: n => n + (un1(n) ? ' number added by WBC since then: relaunch' : ' numbers added by WBC since then: relaunch'),
@@ -543,14 +571,14 @@
             sbOpen: 'Ouvrir la fenêtre',
             sbHelp: 'Aide',
             hWhatT: 'Ce qui est comparé',
-            hWhatB: "<p>La <b>BAN</b> est le référentiel\u00a0: chaque adresse qu’elle recense devrait exister dans WME, en numéro sur un segment (HN) ou en point résidentiel (RPP).</p><p><b>Sources</b>, lues en direct\u00a0: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, État français\u00a0; Licence Ouverte Etalab 2.0\u00a0; la date de révision de chaque commune est affichée)\u00a0; les contours et listes de communes de <b>geo.api.gouv.fr</b> (API Découpage administratif, données INSEE et IGN, Licence Ouverte Etalab 2.0)\u00a0; l’<b>API publique des signalements BAN</b> (signalement.adresse.data.gouv.fr) pour l’état des signalements\u00a0; et WME sur les mêmes serveurs que l’éditeur. La zone n’a pas besoin d’être affichée ni chargée. Depuis le 12/11/2026, Waze accrédite la BAN pour la France (affichage et création assistée des numéros de rue, page Map Data Attribution)\u00a0; l’ajout d’une voie entière reste un geste de L6\u00a0; un numéro à la fois est ouvert à tous les rangs\u00a0; le tout sous quota.</p><p><b>Ce qui part du navigateur</b>\u00a0: vers geo.api.gouv.fr, en mode «\u00a0Centre de la carte\u00a0», le centre de la carte ARRONDI à 3 décimales (environ 100\u00a0m), et vos recherches de commune — sans identité ni cookie\u00a0; vers la BAN et l’API des signalements, le code INSEE de la commune\u00a0; au démarrage, GitHub (version-min.json, la version minimale\u00a0: une version retirée ne démarre pas) et GreasyFork (nouvelle version) sont seulement lus. Vers data.geopf.fr (Géoplateforme de l’IGN), case WBC du menu Calques cochée\u00a0: l’emprise de la vue, à partir du zoom 18, sans cookie. Rien d’autre\u00a0; votre pseudo ne part vers aucun tiers (seulement vers le Discuss de Waze, pour le bouton Copier).</p><p><b>Signaler à la BAN</b>\u00a0: ouvre l’outil officiel (signalement.adresse.data.gouv.fr) dans un nouvel onglet, sur la voie ou le numéro\u00a0; WBC n’envoie rien, c’est vous qui remplissez et envoyez le formulaire. Pour un numéro de WME absent de la BAN, le commentaire prérempli porte l’adresse lue dans Waze («\u00a0Adresse présente dans Waze\u00a0: …\u00a0»)\u00a0: relisez-le, modifiez-le ou effacez-le avant d’envoyer.</p><p><b>BAN de la vue</b>\u00a0: case WBC du menu Calques cochée et aucune analyse affichée à cet endroit, les adresses BAN de la vue s’affichent à partir du zoom 18, en gris (lecture seule)\u00a0; cerclées de vert quand WME a déjà le même numéro sur la même voie ou à moins de 30\u00a0m (numéros enregistrés, lieux résidentiels). <b>Ctrl+clic</b> (Cmd+clic sur Mac) sur le bouton de la carte\u00a0: la commune au centre est analysée, ou son balayage récent rouvert, et montrée sur la carte sans ouvrir la fenêtre. Tant que la fenêtre de WBC est ouverte, les calques WME «\u00a0Numéros de rue\u00a0» et «\u00a0Résidentiel\u00a0» sont affichés\u00a0; à sa fermeture, ils reprennent leur état d’avant.</p>",
+            hWhatB: "<p>La <b>BAN</b> est le référentiel\u00a0: chaque adresse qu’elle recense devrait exister dans WME, en numéro sur un segment (HN) ou en point résidentiel (RPP).</p><p><b>Sources</b>, lues en direct\u00a0: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, État français\u00a0; Licence Ouverte Etalab 2.0\u00a0; la date de révision de la Base Adresse Locale de la commune est affichée sous son nom quand la BAN la publie)\u00a0; les contours et listes de communes de <b>geo.api.gouv.fr</b> (API Découpage administratif, données INSEE et IGN, Licence Ouverte Etalab 2.0)\u00a0; l’<b>API publique des signalements BAN</b> (signalement.adresse.data.gouv.fr) pour l’état des signalements\u00a0; et WME sur les mêmes serveurs que l’éditeur. La zone n’a pas besoin d’être affichée ni chargée. Depuis le 12/11/2026, Waze accrédite la BAN pour la France (affichage et création assistée des numéros de rue, page Map Data Attribution)\u00a0; l’ajout d’une voie entière reste un geste de L6\u00a0; un numéro à la fois est ouvert à tous les rangs\u00a0; le tout sous quota.</p><p><b>Ce qui part du navigateur</b>\u00a0: vers geo.api.gouv.fr, en mode «\u00a0Centre de la carte\u00a0», le centre de la carte ARRONDI à 3 décimales (environ 100\u00a0m), et vos recherches de commune — sans identité ni cookie\u00a0; vers la BAN et l’API des signalements, le code INSEE de la commune\u00a0; au démarrage, une fois par jour au plus, GitHub (version-min.json, la version minimale\u00a0: une version retirée ne démarre pas) et GreasyFork (nouvelle version) sont seulement lus. Vers data.geopf.fr (Géoplateforme de l’IGN), case WBC du menu Calques cochée\u00a0: l’emprise de la vue, à partir du zoom 18, sans cookie. Rien d’autre\u00a0; votre pseudo ne part vers aucun tiers (seulement vers le Discuss de Waze, pour le bouton Copier).</p><p><b>Signaler à la BAN</b>\u00a0: ouvre l’outil officiel (signalement.adresse.data.gouv.fr) dans un nouvel onglet, sur la voie ou le numéro\u00a0; WBC n’envoie rien, c’est vous qui remplissez et envoyez le formulaire. Pour un numéro de WME absent de la BAN, le commentaire prérempli porte l’adresse lue dans Waze («\u00a0Adresse présente dans Waze\u00a0: …\u00a0»)\u00a0: relisez-le, modifiez-le ou effacez-le avant d’envoyer.</p><p><b>BAN de la vue</b>\u00a0: case WBC du menu Calques cochée et aucune analyse affichée à cet endroit, les adresses BAN de la vue s’affichent à partir du zoom 18, en gris (lecture seule)\u00a0; cerclées de vert quand WME a déjà le même numéro sur la même voie ou à moins de 30\u00a0m (numéros enregistrés, lieux résidentiels). <b>Ctrl+clic</b> (Cmd+clic sur Mac) sur le bouton de la carte\u00a0: la commune au centre est analysée, ou son balayage récent rouvert, et montrée sur la carte sans ouvrir la fenêtre. Tant que la fenêtre de WBC est ouverte, les calques WME «\u00a0Numéros de rue\u00a0» et «\u00a0Résidentiel\u00a0» sont affichés\u00a0; à sa fermeture, ils reprennent leur état d’avant.</p>",
             hMatchT: 'Quand un numéro est trouvé',
-            hMatchB: '<p>Une adresse BAN est trouvée quand WME porte le même numéro (suffixes compris\u00a0: <i>bis</i>, <i>ter</i>, lettres) à moins de 150\u00a0m, et\u00a0:</p><table class="wbc-help-table"><tr><td>1</td><td>sur une voie du même nom (nom principal ou alternatif), ou qui n’en diffère que par un article («\u00a0Avenue Sembrancher\u00a0» = «\u00a0Avenue de Sembrancher\u00a0»\u00a0; l’écart de nom reste signalé)\u00a0;</td></tr><tr><td>2</td><td>ou sur un segment qui porte les adresses de cette voie, <b>nommé ou non</b>\u00a0;</td></tr><tr><td>3</td><td>ou à moins de 30\u00a0m de l\'adresse.</td></tr></table><p>La règle 1 est essayée partout d\'abord, puis la 2, puis la 3. Un numéro WME ne sert qu\'une fois.</p>',
+            hMatchB: '<p>Une adresse BAN est trouvée quand WME porte le même numéro (suffixes compris\u00a0: <i>bis</i>, <i>ter</i>, lettres) à moins de 150\u00a0m, et\u00a0:</p><table class="wbc-help-table"><tr><td>1</td><td>sur une voie du même nom (nom principal ou alternatif), ou qui n’en diffère que par un article («\u00a0Avenue Sembrancher\u00a0» = «\u00a0Avenue de Sembrancher\u00a0»\u00a0; l’écart de nom reste signalé)\u00a0;</td></tr><tr><td>2</td><td>ou sur un segment qui porte les adresses de cette voie, <b>nommé ou non</b>\u00a0;</td></tr><tr><td>3</td><td>ou à moins de 30\u00a0m de l’adresse.</td></tr></table><p>La règle 1 est essayée partout d’abord, puis la 2, puis la 3. Un numéro WME ne sert qu’une fois.</p>',
             hNamesT: 'La colonne «\u00a0Voie WME\u00a0»',
-            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>les segments proches des adresses portent le nom de la BAN.</td></tr><tr><td><i>nom</i></td><td>ils portent un autre nom\u00a0: le nom à vérifier.</td></tr><tr><td><i>sans nom</i></td><td>ils ne portent aucun nom.</td></tr><tr><td><i>aucun segment</i></td><td>aucun segment à moins de 80\u00a0m des adresses.</td></tr><tr><td>&#x2713; alt</td><td>le nom de la BAN est porté en nom <b>alternatif</b>\u00a0; le nom principal est affiché à côté.</td></tr><tr><td>n° de route</td><td>le nom principal est un numéro de route et le nom de la BAN manque aux noms alternatifs\u00a0: à ajouter.</td></tr><tr><td>type</td><td>seul le type de voie diffère (Rue / Chemin…).</td></tr><tr><td>article · orthographe · partiel</td><td>noms proches\u00a0: un article, une ou deux lettres, ou une forme abrégée. <i>absente de WME</i>\u00a0: la voie n’existe pas dans WME, le nom montré est celui de la voisine.</td></tr><tr><td>&#x2713; parking</td><td>aucun segment nommé, mais un lieu Parking voisin porte le nom de la BAN\u00a0: rien à renommer.</td></tr><tr><td>&#x2713; graphie BAN</td><td>même nom à un tiret ou un point près («\u00a0Rue Paul-Louis Courier\u00a0» / «\u00a0Rue Paul Louis Courier\u00a0»)\u00a0: rien à renommer.</td></tr></table><p>Un numéro manquant en orange avec <b>≠</b> existe dans WME avec un autre suffixe (12 b / 12bis)\u00a0: à vérifier. Si WME n’a que le numéro seul (32 / 32 B), il se pose quand même et l’avertissement reste.</p><p>&#x26A0; signale un nom de la BAN qu\'aucun segment de la commune ne porte.</p>',
+            hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>les segments proches des adresses portent le nom de la BAN.</td></tr><tr><td><i>nom</i></td><td>ils portent un autre nom\u00a0: le nom à vérifier.</td></tr><tr><td><i>sans nom</i></td><td>ils ne portent aucun nom.</td></tr><tr><td><i>aucun segment</i></td><td>aucun segment à moins de 80\u00a0m des adresses.</td></tr><tr><td>&#x2713; alt</td><td>le nom de la BAN est porté en nom <b>alternatif</b>\u00a0; le nom principal est affiché à côté.</td></tr><tr><td>n° de route</td><td>le nom principal est un numéro de route et le nom de la BAN manque aux noms alternatifs\u00a0: à ajouter.</td></tr><tr><td>type</td><td>seul le type de voie diffère (Rue / Chemin…).</td></tr><tr><td>article · orthographe · partiel</td><td>noms proches\u00a0: un article, une ou deux lettres, ou une forme abrégée. <i>absente de WME</i>\u00a0: la voie n’existe pas dans WME, le nom montré est celui de la voisine.</td></tr><tr><td>&#x2713; parking</td><td>aucun segment nommé, mais un lieu Parking voisin porte le nom de la BAN\u00a0: rien à renommer.</td></tr><tr><td>&#x2713; graphie BAN</td><td>même nom à un tiret ou un point près («\u00a0Rue Paul-Louis Courier\u00a0» / «\u00a0Rue Paul Louis Courier\u00a0»)\u00a0: rien à renommer.</td></tr></table><p>Un numéro manquant en orange avec <b>≠</b> existe dans WME avec un autre suffixe (12 b / 12bis)\u00a0: à vérifier. Si WME n’a que le numéro seul (32 / 32 B), il se pose quand même et l’avertissement reste.</p><p>&#x26A0; signale un nom de la BAN qu’aucun segment de la commune ne porte.</p>',
             hLimitsT: 'Bon à savoir',
-            hLimitsB: "<p>Un département entier prend quelques minutes\u00a0: la BAN se lit commune par commune, WME par carreaux d’environ 5\u00a0km. Le bouton Arrêter l’interrompt\u00a0; ce qui est fait reste affiché, et les communes en échec se reprennent seules.</p><p>Paris, Marseille et Lyon se lisent arrondissement par arrondissement. Les balayages sont gardés dans ce navigateur seulement (IndexedDB), jamais ailleurs, avec vos préférences (périmètre, interrupteurs, place de la fenêtre, couleurs des points)\u00a0; ils sont signalés quand la BAN ou WME a changé depuis.</p>",
-            hSafeB: "Le script ne modifie la carte qu’à la demande d’un éditeur\u00a0: le «\u00a0+\u00a0» d’une adresse (un numéro ou un RPP, tous rangs)\u00a0; et, pour un L6, «\u00a0Ajouter les numéros\u00a0» (voie par voie\u00a0: numéros, et RPP au bout d’une allée), «\u00a0⇄\u00a0» (un RPP remplacé par un numéro) et «\u00a0Transformer ce numéro en RPP\u00a0» — 500 par heure glissante au plus, pour chacun\u00a0; il n’enregistre jamais. Ses résultats restent dans ce navigateur.",
+            hLimitsB: "<p>Un département entier prend quelques minutes\u00a0: la BAN se lit commune par commune, WME par carreaux d’environ 5\u00a0km. Le bouton Arrêter l’interrompt\u00a0; ce qui est fait reste affiché, et les communes en échec se reprennent seules.</p><p>Paris, Marseille et Lyon se lisent arrondissement par arrondissement. Les balayages sont gardés dans ce navigateur seulement (IndexedDB), jamais ailleurs, avec vos préférences (périmètre, interrupteurs, place de la fenêtre, couleurs des points)\u00a0; ils sont signalés quand la BAN ou WME a changé depuis.</p><p><b>Fenêtre détachée</b> (⧉ de l’en-tête, Chrome et Edge seulement)\u00a0: la fenêtre de WBC passe dans une fenêtre à part, sur un second écran par exemple\u00a0; ⧉ ou la fermeture de cette fenêtre la remet dans WME. La carte, ses bulles et les avis restent dans la fenêtre de WME, et les raccourcis de WME (Ctrl+Z…) ne répondent pas dans la fenêtre détachée.</p>",
+            hSafeB: "Le script ne modifie la carte qu’à la demande d’un éditeur. Tous rangs\u00a0: le «\u00a0+\u00a0» d’une adresse (un numéro ou un RPP), «\u00a0⇄\u00a0» (un RPP remplacé par un numéro, ou un numéro transformé en RPP) et «\u00a0↻\u00a0» (un numéro réécrit). Pour un L6\u00a0: «\u00a0Ajouter les numéros\u00a0» et «\u00a0Corriger les numéros\u00a0» d’une voie entière. Au plus 500 éditions par heure glissante, pour chacun («\u00a0↻\u00a0» hors quota)\u00a0; il n’enregistre jamais. Ses résultats restent dans ce navigateur.",
             remTitle: "Vous restez responsable de vos éditions",
             remBody: "<p>WME BAN Coverage <b>propose</b>\u00a0: il n’enregistre jamais rien lui\u2011même.</p><p>Chaque numéro, RPP ou conversion «\u00a0⇄\u00a0» arrive dans WME comme une modification en attente. Relisez-la sur la carte, puis enregistrez-la ou annulez-la dans WME.</p><p>Ce que vous enregistrez est votre édition, comme si vous l’aviez faite à la main.</p>",
             remNote: "Ce rappel s’affiche une fois par navigateur\u00a0; il se revoit depuis l’onglet du script.",
@@ -566,11 +594,13 @@
             modeCommune: 'Autre commune',
             modeDep: 'Département',
             modeLbl: 'Périmètre',
-            hereHint: 'La commune sous le centre de la carte, prise au lancement de l\'analyse.',
+            filtreLbl: 'Voies affichées',
+            hereHint: 'La commune sous le centre de la carte, prise au lancement de l’analyse.',
             searchPh: 'Nom, code postal ou code INSEE',
             searchNone: 'Aucune commune trouvée',
             depChoose: 'Choisir un département',
             analyse: 'Analyser',
+            analyseCom: c => 'Analyser ' + c,
             stop: 'Arrêter',
             stLocate: 'Recherche de la commune…',
             stBan: 'BAN\u00a0: lecture…',
@@ -584,13 +614,13 @@
             renomNeuf: n => 'Segment créé dans WME près de ' + n + (n > 1 ? '\u00a0voies qui n’en avaient aucun\u00a0: les chiffres de la commune sont à jour.' : '\u00a0voie qui n’en avait aucun\u00a0: les chiffres de la commune sont à jour.'),
             stStopped: 'Arrêté',
             errNoCommune: 'Aucune commune française sous le centre de la carte.',
-            errPick: 'Choisissez d\'abord une commune.',
-            errPickDep: 'Choisissez d\'abord un département.',
+            errPick: 'Choisissez d’abord une commune.',
+            errPickDep: 'Choisissez d’abord un département.',
             errBan: 'La BAN ne recense aucune adresse pour cette commune.',
             errNet: m => 'Erreur réseau\u00a0: ' + m,
-            errWme: 'WME n\'a pas répondu\u00a0: ',
-            errGrant: 'Le gestionnaire de scripts a refusé l\'appel réseau (vérifiez les autorisations du script).',
-            emptyIntro: 'Choisissez un périmètre, puis lancez l\'analyse.',
+            errWme: 'WME n’a pas répondu\u00a0: ',
+            errGrant: 'Le gestionnaire de scripts a refusé l’appel réseau (vérifiez les autorisations du script).',
+            emptyIntro: 'Choisissez un périmètre, puis lancez l’analyse.',
             kBan: 'Adresses BAN',
             kCert: n => n + (un(n) ? " certifiée" : " certifiées"),
             kWme: 'Trouvées dans WME',
@@ -610,7 +640,7 @@
             filterPh: 'Filtrer les voies',
             filterClear: 'Effacer le filtre',
             filterCount: (n, m) => n + (un(n) ? ' voie sur ' : ' voies sur ') + m,
-            layerSwitch: 'Écarts',
+            layerSwitch: 'À traiter',
             exportCsv: 'Export CSV',
             thStreetBan: 'Voie BAN',
             thStreetWme: 'Voie WME',
@@ -618,6 +648,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'Écart',
+            thGapCourt: 'Écart',
             thRep: 'Repères',
             thRepTip: '↻ numéros à corriger · ↔ numéros trouvés décalés de leur point BAN · RPP en double d’un numéro. Survolez un repère pour le détail.',
             thCommune: 'Commune',
@@ -645,7 +676,7 @@
             sbRppNum: "Numéro des RPP",
             sbRppNumHint: "Écrit son numéro sous le triangle de chaque lieu résidentiel (RPP) chargé dans WME, à partir du zoom 17\u00a0: plus besoin de cliquer dessus pour savoir lequel c’est. Affichage seulement.",
             sbRppLot: "RPP en lot",
-            sbRppLotHint: "« Ajouter les numéros » d’une voie entière crée aussi les lieux résidentiels (RPP) quand il le faut (bout d’allée, hors agglomération, pas de rue de ce nom à côté). Coupé : seuls les numéros de segment sont posés ; les RPP restent au « + », un par un. Réservé aux L6 ; réglage propre à chaque éditeur.",
+            sbRppLotHint: "«\u00a0Ajouter les numéros\u00a0» d’une voie entière crée aussi les lieux résidentiels (RPP) quand il le faut (bout d’allée, hors agglomération, pas de rue de ce nom à côté). Coupé\u00a0: seuls les numéros de segment sont posés\u00a0; les RPP restent au «\u00a0+\u00a0», un par un. Réservé aux L6\u00a0; réglage propre à chaque éditeur.",
             sbColors: "Couleurs",
             sbColorsReset: "Couleurs par défaut",
             legColMap: "Carte des communes",
@@ -659,6 +690,8 @@
             hovWmeStreet: r => 'Voie WME\u00a0: ' + r,
             sizeTip: "Agrandir / rétablir la fenêtre",
             smallTip: "Petite fenêtre (taille d’origine)",
+            detachTip: "Détacher dans une fenêtre à part (second écran). Les raccourcis de WME (Ctrl+Z…) n’y répondent pas.",
+            attachTip: "Remettre la fenêtre dans WME",
             searching: "Recherche…",
             tipAnalyse: "Lancer l’analyse du périmètre choisi. S’il a déjà été balayé, sa date s’affiche d’abord, avec Ouvrir ou Relancer.",
             tipAnalyseCom: c => "Relancer l’analyse de " + c + ", la commune affichée, et mettre à jour sa ligne du département. Pour balayer tout le département, revenez-y d’abord.",
@@ -720,7 +753,9 @@
             stDoneErr: (s, n) => 'Terminé en ' + s + '\u00a0s — ' + n + (un(n) ? ' commune en échec' : ' communes en échec'),
             noCert: n => 'Aucune des ' + n + ' adresses BAN de cette commune n’est certifiée.',
             errSession: "Session WME expirée\u00a0: rechargez la page.",
+            errWmeSerie: (n, m) => 'Département arrêté\xa0: WME a échoué pour ' + n + ' communes de suite (' + m + '). Les communes restantes sont marquées en échec\xa0; reprenez-les plus tard.',
             errFormat: src => src + ' a répondu dans un format inattendu\u00a0: le script est à mettre à jour.',
+            ecrCoupee: 'Écritures suspendues par l’auteur du script jusqu’à la publication d’une version corrigée\u00a0; la lecture et l’analyse restent possibles.',
             delNote: "non rattachables à une commune déléguée",
             mapCap: (a, b) => 'Carte\u00a0: ' + a + ' points montrés sur ' + b + ' dans la vue (zoomez pour tout voir)',
             legExtra: "en trop dans WME",
@@ -753,11 +788,11 @@
             kSuf: n => 'dont ' + n + (un(n) ? ' suffixe à vérifier' : ' suffixes à vérifier'),
             tipSuf: w => "WME porte " + w + "\u00a0: suffixe à vérifier",
             kFar: n => 'dont ' + n + ' loin de la BAN',
-            kArret: n => n + ' point(s) d’arrivée éloigné(s)',
-            hovArret: d => 'Point d’arrivée à ' + d + '\u00a0m de trop',
-            arrT: (n, s) => 'Points d’arrivée éloignés (' + n + ', au-delà de ' + s + '\u00a0m)',
-            arrTip: d => 'Le point d’arrivée est ' + d + '\u00a0m plus loin que la rue voisine du numéro WME\u00a0: le vérifier dans WME',
-            sbArret: 'Signaler un point d’arrivée éloigné au-delà de',
+            kArret: n => n + (un(n) ? ' point d’entrée éloigné' : ' points d’entrée éloignés'),
+            hovArret: d => 'Point d’entrée à ' + d + '\u00a0m de trop',
+            arrT: (n, s) => 'Points d’entrée éloignés (' + n + ', au-delà de ' + s + '\u00a0m)',
+            arrTip: d => 'Le point d’entrée est ' + d + '\u00a0m plus loin que la rue voisine du numéro WME\u00a0: le vérifier dans WME',
+            sbArret: 'Signaler un point d’entrée éloigné au-delà de',
             sbArretHint: 'Distance entre le numéro WME et l’endroit où Waze conduit, moins sa distance à sa rue. Appliqué tout de suite, sans nouvelle analyse.',
             tipFar: d => 'Placé à ' + d + '\u00a0m de l’adresse BAN',
             certOnly: 'Certifiées',
@@ -799,13 +834,13 @@
             nextStreet: n => 'Voie suivante (' + n + ' à ajouter)',
             tipNextStreet: 'Ouvre la voie de la commune où «\xa0Ajouter\xa0» a le plus de numéros à poser (nom BAN en principal ou en alternatif), en sautant les voies déjà ouvertes par ce bouton.',
             nextStreetNone: 'Plus aucune voie prête\xa0: celles qui restent ont leurs numéros posés, ou un nom à corriger d’abord.',
-            ajHnAddTip: r => 'Réservé aux L6\u00a0: pose dans WME les numéros manquants de cette voie, sur les segments dont le nom principal est celui de la BAN (accents, casse, tirets et points tolérés) et dont la ville est la commune ou «\u00a0Village (Commune)\u00a0»\u00a0; une adresse au bout d’une allée devient un RPP. Au plus 500 éditions par heure glissante, comptées à l’enregistrement (reste ' + r + '). Rien n’est enregistré\u00a0: vérifiez, puis enregistrez dans WME. Les adresses hors agglomération deviennent aussi des RPP.',
+            ajHnAddTip: r => 'Réservé aux L6\u00a0: pose dans WME les numéros manquants de cette voie, sur les segments dont le nom principal est celui de la BAN (accents, casse, tirets et points tolérés) et dont la ville est la commune ou «\u00a0Village (Commune)\u00a0»\u00a0; une adresse au bout d’une allée devient un RPP. Au plus 500 éditions par heure glissante, réservées dès la pose, rendues si elles ne sont pas enregistrées (reste ' + r + '). Rien n’est enregistré\u00a0: vérifiez, puis enregistrez dans WME. Les adresses hors agglomération deviennent aussi des RPP.',
             ajHnNoName: 'Le nom WME de cette voie n’est pas celui de la BAN\xa0: l’ajout automatique exige un nom principal identique à la BAN.',
             ajHnNone: 'Aucun numéro à ajouter automatiquement sur cette voie.',
-            ajHnLoin: n => 'Aucun numéro à ajouter automatiquement\u00a0: ' + n + ' adresse(s) à plus de 80\u00a0m de la voie tracée dans WME. Rapproche le segment s’il est mal placé.',
-            ajHnNomEcart: (w, b) => 'Aucun numéro à ajouter automatiquement\u00a0: dans WME, les segments de cette voie s’appellent «\u00a0' + w + '\u00a0», et non «\u00a0' + b + '\u00a0» comme dans la BAN. Donne-leur le nom de la BAN.',
+            ajHnLoin: n => 'Aucun numéro à ajouter automatiquement\u00a0: ' + n + (un(n) ? ' adresse' : ' adresses') + ' à plus de 80\u00a0m de la voie tracée dans WME. Rapprochez le segment s’il est mal placé.',
+            ajHnNomEcart: (w, b) => 'Aucun numéro à ajouter automatiquement\u00a0: dans WME, les segments de cette voie s’appellent «\u00a0' + w + '\u00a0», et non «\u00a0' + b + '\u00a0» comme dans la BAN. Donnez-leur le nom de la BAN.',
             ajHnRenommer: (w, b) => 'Rien n’est posé, et aucun RPP n’est créé à la place\xa0: la voie existe dans WME sous le nom «\xa0' + w + '\xa0», et non «\xa0' + b + '\xa0» (nom à vérifier). Renommez d’abord la voie dans WME, enregistrez, puis relancez.',
-            ajHnQuota: h => 'Quota atteint (500 numéros par heure)\xa0: prochain ajout possible à ' + h + '.',
+            ajHnQuota: h => 'Quota atteint (500 éditions par heure)\xa0: prochain ajout possible à ' + h + '.',
             ajHnRunning: 'Ajout des numéros…',
             rhnToRppRunning: 'Conversion du numéro en RPP…',
             rhnRunning: 'Conversion du RPP en numéro…',
@@ -842,7 +877,7 @@
             rhnCity: v => 'Ce RPP est rattaché à «\xa0' + v + '\xa0», pas à la commune\xa0: il n’est pas converti.',
             rhnStreet: r => 'Ce RPP porte la rue «\xa0' + r + '\xa0», pas le nom BAN de la voie\xa0: il n’est pas converti.',
             rhnNoSeg: 'Aucun segment de la voie (nom BAN en principal, commune pour ville) à moins de 80\xa0m\xa0: le RPP est sans doute hors agglomération, il reste.',
-            rhnLegit: v => 'Le point d’accès du RPP donne sur «\xa0' + v + '\xa0», pas sur sa rue\xa0: le RPP dit un décalage qu’un numéro de segment ne saurait exprimer, il reste.',
+            rhnLegit: v => 'Le point d’entrée du RPP donne sur «\xa0' + v + '\xa0», pas sur sa rue\xa0: le RPP dit un décalage qu’un numéro de segment ne saurait exprimer, il reste.',
             rhnUnsure: 'Rien de net ne permet de trancher (autre voie aussi proche, ou trop loin de toute voie)\xa0: le RPP reste, à voir à la main.',
             rhnFormat: n => 'Le numéro «\xa0' + n + '\xa0» ne s’écrit pas comme un numéro de segment\xa0: à voir à la main.',
             rhnErr: m => 'Remplacement interrompu\xa0: ' + m,
@@ -852,10 +887,14 @@
             rhnSelVersHn: 'en numéro',
             rhnVersRppTip: 'Retire ce numéro du segment et crée à sa place un RPP (même numéro, même voie), point d’entrée sur le segment le plus proche sans nom ou sur une allée (chemin privé, voie de parking)\xa0; le RPP est ensuite sélectionné pour ajuster son entrée. Compte au quota\xa0; rien n’est enregistré.',
             rhnVersRppDone: (n, q) => 'N°\xa0' + n + ' transformé en RPP — ajustez son point d’entrée si besoin (il est sélectionné), puis enregistrez dans WME. Reste au quota\xa0: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'Un RPP n°\xa0' + n + ' de cette rue existe déjà à ' + d + '\xa0m\xa0: rien n’est changé.',
+            rhnVersRppEntree: (v, d) => v ? 'Point d’entrée sur «\xa0' + v + '\xa0», à ' + d + '\xa0m.' : 'Point d’entrée sur une voie sans nom, à ' + d + '\xa0m.',
+            illisibleRpp: 'Lecture des RPP existants impossible dans WME\xa0: rien n’est posé ni changé.',
+            occupeGeste: 'Une écriture WBC est en cours\xa0: attendez qu’elle se termine.',
             rhnVersRppAbsent: n => 'Le numéro ' + n + ' est introuvable dans WME (segment non chargé, ou numéro déjà retiré)\xa0: rien n’est changé.',
             rhnVersRppTipPose: 'Transformé en RPP (pas encore enregistré).',
             ajHnSkip: n => n + (un(n) ? ' adresse écartée' : ' adresses écartées') + ' (détail dans la console).',
-            ajHnRppLot: n => n + ' RPP ' + (un(n) ? 'laissé' : 'laissés') + ' au « + » (option « RPP en lot » coupée).',
+            ajHnRppLot: n => n + ' RPP ' + (un(n) ? 'laissé' : 'laissés') + ' au «\u00a0+\u00a0» (option «\u00a0RPP en lot\u00a0» coupée).',
             ajHnCut: (n, h) => n + (un(n) ? ' adresse non posée' : ' adresses non posées') + '\xa0: quota atteint, reprise possible à ' + h + '.',
             ajHnNoSeg: 'Aucun segment chargé ne porte exactement ce nom en nom principal avec la commune pour ville\xa0: rien n’a été posé.',
             ajHnErr: m => 'Ajout interrompu\xa0: ' + m,
@@ -863,11 +902,11 @@
             ajHnSee: n => un(n) ? 'Il est entouré en turquoise sur la carte.' : 'Ils sont entourés en turquoise sur la carte.',
             ajHnPoseTip: 'Posé par WBC, pas encore enregistré\xa0: cliquez pour centrer la carte dessus.',
             ajZoom17: 'Zoomez au niveau 17 ou plus\u00a0: en dessous, WME ne charge pas les lieux résidentiels. La carte reste où elle est.',
-            ajHnSaved: (c, r, q) => 'Enregistrement\xa0: ' + c + (un(c) ? ' numéro compté' : ' numéros comptés') + ', ' + r + ' rendu(s) au quota (retirés avant l’enregistrement). Reste au quota\xa0: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'Enregistrement\xa0: ' + c + (un(c) ? ' édition comptée' : ' éditions comptées') + ', ' + r + (un(r) ? ' rendue' : ' rendues') + ' au quota (retirées avant l’enregistrement). Reste au quota\xa0: ' + q + '.',
             ajHnSavedTip: 'Posé par WBC et enregistré.',
             hHnT: 'Ajouter les numéros',
-            hHnB: '<p><i>Ajouter les numéros</i> d’une voie entière\u00a0: éditeurs <b>L6</b> seulement. <b>Un numéro à la fois</b> et les conversions <b>⇄</b> (numéro → RPP, RPP → numéro) sont ouverts à <b>tous les rangs</b>, avec les mêmes contrôles et le même quota\u00a0; sans droit sur le segment ou le RPP (verrou au-dessus de votre rang), WME en fait une suggestion à l’enregistrement — s’il n’y a pas de modification directe en attente, et pour une conversion seulement si les deux objets sont dans le même cas. Dans la ligne dépliée d’une voie, <i>Ajouter les numéros</i> pose dans WME ses adresses manquantes — <b>voie par voie</b>, jamais pour toute la commune. Pour un seul numéro\u00a0: le «\u00a0+\u00a0» de sa pastille (au survol), ou un clic sur son point de la carte. Les droits de WME s’appliquent\u00a0: pour un seul numéro ou une conversion, un segment verrouillé au-dessus de votre rang (ou hors de vos zones d’édition) donne une suggestion à l’enregistrement\u00a0; <i>Ajouter les numéros</i> d’une voie entière saute ces segments, et le message le dit.</p><p><b>Conditions</b>\u00a0: le nom principal des segments est celui de la BAN (accents, casse, apostrophes, espaces, tirets et points tolérés\u00a0; une graphie différente est seulement signalée) et leur ville est la commune ou «\u00a0Village (Commune)\u00a0». Chaque numéro va au segment admis le plus proche (80\u00a0m au plus)\u00a0; un numéro déjà présent, même en attente dans cet onglet, n’est jamais reposé\u00a0; un suffixe différent (12 b / 12bis) ou chiffré est laissé à l’éditeur, sauf si WME n’a que le numéro seul (32 pour 32 B)\u00a0: il est alors posé, avec un avertissement.</p><p><b>Rien n’est enregistré</b>\u00a0: les numéros posés sont entourés en turquoise sur la carte (même fenêtre fermée) et marqués ✚ dans la voie\u00a0; relisez-les, puis enregistrez ou annulez avec WME.</p><p><b>Quota</b>\u00a0: 500 numéros par heure glissante. Un numéro est réservé à l’ajout, puis compté s’il se retrouve sur le serveur après l’enregistrement\u00a0; retiré ou modifié avant, il est rendu. Les numéros saisis à la main ne comptent jamais. Une fois enregistrés, ils passent en «\u00a0trouvés\u00a0» sans relancer l’analyse\u00a0; un balayage gardé plus ancien le signale («\u00a0relancez\u00a0»). La pastille &#x271A; de l’en-tête de la fenêtre donne ce qui reste\u00a0: orange sous 20\u00a0%, rouge sous 5\u00a0%.</p><p><b>RPP</b>\u00a0: une adresse au bout d’une allée (chemin privé ou voie de parking à moins de 80\u00a0m, sa voie à moins de 250\u00a0m) devient un POI résidentiel (RPP), bouton de la voie compris. Une adresse hors agglomération (segment au nom principal sans ville, qui porte le nom BAN avec la commune en alternatif) devient un RPP, par le bouton de la voie comme par le «\u00a0+\u00a0». Le RPP est créé à la position BAN, avec son adresse et son point d’entrée sur le segment (ou l’allée) le plus proche\u00a0; une adresse refusée retire le POI. Son verrou est celui que WME donne d’office (aucune table France n’en fixe pour un RPP). Les RPP comptent au quota. Une adresse sans aucun segment au nom BAN à moins de 80\u00a0m, mais proche d’une voie roulable d’un autre nom, devient aussi un RPP\u00a0: adresse «\u00a0nom BAN / commune\u00a0», entrée sur cette voie. Pas quand la voie existe dans WME sous un nom à vérifier (article, orthographe, type…)\u00a0: renommez-la d’abord\u00a0; aucun RPP n’est créé à sa place (0.30.14).</p><p><b>Numéro → RPP</b>\u00a0: dans la bulle du point d’un numéro (enregistré, ou posé par WBC et pas encore enregistré), «\u00a0⇄ Transformer ce numéro en RPP\u00a0» retire le numéro et crée à sa place un RPP (même numéro, même voie), point d’entrée sur le segment sans nom ou l’allée le plus proche (rond-point, chemin privé…)\u00a0; le RPP est ensuite sélectionné pour ajuster son entrée. Un numéro posé par WBC change seulement de nature au quota\u00a0; un numéro enregistré compte 2.</p><p><b>RPP → numéro</b>\u00a0: dans la voie dépliée, les RPP de la voie ont leurs pastilles\u00a0; au survol, «\u00a0⇄\u00a0» remplace UN RPP par un numéro sur le segment le plus proche de sa propre rue — rue et ville du RPP sont le nom BAN et la commune, il n’y a donc pas d’ambiguïté\u00a0: une autre voie plus proche, ou un point d’accès sur une autre voie, ne bloque plus (0.30.14). Le même numéro déjà posé sur la rue à moins de 150\u00a0m fait du RPP un doublon, simplement retiré. Aucun segment de la rue à moins de 80\u00a0m\u00a0: il reste. Refusé si le RPP a un nom ou une photo, une autre ville ou une autre rue. Aussi par un clic sur son point de la carte. Même quota\u00a0; rien n’est enregistré. Le verrou du RPP est lu\u00a0: au-dessus de votre rang, le remplacement devient une suggestion à l’enregistrement\u00a0; sinon le message le dit. Aucune modification ne doit attendre l’enregistrement (WME ne laisse plus lire aux scripts ce qui est en attente)\u00a0; un remplacement compte 2 au quota (RPP retiré, numéro posé). Aussi en sélectionnant le triangle du RPP dans WME (fenêtre de WBC ouverte).</p><p><b>Arrêter</b>\u00a0: pendant l’ajout d’une voie longue (la carte se déplace de zone en zone), le bouton Arrêter interrompt la passe\u00a0; ce qui est posé reste, à relire. Une pose en échec est comptée dans le message. <b>Limite</b>\u00a0: un numéro tapé à la main et pas encore enregistré n’est pas vu comme doublon — enregistrez avant d’ajouter sur la même voie. Deux onglets WME ouverts en même temps ne voient pas leurs poses en attente l’un de l’autre\u00a0: posez depuis un seul onglet.</p>',
-            ajHnQuotaTip: 'Heure glissante\u00a0: un numéro compte pendant une heure à partir de son ajout. Seuls les numéros posés par ce bouton et réellement enregistrés sont comptés.',
+            hHnB: '<p><i>Ajouter les numéros</i> d’une voie entière\u00a0: éditeurs <b>L6</b> seulement. <b>Un numéro à la fois</b> et les conversions <b>⇄</b> (numéro → RPP, RPP → numéro) sont ouverts à <b>tous les rangs</b>, avec les mêmes contrôles et le même quota\u00a0; sans droit sur le segment ou le RPP (verrou au-dessus de votre rang), WME en fait une suggestion à l’enregistrement — s’il n’y a pas de modification directe en attente, et pour une conversion seulement si les deux objets sont dans le même cas. Dans la ligne dépliée d’une voie, <i>Ajouter les numéros</i> pose dans WME ses adresses manquantes — <b>voie par voie</b>, jamais pour toute la commune. Pour un seul numéro\u00a0: le «\u00a0+\u00a0» de sa pastille (au survol), ou un clic sur son point de la carte. Les droits de WME s’appliquent\u00a0: pour un seul numéro ou une conversion, un segment verrouillé au-dessus de votre rang (ou hors de vos zones d’édition) donne une suggestion à l’enregistrement\u00a0; <i>Ajouter les numéros</i> d’une voie entière saute ces segments, et le message le dit.</p><p><b>Conditions</b>\u00a0: le nom principal des segments est celui de la BAN (accents, casse, apostrophes, espaces, tirets et points tolérés\u00a0; une graphie différente est seulement signalée) et leur ville est la commune ou «\u00a0Village (Commune)\u00a0». Chaque numéro va au segment admis le plus proche (80\u00a0m au plus)\u00a0; un numéro déjà présent, même en attente dans cet onglet, n’est jamais reposé\u00a0; un suffixe différent (12 b / 12bis) ou chiffré est laissé à l’éditeur, sauf si WME n’a que le numéro seul (32 pour 32 B)\u00a0: il est alors posé, avec un avertissement.</p><p><b>Rien n’est enregistré</b>\u00a0: les numéros posés sont entourés en turquoise sur la carte (même fenêtre fermée) et marqués ✚ dans la voie\u00a0; relisez-les, puis enregistrez ou annulez avec WME.</p><p><b>Quota</b>\u00a0: 500 éditions par heure glissante, par éditeur et dans ce navigateur\u00a0: numéros et RPP posés par WBC («\u00a0+\u00a0», <i>Ajouter les numéros</i>), «\u00a0⇄\u00a0» compris («\u00a0↻\u00a0» est hors quota). Chaque édition est réservée dès la pose, puis comptée si elle se retrouve sur le serveur après l’enregistrement\u00a0; retirée ou modifiée avant, elle est rendue. Les éditions faites à la main ne comptent jamais. Une fois enregistrés, numéros et RPP passent en «\u00a0trouvés\u00a0» sans relancer l’analyse\u00a0; un balayage gardé plus ancien le signale («\u00a0relancez\u00a0»). La pastille &#x271A; de l’en-tête de la fenêtre donne ce qui reste\u00a0: orange sous 20\u00a0%, rouge sous 5\u00a0%.</p><p><b>RPP</b>\u00a0: une adresse au bout d’une allée (chemin privé ou voie de parking à moins de 80\u00a0m, sa voie à moins de 250\u00a0m) devient un POI résidentiel (RPP), bouton de la voie compris. Une adresse hors agglomération (segment au nom principal sans ville, qui porte le nom BAN avec la commune en alternatif) devient un RPP, par le bouton de la voie comme par le «\u00a0+\u00a0». Le RPP est créé à la position BAN, avec son adresse et son point d’entrée sur le segment (ou l’allée) le plus proche\u00a0; une adresse refusée retire le POI. Son verrou est celui que WME donne d’office (aucune table France n’en fixe pour un RPP). Les RPP comptent au quota. Une adresse sans aucun segment au nom BAN à moins de 80\u00a0m, mais proche d’une voie roulable d’un autre nom, devient aussi un RPP\u00a0: adresse «\u00a0nom BAN / commune\u00a0», entrée sur cette voie. Pas quand la voie existe dans WME sous un nom à vérifier (article, orthographe, type…)\u00a0: renommez-la d’abord\u00a0; aucun RPP n’est créé à sa place (0.30.14).</p><p><b>Numéro → RPP</b>\u00a0: dans la bulle du point d’un numéro (enregistré, ou posé par WBC et pas encore enregistré), «\u00a0⇄ Transformer ce numéro en RPP\u00a0» retire le numéro et crée à sa place un RPP (même numéro, même voie), point d’entrée sur le segment sans nom ou l’allée le plus proche (rond-point, chemin privé…)\u00a0; le RPP est ensuite sélectionné pour ajuster son entrée. Un numéro posé par WBC change seulement de nature au quota\u00a0; un numéro enregistré compte 2.</p><p><b>RPP → numéro</b>\u00a0: dans la voie dépliée, les RPP de la voie ont leurs pastilles\u00a0; au survol, «\u00a0⇄\u00a0» remplace UN RPP par un numéro sur le segment le plus proche de sa propre rue — rue et ville du RPP sont le nom BAN et la commune, il n’y a donc pas d’ambiguïté\u00a0: une autre voie plus proche, ou un point d’entrée sur une autre voie, ne bloque plus (0.30.14). Le même numéro déjà posé sur la rue à moins de 150\u00a0m fait du RPP un doublon, simplement retiré. Aucun segment de la rue à moins de 80\u00a0m\u00a0: il reste. Refusé si le RPP a un nom ou une photo, une autre ville ou une autre rue. Aussi par un clic sur son point de la carte. Même quota\u00a0; rien n’est enregistré. Le verrou du RPP est lu\u00a0: au-dessus de votre rang, le remplacement devient une suggestion à l’enregistrement\u00a0; sinon le message le dit. Aucune modification ne doit attendre l’enregistrement (WME ne laisse plus lire aux scripts ce qui est en attente)\u00a0; un remplacement compte 2 au quota (RPP retiré, numéro posé). Aussi en sélectionnant le triangle du RPP dans WME (fenêtre de WBC ouverte).</p><p><b>Arrêter</b>\u00a0: pendant l’ajout d’une voie longue (la carte se déplace de zone en zone), le bouton Arrêter interrompt la passe\u00a0; ce qui est posé reste, à relire. Une pose en échec est comptée dans le message. <b>Limite</b>\u00a0: un numéro tapé à la main et pas encore enregistré n’est pas vu comme doublon — enregistrez avant d’ajouter sur la même voie. Deux onglets WME ouverts en même temps ne voient pas leurs poses en attente l’un de l’autre\u00a0: posez depuis un seul onglet.</p>',
+            ajHnQuotaTip: '500 éditions par heure glissante, par éditeur, dans ce navigateur\u00a0: chaque numéro ou RPP posé par WBC compte 1, «\u00a0⇄\u00a0» jusqu’à 2. La place est réservée dès la pose, gardée si l’édition se retrouve sur le serveur après l’enregistrement, rendue sinon. «\u00a0↻\u00a0» est hors quota\u00a0; les éditions faites à la main ne comptent jamais.',
             ajHnLeft: n => 'Quota\xa0: ' + n + (un(n) ? ' restant' : ' restants') + ' dans l’heure',
             ajHnFull: h => 'Quota atteint — prochain ajout à ' + h,
             ajHn1: 'Ajouter ce numéro',
@@ -882,28 +921,33 @@
             legTipDecale: 'Numéro trouvé, mais son marqueur est décalé de son point BAN',
             legTipRppDbl: 'RPP en double d’un numéro déjà posé sur la voie',
             legTipFound: 'Adresse BAN trouvée dans WME',
-            corrSaveFail: (n, l) => 'WME n’a pas enregistré, avec ' + n + ' correction(s) «\u00a0↻\u00a0» en attente\u00a0: ' + l + '. Actualisez la page\u00a0: les modifications en attente sont gardées. Merci de le signaler dans le fil WBC.',
+            corrSaveFail: (n, l) => 'WME n’a pas enregistré, avec ' + n + (un(n) ? ' correction' : ' corrections') + ' «\u00a0↻\u00a0» en attente\u00a0: ' + l + '. Actualisez la page\u00a0: les modifications en attente sont gardées. Merci de le signaler dans le fil WBC.',
+            ajHnSaveFail: n => 'WME n’a pas enregistré, avec ' + n + (un(n) ? ' modification WBC' : ' modifications WBC') + ' en attente («\u00a0+\u00a0», «\u00a0⇄\u00a0»). Actualisez la page\u00a0: les modifications en attente sont gardées. Merci de le signaler dans le fil WBC.',
             legPose: 'posé ou corrigé par WBC, pas encore enregistré',
-            legArret: 'trait vers un point d’arrivée éloigné',
+            legArret: 'trait vers un point d’entrée éloigné',
             corrProgress: (n, N, l) => 'Correction ' + n + '/' + N + (l ? '\u00a0: ' + l : '') + '…',
             corrZone: (n, N) => 'Correction ' + n + '/' + N + '\u00a0: chargement de la zone de ce numéro…',
             hovDecale: (m, s) => 'Trouvé à ' + m + '\u00a0m de son point BAN (au-delà de ' + s + '\u00a0m)\u00a0: vérifiez son placement',
             hovDup: 'En double\u00a0: cette adresse BAN est déjà couverte par un autre numéro WME',
-            tagDecale: n => n + ' décalé(s)',
-            tagDecaleTip: (n, s) => n + ' numéro(s) de cette voie trouvé(s) à plus de ' + s + '\u00a0m de leur point BAN',
+            tagDecale: n => n + (un(n) ? ' décalé' : ' décalés'),
+            tagDecaleTip: (n, s) => n + (un(n) ? ' numéro de cette voie trouvé à plus de ' : ' numéros de cette voie trouvés à plus de ') + s + (un(n) ? '\u00a0m de son point BAN' : '\u00a0m de leur point BAN'),
             tagRppDbl: n => 'RPP en double (' + n + ')',
             tagRppDblTip: l => 'RPP qui doublent un numéro déjà posé sur la voie\u00a0: ' + l + '. Dans la voie, «\u00a0⇄\u00a0» sur le RPP le retire.',
-            kDecale: (n, s) => n + ' décalé(s) de plus de ' + s + '\u00a0m',
+            kDecale: (n, s) => n + (un(n) ? ' décalé' : ' décalés') + ' de plus de ' + s + '\u00a0m',
             kDecaleOld: 'décalés\u00a0: relancez l’analyse (balayage ancien)',
             sbDecaleActif: 'Signaler les numéros décalés de leur point BAN',
             sbDecale: 'Signaler un numéro trouvé mais décalé de son point BAN au-delà de',
-            sbDecaleHint: 'Désactivé par défaut. Une aide pour repérer un numéro posé loin de sa maison, pas une règle de placement\u00a0: on peut poser le numéro au centre du bâtiment — ce qui compte pour la navigation, c’est son point d’arrêt. Distance entre le numéro WME et son adresse BAN\u00a0; appliqué tout de suite, sans nouvelle analyse.',
+            sbDecaleHint: 'Désactivé par défaut. Une aide pour repérer un numéro posé loin de sa maison, pas une règle de placement\u00a0: on peut poser le numéro au centre du bâtiment — ce qui compte pour la navigation, c’est son point d’entrée. Distance entre le numéro WME et son adresse BAN\u00a0; appliqué tout de suite, sans nouvelle analyse.',
             corrTip: (o, n) => 'Corriger\xa0: le numéro WME «\xa0' + o + '\xa0» devient «\xa0' + n + '\xa0» (même point). Hors quota, rien n’est enregistré.',
             corrLoin: b => 'Il était rattaché de loin au «\xa0' + b + '\xa0» de la BAN, qui redeviendra manquant.',
+            corrEntropTip: n => '«\xa0' + n + '\xa0» n’existe pas dans la BAN\xa0: adresse récente possible. Vérifiez sur le terrain avant de corriger\xa0; le «\xa0+\xa0» reste offert.',
+            tropCorr: (w, b) => 'proposé au «\xa0↻\xa0» pour devenir le «\xa0' + b + '\xa0» de la BAN, ou adresse récente\xa0? À vérifier avant de corriger ou de signaler.',
+            ajHnVille: (c, v, m) => 'Rien n’est posé, et aucun RPP n’est créé\xa0: le segment «\xa0' + v + '\xa0» proche est rattaché à la ville «\xa0' + c + '\xa0» dans WME, et non «\xa0' + m + '\xa0». Vérifiez la ville du segment, enregistrez, puis recommencez.',
+            ajHnHorsCom: n => n + (un(n) ? ' adresse hors de la commune écartée' : ' adresses hors de la commune écartées') + '\xa0: aucun RPP n’est créé sur le territoire voisin.',
             corrAdd: n => 'Corriger les numéros (' + n + ')',
             corrAddTip: 'Réécrit d’un coup les numéros WME de la voie posés à l’emplacement d’une autre adresse BAN (rue renumérotée) ou écrits autrement que la forme attendue («\xa02bis\xa0» ⇒ «\xa02 bis\xa0»). Hors quota. Rien n’est enregistré\xa0: relisez, puis enregistrez ou annulez dans WME.',
             corrRunning: 'Correction des numéros…',
-            corrDone: n => n + ' numéro(s) corrigé(s)\xa0: relisez, puis enregistrez ou annulez dans WME.',
+            corrDone: n => n + (un(n) ? ' numéro corrigé' : ' numéros corrigés') + '\xa0: relisez, puis enregistrez ou annulez dans WME.',
             corrRefus: l => 'Laissés tels quels\xa0: ' + l + ' (numéro introuvable ou échange circulaire).',
             corrLockSkip: n => n + (un(n) ? ' numéro non corrigé' : ' numéros non corrigés') + '\u00a0: segment que WME ne vous laisse pas modifier (verrou ou zones d’édition). Corrigez-les un par un avec «\u00a0↻\u00a0»\u00a0: chacun deviendra une suggestion à l’enregistrement.',
             ajHnZoom18: 'Zoomez au moins au niveau 18\u00a0: WME ne charge les numéros de rue qu’à partir de ce zoom.',
@@ -921,6 +965,11 @@
             corrRppAbsent: 'introuvable dans WME (zoom 18, calque Lieux affiché\xa0?)',
             corrRppChange: 'modifié depuis l’analyse',
             corrRppSkip: l => 'RPP laissés tels quels (à voir à la main)\xa0: ' + l + '.',
+            corrHnAbsent: 'n’est plus sur son segment (corrigé ou supprimé depuis l’analyse\xa0?)',
+            corrHnChange: n => 'porte désormais «\xa0' + n + '\xa0»',
+            corrHnDeplace: d => 'déplacé de ' + d + '\xa0m depuis l’analyse',
+            corrHnNonRelu: 'relecture impossible dans WME',
+            corrHnSkip: l => 'Numéros laissés tels quels (relancez l’analyse)\xa0: ' + l + '.',
             corrRppTip: 'Lieu résidentiel (RPP)\xa0: seul son numéro change\xa0; rue, ville, point d’entrée et verrou restent.',
             corrPoseTip: 'Corrigé par WBC, pas encore enregistré.',
             formeT: n => 'Posés mais incorrects (' + n + ')',
@@ -929,7 +978,7 @@
             kCorr: n => 'dont ' + n + ' à corriger (↻)',
             corrBtn: (o, n) => 'Corriger\xa0: ' + o + ' → ' + n,
             hovCorr: (o, n) => 'À cet emplacement, WME porte le numéro «\xa0' + o + '\xa0»\xa0: «\xa0↻\xa0» le change en «\xa0' + n + '\xa0».',
-            corrTag: n => n + ' numéro(s) à corriger dans cette voie (↻)',
+            corrTag: n => n + (un(n) ? ' numéro à corriger dans cette voie (↻)' : ' numéros à corriger dans cette voie (↻)'),
             ajHn1Exists: n => 'Le ' + n + ' est déjà dans WME sur cette voie\xa0: rien n’est posé.',
             ajHn1Rights: 'WME ne vous a pas encore identifié (pseudo et rang illisibles)\u00a0: rechargez WME, puis réessayez.',
             ajHn1Lock: (n, v) => 'Le ' + n + ' deviendra une suggestion à l’enregistrement\u00a0: ' + (v ? 'son segment est verrouillé au niveau ' + v + ', au-dessus de votre rang' : 'WME ne vous laisse pas modifier directement les numéros de son segment') + '\u00a0; un éditeur de rang suffisant la validera.',
@@ -945,12 +994,12 @@
             cmpBad: 'Ce fichier n’est pas un export de WME BAN Coverage.',
             cmpCert: 'L’export n’avait pas le même réglage «\u00a0certifiées seulement\u00a0»\u00a0: les chiffres ne se comparent pas.',
             thDelta: 'Δ',
-            thDeltaTip: d => 'Écart dans WME depuis l’export du ' + d,
-            namesCsv: 'Écarts (CSV)',
+            thDeltaTip: d => 'Évolution dans WME depuis l’export du ' + d,
+            namesCsv: 'Noms à vérifier (CSV)',
             namesCsvTip: 'Les voies dont le nom WME diffère de la BAN, avec leurs segments et un lien WME\u00a0: à corriger ou à signaler.',
             namesNone: 'Aucun écart de nom à exporter.',
             hTrackT: 'Suivre et signaler',
-            hTrackB: '<p><b>Carte du département</b>\u00a0: après un département, chaque commune est colorée selon sa couverture (clair = peu, foncé = beaucoup). Le survol donne ses chiffres\u00a0; carte dézoomée, un clic l’ouvre.</p><p><b>Numéro manquant</b>\u00a0: voie ouverte, un pointillé mène au segment qui devrait probablement le porter\u00a0; son identifiant est dans le CSV.</p><p><b>Sélectionner les segments</b> d’une voie depuis sa ligne\u00a0: ils sont sélectionnés dans WME.</p><p><b>Avancement</b>\u00a0: l’export CSV sert aussi de relevé. Plus tard, <i>Comparer</i> le relit et donne l’écart voie par voie (ou commune par commune). Rien n’est gardé ailleurs.</p><p><b>Écarts (CSV)</b>\u00a0: les voies à renommer, chacune avec un lien WME, à corriger ou à transmettre aux responsables de la zone.</p><p><b>Outils de la voie</b>\u00a0: dans la ligne dépliée d’une voie, des icônes à compteur — sélectionner les segments, ajouter les numéros, voie suivante, signaler à la BAN ou contacter la mairie\u00a0; le nom de chacune s’affiche au survol.</p><p><b>Contour de la commune</b>\u00a0: l’icône de polygone, à côté des exports, trace sur la carte le contour administratif de la commune\u00a0; le choix est retenu.</p>',
+            hTrackB: '<p><b>Carte du département</b>\u00a0: après un département, chaque commune est colorée selon sa couverture (clair = peu, foncé = beaucoup). Le survol donne ses chiffres\u00a0; carte dézoomée, un clic l’ouvre.</p><p><b>Numéro manquant</b>\u00a0: voie ouverte, un pointillé mène au segment qui devrait probablement le porter\u00a0; son identifiant est dans le CSV.</p><p><b>Sélectionner les segments</b> d’une voie depuis sa ligne\u00a0: ils sont sélectionnés dans WME.</p><p><b>Avancement</b>\u00a0: l’export CSV sert aussi de relevé. Plus tard, <i>Comparer</i> le relit et donne l’écart voie par voie (ou commune par commune). Rien n’est gardé ailleurs.</p><p><b>Noms à vérifier (CSV)</b>\u00a0: les voies à renommer, chacune avec un lien WME, à corriger ou à transmettre aux responsables de la zone.</p><p><b>Outils de la voie</b>\u00a0: dans la ligne dépliée d’une voie, des icônes à compteur — sélectionner les segments, ajouter les numéros, voie suivante, signaler à la BAN ou contacter la mairie\u00a0; le nom de chacune s’affiche au survol.</p><p><b>Contour de la commune</b>\u00a0: l’icône de polygone, à côté des exports, trace sur la carte le contour administratif de la commune\u00a0; le choix est retenu.</p>',
             certOnlyTip: "Adresses certifiées seulement",
             layerSwitchTip: "Manquants et en trop sur la carte",
             showFoundTip: "Afficher aussi les trouvés",
@@ -961,6 +1010,8 @@
             memoBanProg: (i, n) => 'BAN\u00a0: vérification ' + i + '/' + n,
             memoBanOk: 'BAN inchangée',
             memoBanMaj: d => 'BAN mise à jour' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · révision du ' + d : ''),
+            srcBanTip: 'Date de révision de la Base Adresse Locale de la commune, lue sur la BAN\u00a0; absente quand la commune n’a publié aucune BAL. Source à citer si vous diffusez des chiffres ou un export.',
             memoBanMajN: n => 'BAN mise à jour\u00a0: ' + n,
             memoBanErr: 'BAN\u00a0: vérification impossible',
             dejaHnDepuis: n => n + (un(n) ? ' numéro ajouté par WBC depuis\xa0: relancez' : ' numéros ajoutés par WBC depuis\xa0: relancez'),
@@ -991,14 +1042,14 @@
             sbOpen: 'Fenster öffnen',
             sbHelp: 'Hilfe',
             hWhatT: 'Was verglichen wird',
-            hWhatB: "<p>Die <b>BAN</b> ist die Referenz: jede Adresse, die sie aufführt, sollte im WME vorhanden sein, als Hausnummer an einem Segment (HN) oder als Wohnort (RPP).</p><p><b>Quellen</b>, live gelesen: die <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, französischer Staat; Licence Ouverte Etalab 2.0; das Revisionsdatum jeder Gemeinde wird angezeigt); Gemeindegrenzen und -listen von <b>geo.api.gouv.fr</b> (API Découpage administratif, Daten von INSEE und IGN, Licence Ouverte Etalab 2.0); die öffentliche <b>API der BAN-Meldungen</b> (signalement.adresse.data.gouv.fr) für den Stand der Meldungen; und das WME von denselben Servern wie der Editor. Der Bereich muss weder angezeigt noch geladen sein. Seit dem 12.11.2026 erkennt Waze die BAN für Frankreich an (Anzeige und unterstützte Erstellung von Hausnummern, Seite Map Data Attribution); das Hinzufügen einer ganzen Straße bleibt eine Geste von L6; eine Nummer nach der anderen steht allen Rängen offen; alles im Kontingent.</p><p><b>Was den Browser verlässt</b>: an geo.api.gouv.fr im Modus „Kartenmitte“ die auf 3 Dezimalstellen GERUNDETE Kartenmitte (etwa 100 m) und Ihre Gemeindesuchen — ohne Identität, ohne Cookie; an die BAN und die Meldungs-API der Gemeindecode; beim Start werden GitHub (version-min.json, Mindestversion: eine zurückgezogene Version startet nicht) und GreasyFork (neue Version) nur gelesen. An data.geopf.fr (Géoplateforme des IGN), bei angehakter WBC-Box im Menü Ebenen: der Ausschnitt der Ansicht, ab Zoom 18, ohne Cookie. Sonst nichts; Ihr Benutzername geht an keinen Dritten (nur an das Discuss von Waze, für die Schaltfläche Kopieren).</p><p><b>An die BAN melden</b>: öffnet das offizielle Werkzeug (signalement.adresse.data.gouv.fr) in einem neuen Tab, für die Straße oder die Nummer; WBC sendet nichts, Sie füllen das Formular aus und senden es. Für eine WME-Nummer, die der BAN fehlt, enthält der vorausgefüllte Kommentar die in Waze gelesene Adresse („Adresse présente dans Waze: …“): vor dem Senden prüfen, ändern oder löschen.</p><p><b>BAN der Ansicht</b>: Ist die WBC-Box im Menü Ebenen angehakt und dort keine Analyse angezeigt, erscheinen die BAN-Adressen der Ansicht ab Zoom 18 in Grau (nur lesend); grün umrandet, wenn das WME dieselbe Nummer schon an derselben Straße oder im Umkreis von 30 m hat (gespeicherte Hausnummern, Wohnorte). <b>Strg+Klick</b> (Cmd+Klick auf dem Mac) auf die Kartenschaltfläche: die Gemeinde in der Kartenmitte wird analysiert oder ihr neuer Scan wieder geöffnet und auf der Karte gezeigt, ohne das Fenster zu öffnen. Solange das WBC-Fenster offen ist, werden die WME-Ebenen „Hausnummern“ und „Wohngebäude“ angezeigt; beim Schließen erhalten sie ihren vorherigen Zustand zurück.</p>",
+            hWhatB: "<p>Die <b>BAN</b> ist die Referenz: jede Adresse, die sie aufführt, sollte im WME vorhanden sein, als Hausnummer an einem Segment (HN) oder als Wohnort (RPP).</p><p><b>Quellen</b>, live gelesen: die <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, französischer Staat; Licence Ouverte Etalab 2.0; das Revisionsdatum der Base Adresse Locale der Gemeinde steht unter ihrem Namen, wenn die BAN es veröffentlicht); Gemeindegrenzen und -listen von <b>geo.api.gouv.fr</b> (API Découpage administratif, Daten von INSEE und IGN, Licence Ouverte Etalab 2.0); die öffentliche <b>API der BAN-Meldungen</b> (signalement.adresse.data.gouv.fr) für den Stand der Meldungen; und das WME von denselben Servern wie der Editor. Der Bereich muss weder angezeigt noch geladen sein. Seit dem 12.11.2026 erkennt Waze die BAN für Frankreich an (Anzeige und unterstützte Erstellung von Hausnummern, Seite Map Data Attribution); das Hinzufügen einer ganzen Straße bleibt eine Geste von L6; eine Nummer nach der anderen steht allen Rängen offen; alles im Kontingent.</p><p><b>Was den Browser verlässt</b>: an geo.api.gouv.fr im Modus „Kartenmitte“ die auf 3 Dezimalstellen GERUNDETE Kartenmitte (etwa 100 m) und Ihre Gemeindesuchen — ohne Identität, ohne Cookie; an die BAN und die Meldungs-API der Gemeindecode; beim Start, höchstens einmal am Tag, werden GitHub (version-min.json, Mindestversion: eine zurückgezogene Version startet nicht) und GreasyFork (neue Version) nur gelesen. An data.geopf.fr (Géoplateforme des IGN), bei angehakter WBC-Box im Menü Ebenen: der Ausschnitt der Ansicht, ab Zoom 18, ohne Cookie. Sonst nichts; Ihr Benutzername geht an keinen Dritten (nur an das Discuss von Waze, für die Schaltfläche Kopieren).</p><p><b>An die BAN melden</b>: öffnet das offizielle Werkzeug (signalement.adresse.data.gouv.fr) in einem neuen Tab, für die Straße oder die Nummer; WBC sendet nichts, Sie füllen das Formular aus und senden es. Für eine WME-Nummer, die der BAN fehlt, enthält der vorausgefüllte Kommentar die in Waze gelesene Adresse („Adresse présente dans Waze: …“): vor dem Senden prüfen, ändern oder löschen.</p><p><b>BAN der Ansicht</b>: Ist die WBC-Box im Menü Ebenen angehakt und dort keine Analyse angezeigt, erscheinen die BAN-Adressen der Ansicht ab Zoom 18 in Grau (nur lesend); grün umrandet, wenn das WME dieselbe Nummer schon an derselben Straße oder im Umkreis von 30 m hat (gespeicherte Hausnummern, Wohnorte). <b>Strg+Klick</b> (Cmd+Klick auf dem Mac) auf die Kartenschaltfläche: die Gemeinde in der Kartenmitte wird analysiert oder ihr neuer Scan wieder geöffnet und auf der Karte gezeigt, ohne das Fenster zu öffnen. Solange das WBC-Fenster offen ist, werden die WME-Ebenen „Hausnummern“ und „Wohngebäude“ angezeigt; beim Schließen erhalten sie ihren vorherigen Zustand zurück.</p>",
             hMatchT: 'Wann eine Nummer gefunden ist',
             hMatchB: '<p>Eine BAN-Adresse gilt als gefunden, wenn das WME dieselbe Nummer (mit Zusätzen: <i>bis</i>, <i>ter</i>, Buchstaben) in weniger als 150 m trägt, und zwar:</p><table class="wbc-help-table"><tr><td>1</td><td>an einer Straße mit demselben Namen (Haupt- oder Alternativname) oder einem, der sich nur durch einen Artikel unterscheidet („Avenue Sembrancher“ = „Avenue de Sembrancher“; die Namensabweichung wird weiter gemeldet);</td></tr><tr><td>2</td><td>oder an einem Segment, das die Adressen dieser Straße trägt, <b>mit oder ohne Namen</b>;</td></tr><tr><td>3</td><td>oder weniger als 30 m von der Adresse entfernt.</td></tr></table><p>Regel 1 wird überall zuerst versucht, dann 2, dann 3. Eine WME-Nummer zählt nur einmal.</p>',
             hNamesT: 'Die Spalte „WME-Straße“',
             hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>die Segmente bei den Adressen tragen den BAN-Namen.</td></tr><tr><td><i>Name</i></td><td>sie tragen einen anderen Namen: zu prüfen.</td></tr><tr><td><i>ohne Namen</i></td><td>sie tragen keinen Namen.</td></tr><tr><td><i>kein Segment</i></td><td>kein Segment näher als 80 m an den Adressen.</td></tr><tr><td>&#x2713; alt</td><td>der BAN-Name steht als <b>Alternativname</b>; der Hauptname steht daneben.</td></tr><tr><td>Straßennr.</td><td>der Hauptname ist eine Straßennummer und der BAN-Name fehlt bei den Alternativnamen: ergänzen.</td></tr><tr><td>Typ</td><td>nur der Straßentyp unterscheidet sich (Rue / Chemin…).</td></tr><tr><td>Artikel · Schreibung · gekürzt</td><td>ähnliche Namen: ein Artikel, ein, zwei Buchstaben oder eine Kurzform. <i>fehlt im WME</i>: die Straße fehlt, der gezeigte Name ist der der Nachbarstraße.</td></tr><tr><td>&#x2713; Parkplatz</td><td>kein benanntes Segment, aber ein naher Parkplatz-Ort trägt den BAN-Namen: nichts umzubenennen.</td></tr><tr><td>&#x2713; BAN-Schreibung</td><td>gleicher Name bis auf einen Bindestrich oder Punkt („Rue Paul-Louis Courier“ / „Rue Paul Louis Courier“): nichts umzubenennen.</td></tr></table><p>Eine fehlende Nummer in Orange mit <b>≠</b> steht im WME mit anderem Zusatz (12 b / 12bis): prüfen. Hat WME nur die bloße Nummer (32 / 32 B), wird sie trotzdem gesetzt, die Warnung bleibt.</p><p>&#x26A0; markiert einen BAN-Namen, den kein Segment der Gemeinde trägt.</p>',
             hLimitsT: 'Gut zu wissen',
-            hLimitsB: "<p>Ein ganzes Département dauert einige Minuten: die BAN wird Gemeinde für Gemeinde gelesen, das WME in Kacheln von etwa 5 km. Die Schaltfläche Anhalten unterbricht; das Erledigte bleibt sichtbar, und fehlgeschlagene Gemeinden lassen sich einzeln wiederholen.</p><p>Paris, Marseille und Lyon werden Bezirk für Bezirk gelesen. Die Scans bleiben nur in diesem Browser (IndexedDB), nie anderswo, zusammen mit Ihren Einstellungen (Bereich, Schalter, Fensterposition, Punktfarben); sie werden markiert, wenn sich BAN oder WME seitdem geändert haben.</p>",
-            hSafeB: "Das Skript ändert die Karte nur auf Anforderung eines Editors: das „+“ einer Adresse (eine Nummer oder ein RPP, alle Ränge); und für einen L6 „Hausnummern hinzufügen“ (Straße für Straße: Nummern und RPP am Ende einer Zufahrt), „⇄“ (ein RPP durch eine Nummer ersetzt) und „Diese Nummer in einen RPP umwandeln“ — höchstens 500 pro gleitender Stunde und Editor; es speichert nie. Seine Ergebnisse bleiben in diesem Browser.",
+            hLimitsB: "<p>Ein ganzes Département dauert einige Minuten: die BAN wird Gemeinde für Gemeinde gelesen, das WME in Kacheln von etwa 5 km. Die Schaltfläche Anhalten unterbricht; das Erledigte bleibt sichtbar, und fehlgeschlagene Gemeinden lassen sich einzeln wiederholen.</p><p>Paris, Marseille und Lyon werden Bezirk für Bezirk gelesen. Die Scans bleiben nur in diesem Browser (IndexedDB), nie anderswo, zusammen mit Ihren Einstellungen (Bereich, Schalter, Fensterposition, Punktfarben); sie werden markiert, wenn sich BAN oder WME seitdem geändert haben.</p><p><b>Gelöstes Fenster</b> (⧉ im Fensterkopf, nur Chrome und Edge): das WBC-Fenster wandert in ein eigenes Fenster, z. B. auf einen zweiten Bildschirm; ⧉ oder das Schließen dieses Fensters holt es zurück in WME. Die Karte, ihre Blasen und die Hinweise bleiben im WME-Fenster, und WME-Tastenkürzel (Strg+Z …) wirken im gelösten Fenster nicht.</p>",
+            hSafeB: "Das Skript ändert die Karte nur auf Anforderung eines Editors. Alle Ränge: das „+“ einer Adresse (eine Nummer oder ein RPP), „⇄“ (ein RPP durch eine Nummer ersetzt oder eine Nummer in einen RPP umgewandelt) und „↻“ (eine Nummer neu geschrieben). Für einen L6: „Hausnummern hinzufügen“ und „Nummern korrigieren“ für eine ganze Straße. Höchstens 500 Bearbeitungen pro gleitender Stunde und Editor („↻“ außerhalb des Kontingents); es speichert nie. Seine Ergebnisse bleiben in diesem Browser.",
             remTitle: "Sie bleiben für Ihre Bearbeitungen verantwortlich",
             remBody: "<p>WME BAN Coverage <b>schlägt vor</b>: es speichert nie selbst etwas.</p><p>Jede Hausnummer, jeder RPP und jede Umwandlung „⇄“ kommt in WME als ausstehende Änderung an. Prüfen Sie sie auf der Karte, dann speichern Sie sie in WME oder machen Sie sie dort rückgängig.</p><p>Was Sie speichern, ist Ihre Bearbeitung, als hätten Sie sie von Hand gemacht.</p>",
             remNote: "Dieser Hinweis erscheint einmal pro Browser; im Skript-Tab können Sie ihn erneut ansehen.",
@@ -1014,11 +1065,13 @@
             modeCommune: 'Andere Gemeinde',
             modeDep: 'Département',
             modeLbl: 'Bereich',
+            filtreLbl: 'Angezeigte Straßen',
             hereHint: 'Die Gemeinde unter der Kartenmitte, beim Start der Analyse ermittelt.',
             searchPh: 'Name, Postleitzahl oder INSEE-Code',
             searchNone: 'Keine Gemeinde gefunden',
             depChoose: 'Département wählen',
             analyse: 'Analysieren',
+            analyseCom: c => c + ' analysieren',
             stop: 'Anhalten',
             stLocate: 'Gemeinde wird gesucht…',
             stBan: 'BAN: wird gelesen…',
@@ -1058,7 +1111,7 @@
             filterPh: 'Straßen filtern',
             filterClear: 'Filter löschen',
             filterCount: (n, m) => n + (un1(n) ? ' Straße von ' : ' Straßen von ') + m,
-            layerSwitch: 'Abweichungen',
+            layerSwitch: 'Offen',
             exportCsv: 'CSV-Export',
             thStreetBan: 'BAN-Straße',
             thStreetWme: 'WME-Straße',
@@ -1066,6 +1119,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'Lücke',
+            thGapCourt: 'Lücke',
             thRep: 'Hinweise',
             thRepTip: '↻ zu korrigierende Nummern · ↔ vom BAN-Punkt versetzte Nummern · RPP doppelt zu einer Nummer. Für Details über einen Hinweis fahren.',
             thCommune: 'Gemeinde',
@@ -1107,6 +1161,8 @@
             hovWmeStreet: r => 'WME-Straße: ' + r,
             sizeTip: "Fenster vergrößern / wiederherstellen",
             smallTip: "Kleines Fenster (ursprüngliche Größe)",
+            detachTip: "In ein eigenes Fenster lösen (z. B. zweiter Bildschirm). WME-Tastenkürzel (Strg+Z …) wirken dort nicht.",
+            attachTip: "Fenster zurück in WME holen",
             searching: "Suche…",
             tipAnalyse: "Den gewählten Bereich analysieren. Wurde er schon durchlaufen, erscheint zuerst sein Datum, mit Öffnen oder Neu starten.",
             tipAnalyseCom: c => c + " erneut analysieren (angezeigte Gemeinde) und ihre Zeile im Département aktualisieren. Für das ganze Département zuerst dorthin zurückkehren.",
@@ -1168,7 +1224,9 @@
             stDoneErr: (s, n) => 'Fertig in ' + s + ' s — ' + n + (un1(n) ? ' Gemeinde fehlgeschlagen' : ' Gemeinden fehlgeschlagen'),
             noCert: n => 'Keine der ' + n + ' BAN-Adressen dieser Gemeinde ist zertifiziert.',
             errSession: "WME-Sitzung abgelaufen: Seite neu laden.",
+            errWmeSerie: (n, m) => 'Département angehalten: Das WME ist bei ' + n + ' Gemeinden in Folge gescheitert (' + m + '). Die übrigen Gemeinden sind als fehlgeschlagen markiert; später erneut versuchen.',
             errFormat: src => src + ' hat in einem unerwarteten Format geantwortet: das Skript muss aktualisiert werden.',
+            ecrCoupee: 'Das Schreiben ist vom Autor des Skripts ausgesetzt, bis eine korrigierte Version erscheint; Lesen und Analysieren funktionieren weiter.',
             delNote: "keinem Ortsteil zuordenbar",
             mapCap: (a, b) => 'Karte: ' + a + ' von ' + b + ' Punkten im Ausschnitt (hineinzoomen, um alle zu sehen)',
             legExtra: "zu viel im WME",
@@ -1202,11 +1260,11 @@
             kSuf: n => 'davon ' + n + (un1(n) ? ' Zusatz prüfen' : ' Zusätze prüfen'),
             tipSuf: w => "WME hat " + w + ": Zusatz prüfen",
             kFar: n => 'davon ' + n + ' weit vom BAN-Punkt',
-            kArret: n => n + ' entfernte(r) Ankunftspunkt(e)',
-            hovArret: d => 'Ankunftspunkt ' + d + ' m zu weit',
-            arrT: (n, s) => 'Entfernte Ankunftspunkte (' + n + ', über ' + s + ' m)',
-            arrTip: d => 'Der Ankunftspunkt liegt ' + d + ' m weiter als die Straße neben der WME-Nummer: in WME prüfen',
-            sbArret: 'Entfernte Ankunftspunkte melden ab',
+            kArret: n => n + ' entfernte Einfahrt(en)',
+            hovArret: d => 'Einfahrt ' + d + ' m zu weit',
+            arrT: (n, s) => 'Entfernte Einfahrten (' + n + ', über ' + s + ' m)',
+            arrTip: d => 'Die Einfahrt liegt ' + d + ' m weiter als die Straße neben der WME-Nummer: in WME prüfen',
+            sbArret: 'Entfernte Einfahrten melden ab',
             sbArretHint: 'Abstand zwischen der WME-Nummer und dem Ort, zu dem Waze führt, abzüglich ihres Abstands zur Straße. Sofort angewendet, ohne neue Analyse.',
             tipFar: d => 'Liegt ' + d + ' m von der BAN-Adresse entfernt',
             certOnly: 'Zertifiziert',
@@ -1247,13 +1305,13 @@
             nextStreet: n => 'Nächste Straße (' + n + ' hinzuzufügen)',
             tipNextStreet: 'Öffnet die Straße der Gemeinde, in der „Hinzufügen“ die meisten Nummern zu setzen hat (BAN-Name als Haupt- oder Alternativname), und überspringt die mit dieser Schaltfläche bereits geöffneten Straßen.',
             nextStreetNone: 'Keine weitere Straße bereit: Die übrigen haben ihre Nummern, oder ihr Name muss zuerst korrigiert werden.',
-            ajHnAddTip: r => 'Nur L6: setzt in WME die fehlenden Nummern dieser Straße, auf den Segmenten, deren Hauptname der BAN-Name ist (Akzente, Groß-/Kleinschreibung, Bindestriche und Punkte toleriert) und deren Stadt die Gemeinde oder „Village (Commune)“ ist; eine Adresse am Ende einer Zufahrt wird ein RPP. Höchstens 500 Bearbeitungen pro gleitender Stunde, beim Speichern gezählt (übrig: ' + r + '). Nichts wird gespeichert: prüfen, dann in WME speichern. Adressen außerorts werden ebenfalls RPP.',
+            ajHnAddTip: r => 'Nur L6: setzt in WME die fehlenden Nummern dieser Straße, auf den Segmenten, deren Hauptname der BAN-Name ist (Akzente, Groß-/Kleinschreibung, Bindestriche und Punkte toleriert) und deren Stadt die Gemeinde oder „Village (Commune)“ ist; eine Adresse am Ende einer Zufahrt wird ein RPP. Höchstens 500 Bearbeitungen pro gleitender Stunde, beim Setzen reserviert, zurückgegeben, wenn nicht gespeichert (übrig: ' + r + '). Nichts wird gespeichert: prüfen, dann in WME speichern. Adressen außerorts werden ebenfalls RPP.',
             ajHnNoName: 'Der WME-Name dieser Straße ist nicht der BAN-Name: automatisches Hinzufügen erfordert einen mit der BAN identischen Hauptnamen.',
             ajHnNone: 'Auf dieser Straße kann keine Nummer automatisch hinzugefügt werden.',
             ajHnLoin: n => 'Keine Nummer automatisch hinzuzufügen: ' + n + ' Adresse(n) mehr als 80 m von der in WME gezeichneten Straße entfernt. Rücke das Segment näher, falls es falsch liegt.',
             ajHnNomEcart: (w, b) => 'Keine Nummer automatisch hinzuzufügen: Die Segmente dieser Straße heißen im WME „' + w + '“, nicht „' + b + '“ wie in der BAN. Gib ihnen den BAN-Namen.',
             ajHnRenommer: (w, b) => 'Nichts gesetzt, und stattdessen kein RPP angelegt: die Straße existiert in WME als „' + w + '“, nicht „' + b + '“ (Name prüfen). Benennen Sie die Straße zuerst in WME um, speichern Sie, dann erneut versuchen.',
-            ajHnQuota: h => 'Kontingent erreicht (500 Nummern pro Stunde): nächstes Hinzufügen um ' + h + ' möglich.',
+            ajHnQuota: h => 'Kontingent erreicht (500 Bearbeitungen pro Stunde): nächstes Hinzufügen um ' + h + ' möglich.',
             ajHnRunning: 'Hausnummern werden hinzugefügt…',
             rhnToRppRunning: 'Hausnummer wird in einen RPP umgewandelt…',
             rhnRunning: 'RPP wird in eine Hausnummer umgewandelt…',
@@ -1290,7 +1348,7 @@
             rhnCity: v => 'Dieser RPP gehört zu „' + v + '“, nicht zur Gemeinde: er wird nicht umgewandelt.',
             rhnStreet: r => 'Dieser RPP trägt die Straße „' + r + '“, nicht den BAN-Namen der Straße: er wird nicht umgewandelt.',
             rhnNoSeg: 'Kein Segment der Straße (BAN-Name als Hauptname, Gemeinde als Stadt) innerhalb von 80 m: der RPP liegt wohl außerorts, er bleibt.',
-            rhnLegit: v => 'Der Zugangspunkt des RPP führt auf „' + v + '“, nicht auf seine Straße: der RPP drückt einen Versatz aus, den eine Segmentnummer nicht kann, er bleibt.',
+            rhnLegit: v => 'Die Einfahrt des RPP führt auf „' + v + '“, nicht auf seine Straße: der RPP drückt einen Versatz aus, den eine Segmentnummer nicht kann, er bleibt.',
             rhnUnsure: 'Nichts Eindeutiges (andere Straße gleich nah, oder zu weit von jeder Straße): der RPP bleibt, von Hand prüfen.',
             rhnFormat: n => 'Die Nummer „' + n + '“ ist nicht wie eine Segmentnummer geschrieben: von Hand prüfen.',
             rhnErr: m => 'Ersetzen abgebrochen: ' + m,
@@ -1298,8 +1356,12 @@
             rhnVersRpp: 'Diese Nummer in einen RPP umwandeln',
             rhnSelVersRpp: 'zu RPP',
             rhnSelVersHn: 'zu Hausnummer',
-            rhnVersRppTip: 'Entfernt diese Nummer vom Segment und legt an ihrer Stelle einen RPP an (gleiche Nummer, gleiche Straße), Zugangspunkt am nächsten unbenannten Segment oder an einer Zufahrt (Privatweg, Parkplatzweg); der RPP wird danach ausgewählt, um den Zugang anzupassen. Zählt zum Kontingent; nichts wird gespeichert.',
-            rhnVersRppDone: (n, q) => 'Nr. ' + n + ' in einen RPP umgewandelt — Zugangspunkt bei Bedarf anpassen (er ist ausgewählt), dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
+            rhnVersRppTip: 'Entfernt diese Nummer vom Segment und legt an ihrer Stelle einen RPP an (gleiche Nummer, gleiche Straße), Einfahrt am nächsten unbenannten Segment oder an einer Zufahrt (Privatweg, Parkplatzweg); der RPP wird danach ausgewählt, um die Einfahrt anzupassen. Zählt zum Kontingent; nichts wird gespeichert.',
+            rhnVersRppDone: (n, q) => 'Nr. ' + n + ' in einen RPP umgewandelt — Einfahrt bei Bedarf anpassen (der RPP ist ausgewählt), dann in WME speichern. Verbleibendes Kontingent: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'Ein RPP Nr. ' + n + ' dieser Straße gibt es schon in ' + d + ' m Entfernung: nichts geändert.',
+            rhnVersRppEntree: (v, d) => v ? 'Einfahrt auf „' + v + '“, ' + d + ' m entfernt.' : 'Einfahrt auf einer Straße ohne Namen, ' + d + ' m entfernt.',
+            illisibleRpp: 'Die vorhandenen RPP sind in WME nicht lesbar: nichts gesetzt oder geändert.',
+            occupeGeste: 'Eine WBC-Bearbeitung läuft: bitte warten, bis sie fertig ist.',
             rhnVersRppAbsent: n => 'Nummer ' + n + ' in WME nicht gefunden (Segment nicht geladen oder Nummer schon entfernt): nichts geändert.',
             rhnVersRppTipPose: 'In einen RPP umgewandelt (noch nicht gespeichert).',
             ajHnSkip: n => n + (un1(n) ? ' Adresse übersprungen' : ' Adressen übersprungen') + ' (Details in der Konsole).',
@@ -1311,11 +1373,11 @@
             ajHnSee: n => (un1(n) ? 'Sie ist' : 'Sie sind') + ' auf der Karte türkis eingekreist.',
             ajHnPoseTip: 'Von WBC gesetzt, noch nicht gespeichert: klicken, um die Karte darauf zu zentrieren.',
             ajZoom17: 'Auf Stufe 17 oder höher zoomen: darunter lädt WME keine Wohnorte. Die Karte bleibt, wo sie ist.',
-            ajHnSaved: (c, r, q) => 'Gespeichert: ' + c + (un1(c) ? ' Nummer gezählt' : ' Nummern gezählt') + ', ' + r + ' dem Kontingent zurückgegeben (vor dem Speichern entfernt). Verbleibendes Kontingent: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'Gespeichert: ' + c + (un1(c) ? ' Bearbeitung gezählt' : ' Bearbeitungen gezählt') + ', ' + r + ' dem Kontingent zurückgegeben (vor dem Speichern entfernt). Verbleibendes Kontingent: ' + q + '.',
             ajHnSavedTip: 'Von WBC gesetzt und gespeichert.',
             hHnT: 'Hausnummern hinzufügen',
-            hHnB: '<p><i>Hausnummern hinzufügen</i> für eine ganze Straße: nur <b>L6</b>-Editoren. <b>Eine Nummer nach der anderen</b> und die Umwandlungen <b>⇄</b> (Nummer → RPP, RPP → Nummer) stehen <b>allen Rängen</b> offen, mit denselben Prüfungen und demselben Kontingent; ohne Recht auf das Segment oder den RPP (Sperre über Ihrem Rang) macht WME beim Speichern einen Vorschlag daraus — sofern keine direkte Änderung offen ist, und bei einer Umwandlung nur, wenn beide Objekte im selben Fall sind. In der aufgeklappten Zeile einer Straße setzt <i>Hausnummern hinzufügen</i> ihre fehlenden Adressen im WME — <b>Straße für Straße</b>, nie für eine ganze Gemeinde. Für eine einzelne Nummer: das „+“ an ihrem Feld (beim Überfahren) oder ein Klick auf ihren Punkt auf der Karte. Die Rechte des WME gelten: für eine einzelne Nummer oder eine Umwandlung ergibt ein Segment, das über Ihrem Rang gesperrt ist (oder außerhalb Ihrer Bearbeitungsgebiete liegt), beim Speichern einen Vorschlag; <i>Hausnummern hinzufügen</i> für eine ganze Straße überspringt solche Segmente, und die Meldung sagt es.</p><p><b>Bedingungen</b>: der Hauptname der Segmente ist der BAN-Name (Akzente, Groß-/Kleinschreibung, Apostrophe, Leerzeichen, Bindestriche und Punkte werden toleriert; eine abweichende Schreibung wird nur gemeldet) und ihre Stadt ist die Gemeinde oder „Village (Commune)“. Jede Nummer kommt zum nächsten zugelassenen Segment (höchstens 80 m); eine schon vorhandene Nummer, auch ausstehend in diesem Tab, wird nie erneut gesetzt; ein anderer (12 b / 12bis) oder numerischer Zusatz bleibt dem Editor überlassen, außer WME hat nur die bloße Nummer (32 für 32 B): dann wird sie gesetzt, mit einer Warnung.</p><p><b>Nichts wird gespeichert</b>: gesetzte Nummern sind auf der Karte türkis eingekreist (auch bei geschlossenem Fenster) und in der Straße mit ✚ markiert; prüfen, dann im WME speichern oder rückgängig machen.</p><p><b>Kontingent</b>: 500 Nummern pro gleitender Stunde. Eine Nummer wird beim Setzen reserviert und gezählt, wenn sie nach dem Speichern auf dem Server steht; vorher entfernt oder geändert, wird sie zurückgegeben. Von Hand eingegebene Nummern zählen nie. Gespeichert gelten sie als „gefunden“, ohne neue Analyse; ein älterer gespeicherter Scan weist darauf hin („neu starten“). Das Abzeichen &#x271A; im Fensterkopf zeigt den Rest: orange unter 20 %, rot unter 5 %.</p><p><b>RPP</b>: eine Adresse am Ende einer Zufahrt (Privatweg oder Parkplatzweg innerhalb von 80 m, ihre Straße innerhalb von 250 m) wird ein Wohnort (RPP), auch über die Schaltfläche der Straße. Eine Adresse außerorts (Segment, dessen Hauptname keine Stadt hat und das den BAN-Namen mit der Gemeinde als Alternativnamen trägt) wird ein RPP, über die Schaltfläche der Straße wie über das „+“. Der RPP wird an der BAN-Position angelegt, mit seiner Adresse und seinem Zugangspunkt am nächsten Segment (oder an der Zufahrt); eine abgelehnte Adresse entfernt den Ort. Seine Sperre ist die, die WME standardmäßig vergibt (keine Tabelle für Frankreich legt eine für RPP fest). RPP zählen zum Kontingent. Eine Adresse ohne Segment mit dem BAN-Namen innerhalb von 80 m, aber nahe einer befahrbaren Straße anderen Namens, wird ebenfalls zu einem RPP: Adresse „BAN-Name / Gemeinde“, Zufahrt über diese Straße. Nicht, wenn die Straße in WME unter einem zu prüfenden Namen existiert (Artikel, Schreibweise, Typ…): zuerst umbenennen; an ihrer Stelle wird kein RPP angelegt (0.30.14).</p><p><b>Nummer → RPP</b>: in der Blase des Kartenpunkts einer Nummer (gespeichert, oder von WBC gesetzt und noch nicht gespeichert) entfernt „⇄ Diese Nummer in einen RPP umwandeln“ die Nummer und legt an ihrer Stelle einen RPP an (gleiche Nummer, gleiche Straße), Zugangspunkt am nächsten unbenannten Segment oder an der nächsten Zufahrt (Kreisverkehr, Privatweg…); der RPP wird danach ausgewählt, um seinen Zugang anzupassen. Eine von WBC gesetzte Nummer ändert im Kontingent nur ihre Art; eine gespeicherte Nummer zählt 2.</p><p><b>RPP → Nummer</b>: In der aufgeklappten Straße haben die RPP der Straße eigene Felder; beim Überfahren ersetzt „⇄“ EINEN RPP durch eine Nummer am nächsten Segment seiner eigenen Straße — Straße und Ort des RPP sind der BAN-Name und die Gemeinde, also keine Mehrdeutigkeit: eine nähere andere Straße oder ein Zugangspunkt zu einer anderen Straße blockiert nicht mehr (0.30.14). Die gleiche Nummer schon an der Straße innerhalb von 150 m macht den RPP zum Duplikat, das einfach entfernt wird. Kein Segment der Straße innerhalb von 80 m: er bleibt. Abgelehnt bei Name oder Foto, anderer Stadt oder anderer Straße. Auch per Klick auf seinen Punkt auf der Karte. Gleiches Kontingent; nichts wird gespeichert. Die Sperre des RPP wird gelesen: über Ihrem Rang wird die Ersetzung beim Speichern zu einem Vorschlag; sonst nennt die Meldung sie. Es darf keine Änderung auf das Speichern warten (WME lässt Skripte Ausstehendes nicht mehr lesen); ein Ersatz zählt 2 zum Kontingent (RPP entfernt, Nummer gesetzt). Auch durch Auswahl des RPP-Dreiecks in WME (WBC-Fenster offen).</p><p><b>Anhalten</b>: während eine lange Straße gefüllt wird (die Karte wandert von Bereich zu Bereich), unterbricht die Schaltfläche Anhalten den Durchgang; Gesetztes bleibt und ist zu prüfen. Eine fehlgeschlagene Setzung wird in der Meldung gezählt. <b>Grenze</b>: eine von Hand eingegebene, noch nicht gespeicherte Nummer wird nicht als Doppel erkannt — vor dem Hinzufügen auf derselben Straße speichern. Zwei gleichzeitig geöffnete WME-Tabs sehen die ausstehenden Einträge des anderen nicht: nur aus einem Tab setzen.</p>',
-            ajHnQuotaTip: 'Gleitende Stunde: eine Nummer zählt eine Stunde ab dem Setzen. Gezählt werden nur mit dieser Schaltfläche gesetzte und tatsächlich gespeicherte Nummern.',
+            hHnB: '<p><i>Hausnummern hinzufügen</i> für eine ganze Straße: nur <b>L6</b>-Editoren. <b>Eine Nummer nach der anderen</b> und die Umwandlungen <b>⇄</b> (Nummer → RPP, RPP → Nummer) stehen <b>allen Rängen</b> offen, mit denselben Prüfungen und demselben Kontingent; ohne Recht auf das Segment oder den RPP (Sperre über Ihrem Rang) macht WME beim Speichern einen Vorschlag daraus — sofern keine direkte Änderung offen ist, und bei einer Umwandlung nur, wenn beide Objekte im selben Fall sind. In der aufgeklappten Zeile einer Straße setzt <i>Hausnummern hinzufügen</i> ihre fehlenden Adressen im WME — <b>Straße für Straße</b>, nie für eine ganze Gemeinde. Für eine einzelne Nummer: das „+“ an ihrem Feld (beim Überfahren) oder ein Klick auf ihren Punkt auf der Karte. Die Rechte des WME gelten: für eine einzelne Nummer oder eine Umwandlung ergibt ein Segment, das über Ihrem Rang gesperrt ist (oder außerhalb Ihrer Bearbeitungsgebiete liegt), beim Speichern einen Vorschlag; <i>Hausnummern hinzufügen</i> für eine ganze Straße überspringt solche Segmente, und die Meldung sagt es.</p><p><b>Bedingungen</b>: der Hauptname der Segmente ist der BAN-Name (Akzente, Groß-/Kleinschreibung, Apostrophe, Leerzeichen, Bindestriche und Punkte werden toleriert; eine abweichende Schreibung wird nur gemeldet) und ihre Stadt ist die Gemeinde oder „Village (Commune)“. Jede Nummer kommt zum nächsten zugelassenen Segment (höchstens 80 m); eine schon vorhandene Nummer, auch ausstehend in diesem Tab, wird nie erneut gesetzt; ein anderer (12 b / 12bis) oder numerischer Zusatz bleibt dem Editor überlassen, außer WME hat nur die bloße Nummer (32 für 32 B): dann wird sie gesetzt, mit einer Warnung.</p><p><b>Nichts wird gespeichert</b>: gesetzte Nummern sind auf der Karte türkis eingekreist (auch bei geschlossenem Fenster) und in der Straße mit ✚ markiert; prüfen, dann im WME speichern oder rückgängig machen.</p><p><b>Kontingent</b>: 500 Bearbeitungen pro gleitender Stunde, je Editor und in diesem Browser: von WBC gesetzte Nummern und RPP („+“, <i>Hausnummern hinzufügen</i>), „⇄“ inbegriffen („↻“ zählt nicht zum Kontingent). Jede Bearbeitung wird beim Setzen reserviert und gezählt, wenn sie nach dem Speichern auf dem Server steht; vorher entfernt oder geändert, wird sie zurückgegeben. Von Hand gemachte Bearbeitungen zählen nie. Gespeichert gelten Nummern und RPP als „gefunden“, ohne neue Analyse; ein älterer gespeicherter Scan weist darauf hin („neu starten“). Das Abzeichen &#x271A; im Fensterkopf zeigt den Rest: orange unter 20 %, rot unter 5 %.</p><p><b>RPP</b>: eine Adresse am Ende einer Zufahrt (Privatweg oder Parkplatzweg innerhalb von 80 m, ihre Straße innerhalb von 250 m) wird ein Wohnort (RPP), auch über die Schaltfläche der Straße. Eine Adresse außerorts (Segment, dessen Hauptname keine Stadt hat und das den BAN-Namen mit der Gemeinde als Alternativnamen trägt) wird ein RPP, über die Schaltfläche der Straße wie über das „+“. Der RPP wird an der BAN-Position angelegt, mit seiner Adresse und seiner Einfahrt am nächsten Segment (oder an der Zufahrt); eine abgelehnte Adresse entfernt den Ort. Seine Sperre ist die, die WME standardmäßig vergibt (keine Tabelle für Frankreich legt eine für RPP fest). RPP zählen zum Kontingent. Eine Adresse ohne Segment mit dem BAN-Namen innerhalb von 80 m, aber nahe einer befahrbaren Straße anderen Namens, wird ebenfalls zu einem RPP: Adresse „BAN-Name / Gemeinde“, Zufahrt über diese Straße. Nicht, wenn die Straße in WME unter einem zu prüfenden Namen existiert (Artikel, Schreibweise, Typ…): zuerst umbenennen; an ihrer Stelle wird kein RPP angelegt (0.30.14).</p><p><b>Nummer → RPP</b>: in der Blase des Kartenpunkts einer Nummer (gespeichert, oder von WBC gesetzt und noch nicht gespeichert) entfernt „⇄ Diese Nummer in einen RPP umwandeln“ die Nummer und legt an ihrer Stelle einen RPP an (gleiche Nummer, gleiche Straße), Einfahrt am nächsten unbenannten Segment oder an der nächsten Zufahrt (Kreisverkehr, Privatweg…); der RPP wird danach ausgewählt, um seine Einfahrt anzupassen. Eine von WBC gesetzte Nummer ändert im Kontingent nur ihre Art; eine gespeicherte Nummer zählt 2.</p><p><b>RPP → Nummer</b>: In der aufgeklappten Straße haben die RPP der Straße eigene Felder; beim Überfahren ersetzt „⇄“ EINEN RPP durch eine Nummer am nächsten Segment seiner eigenen Straße — Straße und Ort des RPP sind der BAN-Name und die Gemeinde, also keine Mehrdeutigkeit: eine nähere andere Straße oder eine Einfahrt zu einer anderen Straße blockiert nicht mehr (0.30.14). Die gleiche Nummer schon an der Straße innerhalb von 150 m macht den RPP zum Duplikat, das einfach entfernt wird. Kein Segment der Straße innerhalb von 80 m: er bleibt. Abgelehnt bei Name oder Foto, anderer Stadt oder anderer Straße. Auch per Klick auf seinen Punkt auf der Karte. Gleiches Kontingent; nichts wird gespeichert. Die Sperre des RPP wird gelesen: über Ihrem Rang wird die Ersetzung beim Speichern zu einem Vorschlag; sonst nennt die Meldung sie. Es darf keine Änderung auf das Speichern warten (WME lässt Skripte Ausstehendes nicht mehr lesen); ein Ersatz zählt 2 zum Kontingent (RPP entfernt, Nummer gesetzt). Auch durch Auswahl des RPP-Dreiecks in WME (WBC-Fenster offen).</p><p><b>Anhalten</b>: während eine lange Straße gefüllt wird (die Karte wandert von Bereich zu Bereich), unterbricht die Schaltfläche Anhalten den Durchgang; Gesetztes bleibt und ist zu prüfen. Eine fehlgeschlagene Setzung wird in der Meldung gezählt. <b>Grenze</b>: eine von Hand eingegebene, noch nicht gespeicherte Nummer wird nicht als Doppel erkannt — vor dem Hinzufügen auf derselben Straße speichern. Zwei gleichzeitig geöffnete WME-Tabs sehen die ausstehenden Einträge des anderen nicht: nur aus einem Tab setzen.</p>',
+            ajHnQuotaTip: '500 Bearbeitungen pro gleitender Stunde, je Editor, in diesem Browser: jede von WBC gesetzte Nummer und jeder RPP zählt 1, „⇄“ bis zu 2. Der Platz wird beim Setzen reserviert, behalten, wenn die Bearbeitung nach dem Speichern auf dem Server steht, sonst zurückgegeben. „↻“ zählt nicht zum Kontingent; von Hand gemachte Bearbeitungen zählen nie.',
             ajHnLeft: n => 'Kontingent: ' + n + ' übrig in dieser Stunde',
             ajHnFull: h => 'Kontingent erreicht — nächstes Hinzufügen um ' + h,
             ajHn1: 'Diese Nummer hinzufügen',
@@ -1331,8 +1393,9 @@
             legTipRppDbl: 'RPP doppelt zu einer Nummer der Straße',
             legTipFound: 'BAN-Adresse im WME gefunden',
             corrSaveFail: (n, l) => 'WME hat nicht gespeichert, mit ' + n + ' offenen „↻“-Korrektur(en): ' + l + '. Seite neu laden: offene Änderungen bleiben erhalten. Bitte im WBC-Thread melden.',
+            ajHnSaveFail: n => 'WME hat nicht gespeichert, mit ' + n + (un1(n) ? ' offenen WBC-Änderung' : ' offenen WBC-Änderungen') + ' („+“, „⇄“). Seite neu laden: offene Änderungen bleiben erhalten. Bitte im WBC-Thread melden.',
             legPose: 'von WBC gesetzt oder korrigiert, noch nicht gespeichert',
-            legArret: 'Linie zu einem entfernten Ankunftspunkt',
+            legArret: 'Linie zu einer entfernten Einfahrt',
             corrProgress: (n, N, l) => 'Korrektur ' + n + '/' + N + (l ? ': ' + l : '') + '…',
             corrZone: (n, N) => 'Korrektur ' + n + '/' + N + ': Bereich dieser Nummer wird geladen…',
             hovDecale: (m, s) => 'Gefunden ' + m + ' m von ihrem BAN-Punkt (über ' + s + ' m): Lage prüfen',
@@ -1345,9 +1408,13 @@
             kDecaleOld: 'versetzte Nummern: Analyse neu starten (älterer Scan)',
             sbDecaleActif: 'Vom BAN-Punkt versetzte Nummern melden',
             sbDecale: 'Gefundene, aber vom BAN-Punkt versetzte Nummern melden ab',
-            sbDecaleHint: 'Standardmäßig aus. Eine Hilfe, um eine weit vom Haus gesetzte Nummer zu finden, keine Platzierungsregel: eine Nummer darf in der Gebäudemitte liegen — für die Navigation zählt ihr Haltepunkt. Abstand zwischen WME-Nummer und BAN-Adresse; sofort angewendet, ohne neue Analyse.',
+            sbDecaleHint: 'Standardmäßig aus. Eine Hilfe, um eine weit vom Haus gesetzte Nummer zu finden, keine Platzierungsregel: eine Nummer darf in der Gebäudemitte liegen — für die Navigation zählt ihre Einfahrt. Abstand zwischen WME-Nummer und BAN-Adresse; sofort angewendet, ohne neue Analyse.',
             corrTip: (o, n) => 'Korrigieren: WME-Nummer „' + o + '“ wird zu „' + n + '“ (gleicher Punkt). Außerhalb des Kontingents; nichts wird gespeichert.',
             corrLoin: b => 'Sie war aus der Ferne der BAN-Nummer „' + b + '“ zugeordnet, die wieder fehlen wird.',
+            corrEntropTip: n => '„' + n + '“ gibt es in der BAN nicht: möglicherweise eine neue Adresse. Vor dem Korrigieren vor Ort prüfen; „+“ bleibt verfügbar.',
+            tropCorr: (w, b) => 'für „↻“ vorgeschlagen, um BAN-„' + b + '“ zu werden – oder eine neue Adresse? Vor dem Korrigieren oder Melden prüfen.',
+            ajHnVille: (c, v, m) => 'Nichts gesetzt und kein RPP angelegt: das nahe Segment „' + v + '“ gehört in WME zur Stadt „' + c + '“, nicht „' + m + '“. Stadt des Segments prüfen, speichern, dann erneut versuchen.',
+            ajHnHorsCom: n => n + (un1(n) ? ' Adresse außerhalb der Gemeinde übersprungen' : ' Adressen außerhalb der Gemeinde übersprungen') + ': kein RPP auf dem Nachbargebiet angelegt.',
             corrAdd: n => 'Nummern korrigieren (' + n + ')',
             corrAddTip: 'Schreibt auf einmal die WME-Nummern dieser Straße um, die an der Stelle einer anderen BAN-Adresse stehen (umnummerierte Straße) oder anders als in der erwarteten Form geschrieben sind („2bis“ ⇒ „2 bis“). Außerhalb des Kontingents. Nichts wird gespeichert: prüfen, dann im WME speichern oder rückgängig machen.',
             corrRunning: 'Nummern werden korrigiert…',
@@ -1369,7 +1436,12 @@
             corrRppAbsent: 'in WME nicht gefunden (Zoom 18, Ebene Orte eingeblendet?)',
             corrRppChange: 'seit der Analyse geändert',
             corrRppSkip: l => 'RPP unverändert gelassen (von Hand prüfen): ' + l + '.',
-            corrRppTip: 'Wohnort (RPP): nur seine Nummer ändert sich; Straße, Ort, Einfahrtspunkt und Sperre bleiben.',
+            corrHnAbsent: 'nicht mehr auf seinem Segment (seit der Analyse korrigiert oder gelöscht?)',
+            corrHnChange: n => 'lautet jetzt „' + n + '“',
+            corrHnDeplace: d => 'seit der Analyse um ' + d + ' m verschoben',
+            corrHnNonRelu: 'in WME nicht erneut lesbar',
+            corrHnSkip: l => 'Nummern unverändert gelassen (Analyse erneut starten): ' + l + '.',
+            corrRppTip: 'Wohnort (RPP): nur seine Nummer ändert sich; Straße, Ort, Einfahrt und Sperre bleiben.',
             corrPoseTip: 'Von WBC korrigiert, noch nicht gespeichert.',
             formeT: n => 'Gesetzt, aber falsch (' + n + ')',
             fCorr: 'Zu korrigieren',
@@ -1394,11 +1466,11 @@
             cmpCert: 'Der Export hatte eine andere Einstellung „nur zertifizierte“: die Zahlen sind nicht vergleichbar.',
             thDelta: 'Δ',
             thDeltaTip: d => 'Änderung im WME seit dem Export vom ' + d,
-            namesCsv: 'Abweichungen (CSV)',
+            namesCsv: 'Namen prüfen (CSV)',
             namesCsvTip: 'Die Straßen, deren WME-Name von der BAN abweicht, mit ihren Segmenten und einem WME-Link: zum Korrigieren oder Melden.',
             namesNone: 'Keine Namensabweichung zu exportieren.',
             hTrackT: 'Verfolgen und melden',
-            hTrackB: '<p><b>Département-Karte</b>: nach einem Département ist jede Gemeinde nach ihrer Abdeckung eingefärbt (hell = wenig, dunkel = viel). Beim Überfahren erscheinen ihre Zahlen; herausgezoomt öffnet ein Klick sie.</p><p><b>Fehlende Nummer</b>: bei geöffneter Straße führt eine gepunktete Linie zum Segment, das sie wahrscheinlich tragen sollte; seine ID steht in der CSV.</p><p><b>Segmente auswählen</b> einer Straße aus ihrer Zeile: sie werden im WME ausgewählt.</p><p><b>Fortschritt</b>: der CSV-Export dient auch als Stand. Später liest <i>Vergleichen</i> ihn wieder ein und zeigt die Änderung Straße für Straße (oder Gemeinde für Gemeinde). Nichts wird anderswo gespeichert.</p><p><b>Abweichungen (CSV)</b>: die umzubenennenden Straßen, jede mit einem WME-Link, zum Korrigieren oder zur Weitergabe an die Gebietsverantwortlichen.</p><p><b>Straßenwerkzeuge</b>: In der aufgeklappten Zeile einer Straße Symbole mit Zähler — Segmente auswählen, Hausnummern hinzufügen, nächste Straße, an die BAN melden oder das Rathaus kontaktieren; der Name erscheint beim Überfahren.</p><p><b>Gemeindegrenze</b>: Das Polygon-Symbol neben den Exporten zeichnet die Verwaltungsgrenze der Gemeinde auf die Karte; die Wahl bleibt gespeichert.</p>',
+            hTrackB: '<p><b>Département-Karte</b>: nach einem Département ist jede Gemeinde nach ihrer Abdeckung eingefärbt (hell = wenig, dunkel = viel). Beim Überfahren erscheinen ihre Zahlen; herausgezoomt öffnet ein Klick sie.</p><p><b>Fehlende Nummer</b>: bei geöffneter Straße führt eine gepunktete Linie zum Segment, das sie wahrscheinlich tragen sollte; seine ID steht in der CSV.</p><p><b>Segmente auswählen</b> einer Straße aus ihrer Zeile: sie werden im WME ausgewählt.</p><p><b>Fortschritt</b>: der CSV-Export dient auch als Stand. Später liest <i>Vergleichen</i> ihn wieder ein und zeigt die Änderung Straße für Straße (oder Gemeinde für Gemeinde). Nichts wird anderswo gespeichert.</p><p><b>Namen prüfen (CSV)</b>: die umzubenennenden Straßen, jede mit einem WME-Link, zum Korrigieren oder zur Weitergabe an die Gebietsverantwortlichen.</p><p><b>Straßenwerkzeuge</b>: In der aufgeklappten Zeile einer Straße Symbole mit Zähler — Segmente auswählen, Hausnummern hinzufügen, nächste Straße, an die BAN melden oder das Rathaus kontaktieren; der Name erscheint beim Überfahren.</p><p><b>Gemeindegrenze</b>: Das Polygon-Symbol neben den Exporten zeichnet die Verwaltungsgrenze der Gemeinde auf die Karte; die Wahl bleibt gespeichert.</p>',
             certOnlyTip: "Nur zertifizierte Adressen",
             layerSwitchTip: "Fehlende und überzählige Nummern auf der Karte",
             showFoundTip: "Auch gefundene Adressen zeigen",
@@ -1409,6 +1481,8 @@
             memoBanProg: (i, n) => 'BAN: Prüfung ' + i + '/' + n,
             memoBanOk: 'BAN unverändert',
             memoBanMaj: d => 'BAN aktualisiert' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · Revision vom ' + d : ''),
+            srcBanTip: 'Revisionsdatum der Base Adresse Locale der Gemeinde, aus der BAN gelesen; fehlt, wenn die Gemeinde keine BAL veröffentlicht hat. Quelle, die bei weitergegebenen Zahlen oder Exporten zu nennen ist.',
             memoBanMajN: n => 'BAN aktualisiert: ' + n,
             memoBanErr: 'BAN: Prüfung fehlgeschlagen',
             dejaHnDepuis: n => n + (un1(n) ? ' Nummer seitdem von WBC hinzugefügt: neu starten' : ' Nummern seitdem von WBC hinzugefügt: neu starten'),
@@ -1439,14 +1513,14 @@
             sbOpen: 'Abrir la ventana',
             sbHelp: 'Ayuda',
             hWhatT: 'Qué se compara',
-            hWhatB: "<p>La <b>BAN</b> es la referencia: cada dirección que recoge debería existir en WME, como número en un segmento (HN) o como punto residencial (RPP).</p><p><b>Fuentes</b>, leídas en directo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francés; Licence Ouverte Etalab 2.0; se muestra la fecha de revisión de cada municipio); los límites y listas de municipios de <b>geo.api.gouv.fr</b> (API Découpage administratif, datos del INSEE y del IGN, Licence Ouverte Etalab 2.0); la <b>API pública de señalamientos de la BAN</b> (signalement.adresse.data.gouv.fr) para el estado de los señalamientos; y WME en los mismos servidores que el editor. No hace falta mostrar ni cargar la zona. Desde el 12/11/2026, Waze acredita la BAN para Francia (visualización y creación asistida de números de portal, página Map Data Attribution); añadir una calle entera sigue siendo un gesto de L6; un número cada vez está abierto a todos los rangos; todo con cuota.</p><p><b>Lo que sale del navegador</b>: a geo.api.gouv.fr, en modo «Centro del mapa», el centro del mapa REDONDEADO a 3 decimales (unos 100 m) y sus búsquedas de municipio — sin identidad ni cookie; a la BAN y a la API de señalamientos, el código del municipio; al arrancar, GitHub (version-min.json, versión mínima: una versión retirada no arranca) y GreasyFork (versión nueva) solo se leen. A data.geopf.fr (Géoplateforme del IGN), con la casilla WBC del menú Capas marcada: la extensión de la vista, a partir del zoom 18, sin cookie. Nada más; su nombre de usuario no va a ningún tercero (solo al Discuss de Waze, para el botón Copiar).</p><p><b>Señalar a la BAN</b>: abre la herramienta oficial (signalement.adresse.data.gouv.fr) en una pestaña nueva, en la calle o el número; WBC no envía nada, usted rellena y envía el formulario. Para un número de WME que falta en la BAN, el comentario prellenado lleva la dirección leída en Waze («Adresse présente dans Waze: …»): revíselo, cámbielo o bórrelo antes de enviar.</p><p><b>BAN de la vista</b>: con la casilla WBC del menú Capas marcada y ningún análisis mostrado en ese lugar, las direcciones BAN de la vista aparecen a partir del zoom 18, en gris (solo lectura); rodeadas de verde cuando WME ya tiene el mismo número en la misma calle o a menos de 30 m (números guardados, puntos residenciales). <b>Ctrl+clic</b> (Cmd+clic en Mac) en el botón del mapa: el municipio del centro se analiza, o se reabre su barrido reciente, y se muestra en el mapa sin abrir la ventana. Mientras la ventana de WBC está abierta, se muestran las capas de WME «Números de portal» y «Residencial»; al cerrarla, vuelven a su estado anterior.</p>",
+            hWhatB: "<p>La <b>BAN</b> es la referencia: cada dirección que recoge debería existir en WME, como número en un segmento (HN) o como punto residencial (RPP).</p><p><b>Fuentes</b>, leídas en directo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francés; Licence Ouverte Etalab 2.0; la fecha de revisión de la Base Adresse Locale del municipio se muestra bajo su nombre cuando la BAN la publica); los límites y listas de municipios de <b>geo.api.gouv.fr</b> (API Découpage administratif, datos del INSEE y del IGN, Licence Ouverte Etalab 2.0); la <b>API pública de señalamientos de la BAN</b> (signalement.adresse.data.gouv.fr) para el estado de los señalamientos; y WME en los mismos servidores que el editor. No hace falta mostrar ni cargar la zona. Desde el 12/11/2026, Waze acredita la BAN para Francia (visualización y creación asistida de números de portal, página Map Data Attribution); añadir una calle entera sigue siendo un gesto de L6; un número cada vez está abierto a todos los rangos; todo con cuota.</p><p><b>Lo que sale del navegador</b>: a geo.api.gouv.fr, en modo «Centro del mapa», el centro del mapa REDONDEADO a 3 decimales (unos 100 m) y sus búsquedas de municipio — sin identidad ni cookie; a la BAN y a la API de señalamientos, el código del municipio; al arrancar, como mucho una vez al día, GitHub (version-min.json, versión mínima: una versión retirada no arranca) y GreasyFork (versión nueva) solo se leen. A data.geopf.fr (Géoplateforme del IGN), con la casilla WBC del menú Capas marcada: la extensión de la vista, a partir del zoom 18, sin cookie. Nada más; su nombre de usuario no va a ningún tercero (solo al Discuss de Waze, para el botón Copiar).</p><p><b>Señalar a la BAN</b>: abre la herramienta oficial (signalement.adresse.data.gouv.fr) en una pestaña nueva, en la calle o el número; WBC no envía nada, usted rellena y envía el formulario. Para un número de WME que falta en la BAN, el comentario prellenado lleva la dirección leída en Waze («Adresse présente dans Waze: …»): revíselo, cámbielo o bórrelo antes de enviar.</p><p><b>BAN de la vista</b>: con la casilla WBC del menú Capas marcada y ningún análisis mostrado en ese lugar, las direcciones BAN de la vista aparecen a partir del zoom 18, en gris (solo lectura); rodeadas de verde cuando WME ya tiene el mismo número en la misma calle o a menos de 30 m (números guardados, puntos residenciales). <b>Ctrl+clic</b> (Cmd+clic en Mac) en el botón del mapa: el municipio del centro se analiza, o se reabre su barrido reciente, y se muestra en el mapa sin abrir la ventana. Mientras la ventana de WBC está abierta, se muestran las capas de WME «Números de portal» y «Residencial»; al cerrarla, vuelven a su estado anterior.</p>",
             hMatchT: 'Cuándo se encuentra un número',
             hMatchB: '<p>Una dirección BAN se encuentra cuando WME tiene el mismo número (sufijos incluidos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, y:</p><table class="wbc-help-table"><tr><td>1</td><td>en una calle con el mismo nombre (principal o alternativo), o que solo difiere en un artículo («Avenue Sembrancher» = «Avenue de Sembrancher»; la diferencia de nombre se sigue señalando);</td></tr><tr><td>2</td><td>o en un segmento que lleva las direcciones de esa calle, <b>con nombre o sin él</b>;</td></tr><tr><td>3</td><td>o a menos de 30 m de la dirección.</td></tr></table><p>La regla 1 se prueba primero en todas partes, luego la 2, luego la 3. Un número de WME solo sirve una vez.</p>',
             hNamesT: 'La columna «Calle WME»',
             hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>los segmentos cercanos a las direcciones llevan el nombre de la BAN.</td></tr><tr><td><i>nombre</i></td><td>llevan otro nombre: el nombre a revisar.</td></tr><tr><td><i>sin nombre</i></td><td>no llevan ningún nombre.</td></tr><tr><td><i>ningún segmento</i></td><td>ningún segmento a menos de 80 m de las direcciones.</td></tr><tr><td>&#x2713; alt</td><td>el nombre de la BAN figura como nombre <b>alternativo</b>; el nombre principal aparece al lado.</td></tr><tr><td>n.º de carretera</td><td>el nombre principal es un número de carretera y el nombre de la BAN falta en los alternativos: añadirlo.</td></tr><tr><td>tipo</td><td>solo difiere el tipo de vía (Rue / Chemin…).</td></tr><tr><td>artículo · ortografía · parcial</td><td>nombres parecidos: un artículo, una o dos letras, o una forma abreviada. <i>ausente de WME</i>: la calle no existe en WME, el nombre mostrado es el de la vecina.</td></tr><tr><td>&#x2713; aparcamiento</td><td>ningún segmento con nombre, pero un lugar Aparcamiento cercano lleva el nombre de la BAN: nada que renombrar.</td></tr><tr><td>&#x2713; grafía BAN</td><td>mismo nombre salvo un guion o un punto («Rue Paul-Louis Courier» / «Rue Paul Louis Courier»): nada que renombrar.</td></tr></table><p>Un número que falta en naranja con <b>≠</b> existe en WME con otro sufijo (12 b / 12bis): revisar. Si WME solo tiene el número sin sufijo (32 / 32 B), se coloca igualmente y el aviso se mantiene.</p><p>&#x26A0; señala un nombre de la BAN que ningún segmento del municipio lleva.</p>',
             hLimitsT: 'Conviene saber',
-            hLimitsB: "<p>Un departamento entero tarda unos minutos: la BAN se lee municipio por municipio, WME en cuadros de unos 5 km. El botón Detener lo interrumpe; lo hecho sigue visible y los municipios con error se pueden reintentar solos.</p><p>París, Marsella y Lyon se leen distrito por distrito. Los barridos se guardan solo en este navegador (IndexedDB), nunca en otro sitio, con sus preferencias (ámbito, interruptores, posición de la ventana, colores de los puntos); se señalan cuando la BAN o WME han cambiado desde entonces.</p>",
-            hSafeB: "El script solo modifica el mapa a petición de un editor: el «+» de una dirección (un número o un RPP, todos los rangos); y, para un L6, «Añadir los números» (calle por calle: números, y RPP al final de un acceso), «⇄» (un RPP sustituido por un número) y «Convertir este número en RPP» — 500 por hora móvil como máximo, por editor; nunca guarda. Sus resultados se quedan en este navegador.",
+            hLimitsB: "<p>Un departamento entero tarda unos minutos: la BAN se lee municipio por municipio, WME en cuadros de unos 5 km. El botón Detener lo interrumpe; lo hecho sigue visible y los municipios con error se pueden reintentar solos.</p><p>París, Marsella y Lyon se leen distrito por distrito. Los barridos se guardan solo en este navegador (IndexedDB), nunca en otro sitio, con sus preferencias (ámbito, interruptores, posición de la ventana, colores de los puntos); se señalan cuando la BAN o WME han cambiado desde entonces.</p><p><b>Ventana separada</b> (⧉ de la cabecera, solo Chrome y Edge): la ventana de WBC pasa a una ventana propia, por ejemplo en una segunda pantalla; ⧉ o cerrar esa ventana la devuelve a WME. El mapa, sus burbujas y los avisos se quedan en la ventana de WME, y los atajos de WME (Ctrl+Z…) no funcionan en la ventana separada.</p>",
+            hSafeB: "El script solo modifica el mapa a petición de un editor. Todos los rangos: el «+» de una dirección (un número o un RPP), «⇄» (un RPP sustituido por un número, o un número convertido en RPP) y «↻» (un número reescrito). Para un L6: «Añadir los números» y «Corregir los números» de una calle entera. Como máximo 500 ediciones por hora móvil, por editor («↻» fuera de la cuota); nunca guarda. Sus resultados se quedan en este navegador.",
             remTitle: "Usted sigue siendo responsable de sus ediciones",
             remBody: "<p>WME BAN Coverage <b>propone</b>: nunca guarda nada por sí mismo.</p><p>Cada número, RPP o conversión «⇄» llega a WME como una edición pendiente. Revísela en el mapa y luego guárdela o deshágala en WME.</p><p>Lo que usted guarda es su edición, como si la hubiera hecho a mano.</p>",
             remNote: "Este aviso se muestra una vez por navegador; puede volver a verlo desde la pestaña del script.",
@@ -1462,11 +1536,13 @@
             modeCommune: 'Otro municipio',
             modeDep: 'Departamento',
             modeLbl: 'Ámbito',
+            filtreLbl: 'Vías mostradas',
             hereHint: 'El municipio bajo el centro del mapa, tomado al iniciar el análisis.',
             searchPh: 'Nombre, código postal o código INSEE',
             searchNone: 'Ningún municipio encontrado',
             depChoose: 'Elegir un departamento',
             analyse: 'Analizar',
+            analyseCom: c => 'Analizar ' + c,
             stop: 'Detener',
             stLocate: 'Buscando el municipio…',
             stBan: 'BAN: leyendo…',
@@ -1506,7 +1582,7 @@
             filterPh: 'Filtrar calles',
             filterClear: 'Borrar el filtro',
             filterCount: (n, m) => n + (un1(n) ? ' calle de ' : ' calles de ') + m,
-            layerSwitch: 'Diferencias',
+            layerSwitch: 'Pendientes',
             exportCsv: 'Exportar CSV',
             thStreetBan: 'Calle BAN',
             thStreetWme: 'Calle WME',
@@ -1514,6 +1590,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'Diferencia',
+            thGapCourt: 'Dif.',
             thRep: 'Marcas',
             thRepTip: '↻ números que corregir · ↔ números desplazados de su punto BAN · RPP duplicado de un número. Pase el ratón sobre una marca para el detalle.',
             thCommune: 'Municipio',
@@ -1555,6 +1632,8 @@
             hovWmeStreet: r => 'Calle WME: ' + r,
             sizeTip: "Ampliar / restaurar la ventana",
             smallTip: "Ventana pequeña (tamaño original)",
+            detachTip: "Separar en una ventana propia (p. ej. segunda pantalla). Los atajos de WME (Ctrl+Z…) no funcionan en ella.",
+            attachTip: "Devolver la ventana a WME",
             searching: "Buscando…",
             tipAnalyse: "Analizar la zona elegida. Si ya se analizó, primero se muestra su fecha, con Abrir o Relanzar.",
             tipAnalyseCom: c => "Volver a analizar " + c + ", el municipio mostrado, y actualizar su línea del departamento. Para analizar todo el departamento, vuelva primero a él.",
@@ -1616,7 +1695,9 @@
             stDoneErr: (s, n) => 'Terminado en ' + s + ' s — ' + n + (un1(n) ? ' municipio con error' : ' municipios con error'),
             noCert: n => 'Ninguna de las ' + n + ' direcciones BAN de este municipio está certificada.',
             errSession: "Sesión de WME caducada: recargue la página.",
+            errWmeSerie: (n, m) => 'Departamento detenido: WME ha fallado en ' + n + ' municipios seguidos (' + m + '). Los municipios restantes quedan con error; reinténtelos más tarde.',
             errFormat: src => src + ' respondió en un formato inesperado: hay que actualizar el script.',
+            ecrCoupee: 'El autor del script ha suspendido la escritura hasta que se publique una versión corregida; la lectura y el análisis siguen disponibles.',
             delNote: "no atribuibles a un municipio delegado",
             mapCap: (a, b) => 'Mapa: ' + a + ' puntos mostrados de ' + b + ' en la vista (acerque el zoom para verlos todos)',
             legExtra: "de más en WME",
@@ -1650,11 +1731,11 @@
             kSuf: n => 'de ellas ' + n + (un1(n) ? ' sufijo a revisar' : ' sufijos a revisar'),
             tipSuf: w => "WME tiene " + w + ": revise el sufijo",
             kFar: n => 'de ellas ' + n + ' lejos del punto BAN',
-            kArret: n => n + ' punto(s) de llegada lejano(s)',
-            hovArret: d => 'Punto de llegada ' + d + ' m de más',
-            arrT: (n, s) => 'Puntos de llegada lejanos (' + n + ', más allá de ' + s + ' m)',
-            arrTip: d => 'El punto de llegada está ' + d + ' m más lejos que la calle junto al número de WME: revisarlo en WME',
-            sbArret: 'Señalar un punto de llegada lejano a partir de',
+            kArret: n => n + ' punto(s) de entrada lejano(s)',
+            hovArret: d => 'Punto de entrada ' + d + ' m de más',
+            arrT: (n, s) => 'Puntos de entrada lejanos (' + n + ', más allá de ' + s + ' m)',
+            arrTip: d => 'El punto de entrada está ' + d + ' m más lejos que la calle junto al número de WME: revisarlo en WME',
+            sbArret: 'Señalar un punto de entrada lejano a partir de',
             sbArretHint: 'Distancia entre el número de WME y el lugar al que guía Waze, menos su distancia a su calle. Se aplica al momento, sin nuevo análisis.',
             tipFar: d => 'Situado a ' + d + ' m de la dirección BAN',
             certOnly: 'Certificadas',
@@ -1695,13 +1776,13 @@
             nextStreet: n => 'Calle siguiente (' + n + ' por añadir)',
             tipNextStreet: 'Abre la calle del municipio donde «Añadir» tiene más números por colocar (nombre BAN como principal o alternativo), saltando las calles ya abiertas con este botón.',
             nextStreetNone: 'No queda ninguna calle lista: las restantes ya tienen sus números, o primero hay que corregir su nombre.',
-            ajHnAddTip: r => 'Solo L6: coloca en WME los números que faltan en esta calle, en los segmentos cuyo nombre principal es el de la BAN (se toleran acentos, mayúsculas, guiones y puntos) y cuya ciudad es el municipio o «Village (Commune)»; una dirección al final de un acceso se convierte en RPP. Como máximo 500 ediciones por hora móvil, contadas al guardar (quedan ' + r + '). No se guarda nada: compruebe y luego guarde en WME. Las direcciones fuera de poblado también se convierten en RPP.',
+            ajHnAddTip: r => 'Solo L6: coloca en WME los números que faltan en esta calle, en los segmentos cuyo nombre principal es el de la BAN (se toleran acentos, mayúsculas, guiones y puntos) y cuya ciudad es el municipio o «Village (Commune)»; una dirección al final de un acceso se convierte en RPP. Como máximo 500 ediciones por hora móvil, reservadas al colocar, devueltas si no se guardan (quedan ' + r + '). No se guarda nada: compruebe y luego guarde en WME. Las direcciones fuera de poblado también se convierten en RPP.',
             ajHnNoName: 'El nombre WME de esta calle no es el de la BAN: la adición automática exige un nombre principal idéntico al de la BAN.',
             ajHnNone: 'Ningún número se puede añadir automáticamente en esta calle.',
             ajHnLoin: n => 'Ningún número se puede añadir automáticamente: ' + n + ' dirección(es) a más de 80 m de la calle dibujada en WME. Acerca el segmento si está mal colocado.',
             ajHnNomEcart: (w, b) => 'Ningún número se puede añadir automáticamente: en WME los segmentos de esta calle se llaman «' + w + '», no «' + b + '» como en la BAN. Dales el nombre de la BAN.',
             ajHnRenommer: (w, b) => 'No se coloca nada, ni se crea ningún RPP en su lugar: la calle existe en WME como «' + w + '», no «' + b + '» (nombre a revisar). Renombre primero la calle en WME, guarde y vuelva a intentarlo.',
-            ajHnQuota: h => 'Cuota alcanzada (500 números por hora): próxima adición posible a las ' + h + '.',
+            ajHnQuota: h => 'Cuota alcanzada (500 ediciones por hora): próxima adición posible a las ' + h + '.',
             ajHnRunning: 'Añadiendo los números…',
             rhnToRppRunning: 'Convirtiendo el número en RPP…',
             rhnRunning: 'Convirtiendo el RPP en número…',
@@ -1738,7 +1819,7 @@
             rhnCity: v => 'Este RPP pertenece a «' + v + '», no al municipio: no se convierte.',
             rhnStreet: r => 'Este RPP lleva la calle «' + r + '», no el nombre BAN de la calle: no se convierte.',
             rhnNoSeg: 'Ningún segmento de la calle (nombre BAN como principal, municipio como ciudad) a menos de 80 m: el RPP está sin duda fuera de poblado, se queda.',
-            rhnLegit: v => 'El punto de acceso del RPP da a «' + v + '», no a su calle: el RPP expresa un desfase que un número de segmento no puede, se queda.',
+            rhnLegit: v => 'El punto de entrada del RPP da a «' + v + '», no a su calle: el RPP expresa un desfase que un número de segmento no puede, se queda.',
             rhnUnsure: 'Nada claro (otra calle igual de cerca, o demasiado lejos de toda calle): el RPP se queda, a revisar a mano.',
             rhnFormat: n => 'El número «' + n + '» no se escribe como un número de segmento: a revisar a mano.',
             rhnErr: m => 'Sustitución interrumpida: ' + m,
@@ -1748,6 +1829,10 @@
             rhnSelVersHn: 'a número',
             rhnVersRppTip: 'Quita este número del segmento y crea en su lugar un RPP (mismo número, misma calle), con el punto de entrada en el segmento sin nombre más cercano o en un acceso (camino privado, vía de aparcamiento); luego el RPP queda seleccionado para ajustar su entrada. Cuenta en la cuota; no se guarda nada.',
             rhnVersRppDone: (n, q) => 'N.º ' + n + ' convertido en RPP — ajuste su punto de entrada si hace falta (está seleccionado) y luego guarde en WME. Cuota restante: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'Ya existe un RPP n.º ' + n + ' de esta calle a ' + d + ' m: no se cambia nada.',
+            rhnVersRppEntree: (v, d) => v ? 'Punto de entrada en «' + v + '», a ' + d + ' m.' : 'Punto de entrada en una vía sin nombre, a ' + d + ' m.',
+            illisibleRpp: 'No se pudieron leer los RPP existentes en WME: no se coloca ni se cambia nada.',
+            occupeGeste: 'Hay una edición de WBC en curso: espere a que termine.',
             rhnVersRppAbsent: n => 'El número ' + n + ' no se encuentra en WME (segmento no cargado, o número ya quitado): no se cambia nada.',
             rhnVersRppTipPose: 'Convertido en RPP (aún sin guardar).',
             ajHnSkip: n => n + (un1(n) ? ' dirección descartada' : ' direcciones descartadas') + ' (detalle en la consola).',
@@ -1759,11 +1844,11 @@
             ajHnSee: n => (un1(n) ? 'Aparece rodeado' : 'Aparecen rodeados') + ' en turquesa en el mapa.',
             ajHnPoseTip: 'Colocado por WBC, aún sin guardar: haga clic para centrar el mapa en él.',
             ajZoom17: 'Acerque el zoom al nivel 17 o más: por debajo, WME no carga los lugares residenciales. El mapa no se mueve.',
-            ajHnSaved: (c, r, q) => 'Guardado: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devueltos a la cuota (retirados antes de guardar). Cuota restante: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'Guardado: ' + c + (un1(c) ? ' edición contada' : ' ediciones contadas') + ', ' + r + (un1(r) ? ' devuelta' : ' devueltas') + ' a la cuota (retiradas antes de guardar). Cuota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado por WBC y guardado.',
             hHnT: 'Añadir los números',
-            hHnB: '<p><i>Añadir los números</i> de una calle entera: solo editores <b>L6</b>. <b>Un número cada vez</b> y las conversiones <b>⇄</b> (número → RPP, RPP → número) están abiertos a <b>todos los rangos</b>, con los mismos controles y la misma cuota; sin derecho sobre el segmento o el RPP (bloqueo por encima de su rango), WME lo convierte en una sugerencia al guardar — si no hay ediciones directas pendientes, y en una conversión solo si los dos objetos están en el mismo caso. En la fila desplegada de una calle, <i>Añadir los números</i> coloca en WME sus direcciones que faltan — <b>calle por calle</b>, nunca para todo el municipio. Para un solo número: el «+» de su etiqueta (al pasar el ratón) o un clic en su punto del mapa. Se aplican los derechos de WME: para un solo número o una conversión, un segmento bloqueado por encima de su rango (o fuera de sus zonas de edición) da una sugerencia al guardar; <i>Añadir los números</i> de una calle entera omite esos segmentos, y el mensaje lo dice.</p><p><b>Condiciones</b>: el nombre principal de los segmentos es el de la BAN (se toleran acentos, mayúsculas, apóstrofos, espacios, guiones y puntos; una grafía distinta solo se señala) y su ciudad es el municipio o «Village (Commune)». Cada número va al segmento admitido más cercano (80 m como máximo); un número ya presente, aunque esté pendiente en esta pestaña, nunca se vuelve a colocar; un sufijo distinto (12 b / 12bis) o numérico se deja al editor, salvo si WME solo tiene el número sin sufijo (32 para 32 B): entonces se coloca, con un aviso.</p><p><b>No se guarda nada</b>: los números colocados aparecen rodeados en turquesa en el mapa (incluso con la ventana cerrada) y marcados con ✚ en la calle; revíselos y luego guarde o deshaga en WME.</p><p><b>Cuota</b>: 500 números por hora móvil. Un número se reserva al colocarlo y se cuenta si aparece en el servidor tras guardar; retirado o modificado antes, se devuelve. Los números escritos a mano nunca cuentan. Una vez guardados, pasan a «encontrados» sin volver a analizar; un análisis guardado más antiguo lo indica («relance»). La insignia &#x271A; de la cabecera de la ventana indica lo que queda: naranja por debajo del 20 %, rojo por debajo del 5 %.</p><p><b>RPP</b>: una dirección al final de un acceso (camino privado o vía de aparcamiento a menos de 80 m, su calle a menos de 250 m) se convierte en un lugar residencial (RPP), también con el botón de la calle. Una dirección fuera de poblado (segmento cuyo nombre principal no tiene ciudad y que lleva el nombre BAN con el municipio como alternativo) se convierte en RPP, con el botón de la calle como con el «+». El RPP se crea en la posición BAN, con su dirección y su punto de entrada en el segmento (o el acceso) más cercano; una dirección rechazada retira el lugar. Su bloqueo es el que WME pone por defecto (ninguna tabla de Francia fija uno para un RPP). Los RPP cuentan en la cuota. Una dirección sin ningún segmento con el nombre BAN a menos de 80 m, pero cerca de una vía transitable de otro nombre, también se convierte en RPP: dirección «nombre BAN / municipio», entrada por esa vía. No cuando la calle existe en WME con un nombre a revisar (artículo, ortografía, tipo…): renómbrela primero; no se crea ningún RPP en su lugar (0.30.14).</p><p><b>Número → RPP</b>: en la burbuja del punto de un número (guardado, o colocado por WBC y aún sin guardar), «⇄ Convertir este número en RPP» quita el número y crea en su lugar un RPP (mismo número, misma calle), con el punto de entrada en el segmento sin nombre o el acceso más cercano (rotonda, camino privado…); luego el RPP queda seleccionado para ajustar su entrada. Un número colocado por WBC solo cambia de tipo en la cuota; un número guardado cuenta 2.</p><p><b>RPP → número</b>: en la calle desplegada, los RPP de la calle tienen sus etiquetas; al pasar el ratón, «⇄» sustituye UN RPP por un número en el segmento más cercano de su propia calle — calle y ciudad del RPP son el nombre BAN y el municipio, así que no hay ambigüedad: otra calle más cercana, o un punto de acceso a otra calle, ya no bloquea (0.30.14). El mismo número ya en la calle a menos de 150 m hace del RPP un duplicado, simplemente retirado. Ningún segmento de la calle a menos de 80 m: se queda. Rechazado si el RPP tiene nombre o foto, otra ciudad u otra calle. También con un clic en su punto del mapa. Misma cuota; no se guarda nada. Se lee el bloqueo del RPP: por encima de su rango, la sustitución se convierte en una sugerencia al guardar; si no, el mensaje lo indica. Ningún cambio debe estar pendiente de guardar (WME ya no deja a los scripts leer lo pendiente); una sustitución cuenta 2 en la cuota (RPP retirado, número colocado). También seleccionando el triángulo del RPP en WME (ventana de WBC abierta).</p><p><b>Detener</b>: mientras se rellena una calle larga (el mapa se mueve de zona en zona), el botón Detener interrumpe la pasada; lo colocado se queda, para revisar. Una colocación fallida se cuenta en el mensaje. <b>Límite</b>: un número tecleado a mano y aún no guardado no se ve como duplicado — guarde antes de añadir en la misma calle. Dos pestañas de WME abiertas a la vez no ven los números pendientes de la otra: coloque desde una sola pestaña.</p>',
-            ajHnQuotaTip: 'Hora móvil: un número cuenta durante una hora desde que se coloca. Solo se cuentan los números colocados con este botón y guardados de verdad.',
+            hHnB: '<p><i>Añadir los números</i> de una calle entera: solo editores <b>L6</b>. <b>Un número cada vez</b> y las conversiones <b>⇄</b> (número → RPP, RPP → número) están abiertos a <b>todos los rangos</b>, con los mismos controles y la misma cuota; sin derecho sobre el segmento o el RPP (bloqueo por encima de su rango), WME lo convierte en una sugerencia al guardar — si no hay ediciones directas pendientes, y en una conversión solo si los dos objetos están en el mismo caso. En la fila desplegada de una calle, <i>Añadir los números</i> coloca en WME sus direcciones que faltan — <b>calle por calle</b>, nunca para todo el municipio. Para un solo número: el «+» de su etiqueta (al pasar el ratón) o un clic en su punto del mapa. Se aplican los derechos de WME: para un solo número o una conversión, un segmento bloqueado por encima de su rango (o fuera de sus zonas de edición) da una sugerencia al guardar; <i>Añadir los números</i> de una calle entera omite esos segmentos, y el mensaje lo dice.</p><p><b>Condiciones</b>: el nombre principal de los segmentos es el de la BAN (se toleran acentos, mayúsculas, apóstrofos, espacios, guiones y puntos; una grafía distinta solo se señala) y su ciudad es el municipio o «Village (Commune)». Cada número va al segmento admitido más cercano (80 m como máximo); un número ya presente, aunque esté pendiente en esta pestaña, nunca se vuelve a colocar; un sufijo distinto (12 b / 12bis) o numérico se deja al editor, salvo si WME solo tiene el número sin sufijo (32 para 32 B): entonces se coloca, con un aviso.</p><p><b>No se guarda nada</b>: los números colocados aparecen rodeados en turquesa en el mapa (incluso con la ventana cerrada) y marcados con ✚ en la calle; revíselos y luego guarde o deshaga en WME.</p><p><b>Cuota</b>: 500 ediciones por hora móvil, por editor y en este navegador: números y RPP colocados por WBC («+», <i>Añadir los números</i>), «⇄» incluido («↻» está fuera de la cuota). Cada edición se reserva al colocarla y se cuenta si aparece en el servidor tras guardar; retirada o modificada antes, se devuelve. Las ediciones hechas a mano nunca cuentan. Una vez guardados, los números y RPP pasan a «encontrados» sin volver a analizar; un análisis guardado más antiguo lo indica («relance»). La insignia &#x271A; de la cabecera de la ventana indica lo que queda: naranja por debajo del 20 %, rojo por debajo del 5 %.</p><p><b>RPP</b>: una dirección al final de un acceso (camino privado o vía de aparcamiento a menos de 80 m, su calle a menos de 250 m) se convierte en un lugar residencial (RPP), también con el botón de la calle. Una dirección fuera de poblado (segmento cuyo nombre principal no tiene ciudad y que lleva el nombre BAN con el municipio como alternativo) se convierte en RPP, con el botón de la calle como con el «+». El RPP se crea en la posición BAN, con su dirección y su punto de entrada en el segmento (o el acceso) más cercano; una dirección rechazada retira el lugar. Su bloqueo es el que WME pone por defecto (ninguna tabla de Francia fija uno para un RPP). Los RPP cuentan en la cuota. Una dirección sin ningún segmento con el nombre BAN a menos de 80 m, pero cerca de una vía transitable de otro nombre, también se convierte en RPP: dirección «nombre BAN / municipio», entrada por esa vía. No cuando la calle existe en WME con un nombre a revisar (artículo, ortografía, tipo…): renómbrela primero; no se crea ningún RPP en su lugar (0.30.14).</p><p><b>Número → RPP</b>: en la burbuja del punto de un número (guardado, o colocado por WBC y aún sin guardar), «⇄ Convertir este número en RPP» quita el número y crea en su lugar un RPP (mismo número, misma calle), con el punto de entrada en el segmento sin nombre o el acceso más cercano (rotonda, camino privado…); luego el RPP queda seleccionado para ajustar su entrada. Un número colocado por WBC solo cambia de tipo en la cuota; un número guardado cuenta 2.</p><p><b>RPP → número</b>: en la calle desplegada, los RPP de la calle tienen sus etiquetas; al pasar el ratón, «⇄» sustituye UN RPP por un número en el segmento más cercano de su propia calle — calle y ciudad del RPP son el nombre BAN y el municipio, así que no hay ambigüedad: otra calle más cercana, o un punto de entrada a otra calle, ya no bloquea (0.30.14). El mismo número ya en la calle a menos de 150 m hace del RPP un duplicado, simplemente retirado. Ningún segmento de la calle a menos de 80 m: se queda. Rechazado si el RPP tiene nombre o foto, otra ciudad u otra calle. También con un clic en su punto del mapa. Misma cuota; no se guarda nada. Se lee el bloqueo del RPP: por encima de su rango, la sustitución se convierte en una sugerencia al guardar; si no, el mensaje lo indica. Ningún cambio debe estar pendiente de guardar (WME ya no deja a los scripts leer lo pendiente); una sustitución cuenta 2 en la cuota (RPP retirado, número colocado). También seleccionando el triángulo del RPP en WME (ventana de WBC abierta).</p><p><b>Detener</b>: mientras se rellena una calle larga (el mapa se mueve de zona en zona), el botón Detener interrumpe la pasada; lo colocado se queda, para revisar. Una colocación fallida se cuenta en el mensaje. <b>Límite</b>: un número tecleado a mano y aún no guardado no se ve como duplicado — guarde antes de añadir en la misma calle. Dos pestañas de WME abiertas a la vez no ven los números pendientes de la otra: coloque desde una sola pestaña.</p>',
+            ajHnQuotaTip: '500 ediciones por hora móvil, por editor, en este navegador: cada número o RPP colocado por WBC cuenta 1, «⇄» hasta 2. La plaza se reserva al colocar, se mantiene si la edición aparece en el servidor tras guardar y se devuelve si no. «↻» está fuera de la cuota; las ediciones hechas a mano nunca cuentan.',
             ajHnLeft: n => 'Cuota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' en esta hora',
             ajHnFull: h => 'Cuota alcanzada — próxima adición a las ' + h,
             ajHn1: 'Añadir este número',
@@ -1779,8 +1864,9 @@
             legTipRppDbl: 'RPP duplicado de un número ya colocado en la calle',
             legTipFound: 'Dirección BAN encontrada en WME',
             corrSaveFail: (n, l) => 'WME no ha guardado, con ' + n + ' corrección(es) «↻» pendiente(s): ' + l + '. Recargue la página: las ediciones pendientes se conservan. Indíquelo en el hilo de WBC.',
+            ajHnSaveFail: n => 'WME no ha guardado, con ' + n + (un1(n) ? ' edición de WBC pendiente' : ' ediciones de WBC pendientes') + ' («+», «⇄»). Recargue la página: las ediciones pendientes se conservan. Indíquelo en el hilo de WBC.',
             legPose: 'colocado o corregido por WBC, aún sin guardar',
-            legArret: 'línea hacia un punto de llegada lejano',
+            legArret: 'línea hacia un punto de entrada lejano',
             corrProgress: (n, N, l) => 'Corrigiendo ' + n + '/' + N + (l ? ': ' + l : '') + '…',
             corrZone: (n, N) => 'Corrigiendo ' + n + '/' + N + ': cargando la zona de este número…',
             hovDecale: (m, s) => 'Encontrado a ' + m + ' m de su punto BAN (más de ' + s + ' m): compruebe su posición',
@@ -1793,9 +1879,13 @@
             kDecaleOld: 'desplazados: vuelva a lanzar el análisis (barrido antiguo)',
             sbDecaleActif: 'Señalar los números desplazados de su punto BAN',
             sbDecale: 'Señalar un número encontrado pero desplazado de su punto BAN a más de',
-            sbDecaleHint: 'Desactivado por defecto. Una ayuda para localizar un número colocado lejos de su casa, no una regla de colocación: el número puede ir en el centro del edificio — para la navegación cuenta su punto de parada. Distancia entre el número de WME y su dirección BAN; se aplica de inmediato, sin nuevo análisis.',
+            sbDecaleHint: 'Desactivado por defecto. Una ayuda para localizar un número colocado lejos de su casa, no una regla de colocación: el número puede ir en el centro del edificio — para la navegación cuenta su punto de entrada. Distancia entre el número de WME y su dirección BAN; se aplica de inmediato, sin nuevo análisis.',
             corrTip: (o, n) => 'Corregir: el número WME «' + o + '» pasa a ser «' + n + '» (mismo punto). Fuera de la cuota; no se guarda nada.',
             corrLoin: b => 'Estaba asociado de lejos al «' + b + '» de la BAN, que volverá a faltar.',
+            corrEntropTip: n => '«' + n + '» no existe en la BAN: puede ser una dirección reciente. Compruébelo sobre el terreno antes de corregir; el «+» sigue disponible.',
+            tropCorr: (w, b) => 'propuesto para «↻» para convertirse en el «' + b + '» de la BAN, ¿o dirección reciente? Compruébelo antes de corregir o de avisar.',
+            ajHnVille: (c, v, m) => 'No se coloca nada ni se crea ningún RPP: el segmento «' + v + '» cercano pertenece a la ciudad «' + c + '» en WME, no a «' + m + '». Revise la ciudad del segmento, guarde y vuelva a intentarlo.',
+            ajHnHorsCom: n => n + (un1(n) ? ' dirección fuera del municipio descartada' : ' direcciones fuera del municipio descartadas') + ': no se crea ningún RPP en el territorio vecino.',
             corrAdd: n => 'Corregir los números (' + n + ')',
             corrAddTip: 'Reescribe de una vez los números WME de la vía colocados en el lugar de otra dirección BAN (calle renumerada) o escritos de otra forma que la esperada («2bis» ⇒ «2 bis»). Fuera de la cuota. No se guarda nada: revise y luego guarde o deshaga en WME.',
             corrRunning: 'Corrigiendo los números…',
@@ -1817,6 +1907,11 @@
             corrRppAbsent: 'no encontrado en WME (zoom 18, ¿capa Lugares visible?)',
             corrRppChange: 'modificado desde el análisis',
             corrRppSkip: l => 'RPP dejados tal cual (revisar a mano): ' + l + '.',
+            corrHnAbsent: 'ya no está en su segmento (¿corregido o borrado desde el análisis?)',
+            corrHnChange: n => 'ahora es «' + n + '»',
+            corrHnDeplace: d => 'movido ' + d + ' m desde el análisis',
+            corrHnNonRelu: 'no se pudo releer en WME',
+            corrHnSkip: l => 'Números dejados tal cual (vuelva a lanzar el análisis): ' + l + '.',
             corrRppTip: 'Lugar residencial (RPP): solo cambia su número; calle, ciudad, punto de entrada y bloqueo se mantienen.',
             corrPoseTip: 'Corregido por WBC, aún sin guardar.',
             formeT: n => 'Colocados pero incorrectos (' + n + ')',
@@ -1842,11 +1937,11 @@
             cmpCert: 'La exportación tenía otro ajuste «solo certificadas»: las cifras no se comparan.',
             thDelta: 'Δ',
             thDeltaTip: d => 'Cambio en WME desde la exportación del ' + d,
-            namesCsv: 'Diferencias (CSV)',
+            namesCsv: 'Nombres a revisar (CSV)',
             namesCsvTip: 'Las calles cuyo nombre en WME difiere de la BAN, con sus segmentos y un enlace WME: para corregir o señalar.',
             namesNone: 'Ninguna diferencia de nombre que exportar.',
             hTrackT: 'Seguir y señalar',
-            hTrackB: '<p><b>Mapa del departamento</b>: tras un departamento, cada municipio se colorea según su cobertura (claro = poca, oscuro = mucha). Al pasar el ratón se ven sus cifras; con el mapa alejado, un clic lo abre.</p><p><b>Número que falta</b>: con la calle abierta, una línea de puntos lleva al segmento que probablemente debería llevarlo; su identificador está en el CSV.</p><p><b>Seleccionar los segmentos</b> de una calle desde su fila: quedan seleccionados en WME.</p><p><b>Avance</b>: la exportación CSV sirve también de registro. Más tarde, <i>Comparar</i> la vuelve a leer y da el cambio calle por calle (o municipio por municipio). No se guarda nada en otro sitio.</p><p><b>Diferencias (CSV)</b>: las calles que renombrar, cada una con un enlace WME, para corregir o enviar a los responsables de la zona.</p><p><b>Herramientas de la calle</b>: en la fila desplegada de una calle, iconos con contador — seleccionar los segmentos, añadir los números, calle siguiente, señalar a la BAN o contactar con el ayuntamiento; el nombre de cada uno aparece al pasar el ratón.</p><p><b>Límite del municipio</b>: el icono de polígono, junto a las exportaciones, dibuja en el mapa el límite administrativo del municipio; la elección se conserva.</p>',
+            hTrackB: '<p><b>Mapa del departamento</b>: tras un departamento, cada municipio se colorea según su cobertura (claro = poca, oscuro = mucha). Al pasar el ratón se ven sus cifras; con el mapa alejado, un clic lo abre.</p><p><b>Número que falta</b>: con la calle abierta, una línea de puntos lleva al segmento que probablemente debería llevarlo; su identificador está en el CSV.</p><p><b>Seleccionar los segmentos</b> de una calle desde su fila: quedan seleccionados en WME.</p><p><b>Avance</b>: la exportación CSV sirve también de registro. Más tarde, <i>Comparar</i> la vuelve a leer y da el cambio calle por calle (o municipio por municipio). No se guarda nada en otro sitio.</p><p><b>Nombres a revisar (CSV)</b>: las calles que renombrar, cada una con un enlace WME, para corregir o enviar a los responsables de la zona.</p><p><b>Herramientas de la calle</b>: en la fila desplegada de una calle, iconos con contador — seleccionar los segmentos, añadir los números, calle siguiente, señalar a la BAN o contactar con el ayuntamiento; el nombre de cada uno aparece al pasar el ratón.</p><p><b>Límite del municipio</b>: el icono de polígono, junto a las exportaciones, dibuja en el mapa el límite administrativo del municipio; la elección se conserva.</p>',
             certOnlyTip: "Solo direcciones certificadas",
             layerSwitchTip: "Números que faltan y de más en el mapa",
             showFoundTip: "Mostrar también las encontradas",
@@ -1857,6 +1952,8 @@
             memoBanProg: (i, n) => 'BAN: comprobando ' + i + '/' + n,
             memoBanOk: 'BAN sin cambios',
             memoBanMaj: d => 'BAN actualizada' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · revisión del ' + d : ''),
+            srcBanTip: 'Fecha de revisión de la Base Adresse Locale del municipio, leída en la BAN; no aparece si el municipio no ha publicado ninguna BAL. Fuente que citar si difunde cifras o una exportación.',
             memoBanMajN: n => 'BAN actualizada: ' + n,
             memoBanErr: 'BAN: comprobación imposible',
             dejaHnDepuis: n => n + (un1(n) ? ' número añadido por WBC desde entonces: relance' : ' números añadidos por WBC desde entonces: relance'),
@@ -1887,14 +1984,14 @@
             sbOpen: 'Apri la finestra',
             sbHelp: 'Aiuto',
             hWhatT: 'Cosa viene confrontato',
-            hWhatB: "<p>La <b>BAN</b> è il riferimento: ogni indirizzo che elenca dovrebbe esistere in WME, come numero su un segmento (HN) o come punto residenziale (RPP).</p><p><b>Fonti</b>, lette dal vivo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Stato francese; Licence Ouverte Etalab 2.0; è mostrata la data di revisione di ogni comune); i confini e gli elenchi dei comuni di <b>geo.api.gouv.fr</b> (API Découpage administratif, dati INSEE e IGN, Licence Ouverte Etalab 2.0); l’<b>API pubblica delle segnalazioni BAN</b> (signalement.adresse.data.gouv.fr) per lo stato delle segnalazioni; e WME dagli stessi server dell’editor. La zona non deve essere visualizzata né caricata. Dal 12/11/2026 Waze accredita la BAN per la Francia (visualizzazione e creazione assistita dei numeri civici, pagina Map Data Attribution); l’aggiunta di un’intera via resta un gesto da L6; un numero alla volta è aperto a tutti i livelli; il tutto con quota.</p><p><b>Ciò che esce dal browser</b>: verso geo.api.gouv.fr, in modalità «Centro della mappa», il centro della mappa ARROTONDATO a 3 decimali (circa 100 m) e le tue ricerche di comune — senza identità né cookie; verso la BAN e l’API delle segnalazioni, il codice del comune; all’avvio, GitHub (version-min.json, versione minima: una versione ritirata non si avvia) e GreasyFork (nuova versione) sono solo letti. Verso data.geopf.fr (Géoplateforme dell’IGN), con la casella WBC del menu Livelli spuntata: l’estensione della vista, dallo zoom 18, senza cookie. Nient’altro; il tuo nome utente non va a nessun terzo (solo al Discuss di Waze, per il pulsante Copia).</p><p><b>Segnala alla BAN</b>: apre lo strumento ufficiale (signalement.adresse.data.gouv.fr) in una nuova scheda, sulla via o sul numero; WBC non invia nulla, sei tu a compilare e inviare il modulo. Per un numero di WME assente dalla BAN, il commento precompilato porta l’indirizzo letto in Waze («Adresse présente dans Waze: …»): rileggilo, modificalo o cancellalo prima di inviare.</p><p><b>BAN della vista</b>: con la casella WBC del menu Livelli spuntata e nessuna analisi mostrata in quel punto, gli indirizzi BAN della vista compaiono dallo zoom 18, in grigio (sola lettura); cerchiati di verde quando WME ha già lo stesso numero sulla stessa via o entro 30 m (numeri salvati, punti residenziali). <b>Ctrl+clic</b> (Cmd+clic su Mac) sul pulsante della mappa: il comune al centro viene analizzato, o la sua scansione recente riaperta, e mostrato sulla mappa senza aprire la finestra. Finché la finestra di WBC è aperta, i livelli WME «Numeri civici» e «Residenziale» sono visibili; alla chiusura tornano allo stato precedente.</p>",
+            hWhatB: "<p>La <b>BAN</b> è il riferimento: ogni indirizzo che elenca dovrebbe esistere in WME, come numero su un segmento (HN) o come punto residenziale (RPP).</p><p><b>Fonti</b>, lette dal vivo: la <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Stato francese; Licence Ouverte Etalab 2.0; la data di revisione della Base Adresse Locale del comune è mostrata sotto il suo nome quando la BAN la pubblica); i confini e gli elenchi dei comuni di <b>geo.api.gouv.fr</b> (API Découpage administratif, dati INSEE e IGN, Licence Ouverte Etalab 2.0); l’<b>API pubblica delle segnalazioni BAN</b> (signalement.adresse.data.gouv.fr) per lo stato delle segnalazioni; e WME dagli stessi server dell’editor. La zona non deve essere visualizzata né caricata. Dal 12/11/2026 Waze accredita la BAN per la Francia (visualizzazione e creazione assistita dei numeri civici, pagina Map Data Attribution); l’aggiunta di un’intera via resta un gesto da L6; un numero alla volta è aperto a tutti i livelli; il tutto con quota.</p><p><b>Ciò che esce dal browser</b>: verso geo.api.gouv.fr, in modalità «Centro della mappa», il centro della mappa ARROTONDATO a 3 decimali (circa 100 m) e le tue ricerche di comune — senza identità né cookie; verso la BAN e l’API delle segnalazioni, il codice del comune; all’avvio, al massimo una volta al giorno, GitHub (version-min.json, versione minima: una versione ritirata non si avvia) e GreasyFork (nuova versione) sono solo letti. Verso data.geopf.fr (Géoplateforme dell’IGN), con la casella WBC del menu Livelli spuntata: l’estensione della vista, dallo zoom 18, senza cookie. Nient’altro; il tuo nome utente non va a nessun terzo (solo al Discuss di Waze, per il pulsante Copia).</p><p><b>Segnala alla BAN</b>: apre lo strumento ufficiale (signalement.adresse.data.gouv.fr) in una nuova scheda, sulla via o sul numero; WBC non invia nulla, sei tu a compilare e inviare il modulo. Per un numero di WME assente dalla BAN, il commento precompilato porta l’indirizzo letto in Waze («Adresse présente dans Waze: …»): rileggilo, modificalo o cancellalo prima di inviare.</p><p><b>BAN della vista</b>: con la casella WBC del menu Livelli spuntata e nessuna analisi mostrata in quel punto, gli indirizzi BAN della vista compaiono dallo zoom 18, in grigio (sola lettura); cerchiati di verde quando WME ha già lo stesso numero sulla stessa via o entro 30 m (numeri salvati, punti residenziali). <b>Ctrl+clic</b> (Cmd+clic su Mac) sul pulsante della mappa: il comune al centro viene analizzato, o la sua scansione recente riaperta, e mostrato sulla mappa senza aprire la finestra. Finché la finestra di WBC è aperta, i livelli WME «Numeri civici» e «Residenziale» sono visibili; alla chiusura tornano allo stato precedente.</p>",
             hMatchT: 'Quando un numero è trovato',
             hMatchB: '<p>Un indirizzo BAN è trovato quando WME ha lo stesso numero (suffissi compresi: <i>bis</i>, <i>ter</i>, lettere) a meno di 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>su una via con lo stesso nome (principale o alternativo), o che ne differisce solo per un articolo («Avenue Sembrancher» = «Avenue de Sembrancher»; la differenza di nome resta segnalata);</td></tr><tr><td>2</td><td>oppure su un segmento che porta gli indirizzi di questa via, <b>con o senza nome</b>;</td></tr><tr><td>3</td><td>oppure a meno di 30 m dall\'indirizzo.</td></tr></table><p>La regola 1 è provata ovunque per prima, poi la 2, poi la 3. Un numero WME serve una sola volta.</p>',
             hNamesT: 'La colonna «Via WME»',
             hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>i segmenti vicini agli indirizzi portano il nome della BAN.</td></tr><tr><td><i>nome</i></td><td>portano un altro nome: il nome da verificare.</td></tr><tr><td><i>senza nome</i></td><td>non portano alcun nome.</td></tr><tr><td><i>nessun segmento</i></td><td>nessun segmento a meno di 80 m dagli indirizzi.</td></tr><tr><td>&#x2713; alt</td><td>il nome della BAN è un nome <b>alternativo</b>; il nome principale è mostrato accanto.</td></tr><tr><td>n. strada</td><td>il nome principale è un numero di strada e il nome della BAN manca tra gli alternativi: aggiungerlo.</td></tr><tr><td>tipo</td><td>differisce solo il tipo di via (Rue / Chemin…).</td></tr><tr><td>articolo · ortografia · parziale</td><td>nomi simili: un articolo, una o due lettere, o una forma abbreviata. <i>assente in WME</i>: la via non esiste in WME, il nome mostrato è quello della vicina.</td></tr><tr><td>&#x2713; parcheggio</td><td>nessun segmento con nome, ma un luogo Parcheggio vicino porta il nome della BAN: niente da rinominare.</td></tr><tr><td>&#x2713; grafia BAN</td><td>stesso nome a meno di un trattino o un punto («Rue Paul-Louis Courier» / «Rue Paul Louis Courier»): niente da rinominare.</td></tr></table><p>Un numero mancante in arancione con <b>≠</b> esiste in WME con un altro suffisso (12 b / 12bis): da verificare. Se WME ha solo il numero senza suffisso (32 / 32 B), viene inserito comunque e l’avviso resta.</p><p>&#x26A0; segnala un nome della BAN che nessun segmento del comune porta.</p>',
             hLimitsT: 'Buono a sapersi',
-            hLimitsB: "<p>Un intero dipartimento richiede qualche minuto: la BAN si legge comune per comune, WME a riquadri di circa 5 km. Il pulsante Ferma lo interrompe; quanto fatto resta visibile e i comuni in errore si possono riprovare da soli.</p><p>Parigi, Marsiglia e Lione si leggono arrondissement per arrondissement. Le scansioni restano solo in questo browser (IndexedDB), mai altrove, con le tue preferenze (ambito, interruttori, posizione della finestra, colori dei punti); sono segnalate quando la BAN o WME sono cambiati da allora.</p>",
-            hSafeB: "Lo script modifica la mappa solo su richiesta di un editor: il «+» di un indirizzo (un numero o un RPP, tutti i livelli); e, per un L6, «Aggiungi i numeri» (via per via: numeri, e RPP in fondo a un accesso), «⇄» (un RPP sostituito da un numero) e «Trasforma questo numero in RPP» — al massimo 500 per ora mobile, per editor; non salva mai. I risultati restano in questo browser.",
+            hLimitsB: "<p>Un intero dipartimento richiede qualche minuto: la BAN si legge comune per comune, WME a riquadri di circa 5 km. Il pulsante Ferma lo interrompe; quanto fatto resta visibile e i comuni in errore si possono riprovare da soli.</p><p>Parigi, Marsiglia e Lione si leggono arrondissement per arrondissement. Le scansioni restano solo in questo browser (IndexedDB), mai altrove, con le tue preferenze (ambito, interruttori, posizione della finestra, colori dei punti); sono segnalate quando la BAN o WME sono cambiati da allora.</p><p><b>Finestra staccata</b> (⧉ nell’intestazione, solo Chrome ed Edge): la finestra di WBC passa in una finestra separata, per esempio su un secondo schermo; ⧉ o la chiusura di quella finestra la riporta in WME. La mappa, i suoi fumetti e gli avvisi restano nella finestra di WME, e le scorciatoie di WME (Ctrl+Z…) non funzionano nella finestra staccata.</p>",
+            hSafeB: "Lo script modifica la mappa solo su richiesta di un editor. Tutti i livelli: il «+» di un indirizzo (un numero o un RPP), «⇄» (un RPP sostituito da un numero, o un numero trasformato in RPP) e «↻» (un numero riscritto). Per un L6: «Aggiungi i numeri» e «Correggi i numeri» di un’intera via. Al massimo 500 modifiche per ora mobile, per editor («↻» fuori quota); non salva mai. I risultati restano in questo browser.",
             remTitle: "Resta responsabile delle sue modifiche",
             remBody: "<p>WME BAN Coverage <b>propone</b>: non salva mai nulla da solo.</p><p>Ogni numero, RPP o conversione «⇄» arriva in WME come modifica in sospeso. La controlli sulla mappa, poi la salvi o la annulli in WME.</p><p>Ciò che salva è una sua modifica, come se l’avesse fatta a mano.</p>",
             remNote: "Questo promemoria compare una volta per browser; può rivederlo dalla scheda dello script.",
@@ -1910,11 +2007,13 @@
             modeCommune: 'Altro comune',
             modeDep: 'Dipartimento',
             modeLbl: 'Ambito',
+            filtreLbl: 'Vie mostrate',
             hereHint: 'Il comune sotto il centro della mappa, preso all\'avvio dell\'analisi.',
             searchPh: 'Nome, CAP o codice INSEE',
             searchNone: 'Nessun comune trovato',
             depChoose: 'Scegli un dipartimento',
             analyse: 'Analizza',
+            analyseCom: c => 'Analizza ' + c,
             stop: 'Ferma',
             stLocate: 'Ricerca del comune…',
             stBan: 'BAN: lettura…',
@@ -1954,7 +2053,7 @@
             filterPh: 'Filtra le vie',
             filterClear: 'Cancella il filtro',
             filterCount: (n, m) => n + (un1(n) ? ' via su ' : ' vie su ') + m,
-            layerSwitch: 'Scarti',
+            layerSwitch: 'Da trattare',
             exportCsv: 'Esporta CSV',
             thStreetBan: 'Via BAN',
             thStreetWme: 'Via WME',
@@ -1962,6 +2061,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'Scarto',
+            thGapCourt: 'Diff.',
             thRep: 'Segni',
             thRepTip: '↻ numeri da correggere · ↔ numeri spostati dal punto BAN · RPP doppione di un numero. Passa sopra un segno per i dettagli.',
             thCommune: 'Comune',
@@ -2003,6 +2103,8 @@
             hovWmeStreet: r => 'Via WME: ' + r,
             sizeTip: "Ingrandisci / ripristina la finestra",
             smallTip: "Finestra piccola (dimensione originale)",
+            detachTip: "Staccare in una finestra separata (es. secondo schermo). Le scorciatoie di WME (Ctrl+Z…) lì non funzionano.",
+            attachTip: "Riportare la finestra in WME",
             searching: "Ricerca…",
             tipAnalyse: "Analizza la zona scelta. Se è già stata scansionata, compare prima la sua data, con Apri o Rilancia.",
             tipAnalyseCom: c => "Rianalizza " + c + ", il comune mostrato, e aggiorna la sua riga nel dipartimento. Per scansionare tutto il dipartimento, tornaci prima.",
@@ -2064,7 +2166,9 @@
             stDoneErr: (s, n) => 'Fatto in ' + s + ' s — ' + n + (un1(n) ? ' comune in errore' : ' comuni in errore'),
             noCert: n => 'Nessuno dei ' + n + ' indirizzi BAN di questo comune è certificato.',
             errSession: "Sessione WME scaduta: ricarica la pagina.",
+            errWmeSerie: (n, m) => 'Dipartimento interrotto: WME non ha risposto per ' + n + ' comuni di fila (' + m + '). I comuni rimanenti sono segnati in errore; riprovali più tardi.',
             errFormat: src => src + ' ha risposto in un formato inatteso: lo script va aggiornato.',
+            ecrCoupee: 'La scrittura è sospesa dall’autore dello script fino alla pubblicazione di una versione corretta; lettura e analisi restano disponibili.',
             delNote: "non attribuibili a un comune delegato",
             mapCap: (a, b) => 'Mappa: ' + a + ' punti mostrati su ' + b + ' nella vista (ingrandisci per vederli tutti)',
             legExtra: "in più in WME",
@@ -2098,11 +2202,11 @@
             kSuf: n => 'di cui ' + n + (un1(n) ? ' suffisso da verificare' : ' suffissi da verificare'),
             tipSuf: w => "WME ha " + w + ": verificare il suffisso",
             kFar: n => 'di cui ' + n + ' lontani dal punto BAN',
-            kArret: n => n + ' punto/i di arrivo lontano/i',
-            hovArret: d => 'Punto di arrivo ' + d + ' m di troppo',
-            arrT: (n, s) => 'Punti di arrivo lontani (' + n + ', oltre ' + s + ' m)',
-            arrTip: d => 'Il punto di arrivo è ' + d + ' m più lontano della strada accanto al numero WME: controllarlo in WME',
-            sbArret: 'Segnalare un punto di arrivo lontano oltre',
+            kArret: n => n + ' punto/i di ingresso lontano/i',
+            hovArret: d => 'Punto di ingresso ' + d + ' m di troppo',
+            arrT: (n, s) => 'Punti di ingresso lontani (' + n + ', oltre ' + s + ' m)',
+            arrTip: d => 'Il punto di ingresso è ' + d + ' m più lontano della strada accanto al numero WME: controllarlo in WME',
+            sbArret: 'Segnalare un punto di ingresso lontano oltre',
             sbArretHint: 'Distanza tra il numero WME e il punto in cui Waze porta, meno la sua distanza dalla strada. Applicato subito, senza nuova analisi.',
             tipFar: d => 'Posto a ' + d + ' m dall’indirizzo BAN',
             certOnly: 'Certificati',
@@ -2143,13 +2247,13 @@
             nextStreet: n => 'Via successiva (' + n + ' da aggiungere)',
             tipNextStreet: 'Apre la via del comune in cui «Aggiungi» ha più numeri da inserire (nome BAN come principale o alternativo), saltando le vie già aperte con questo pulsante.',
             nextStreetNone: 'Nessun’altra via pronta: le rimanenti hanno già i numeri, o prima va corretto il nome.',
-            ajHnAddTip: r => 'Solo L6: inserisce in WME i numeri mancanti di questa via, sui segmenti il cui nome principale è quello della BAN (accenti, maiuscole, trattini e punti tollerati) e la cui città è il comune o «Village (Commune)»; un indirizzo in fondo a un accesso diventa un RPP. Al massimo 500 modifiche per ora mobile, contate al salvataggio (restano ' + r + '). Niente viene salvato: controlla, poi salva in WME. Anche gli indirizzi fuori centro abitato diventano RPP.',
+            ajHnAddTip: r => 'Solo L6: inserisce in WME i numeri mancanti di questa via, sui segmenti il cui nome principale è quello della BAN (accenti, maiuscole, trattini e punti tollerati) e la cui città è il comune o «Village (Commune)»; un indirizzo in fondo a un accesso diventa un RPP. Al massimo 500 modifiche per ora mobile, riservate all’inserimento, restituite se non salvate (restano ' + r + '). Niente viene salvato: controlla, poi salva in WME. Anche gli indirizzi fuori centro abitato diventano RPP.',
             ajHnNoName: 'Il nome WME di questa via non è quello della BAN: l’aggiunta automatica richiede un nome principale identico a quello della BAN.',
             ajHnNone: 'Nessun numero può essere aggiunto automaticamente su questa via.',
             ajHnLoin: n => 'Nessun numero da aggiungere automaticamente: ' + n + ' indirizzo/i a più di 80 m dalla via disegnata in WME. Avvicina il segmento se è mal posizionato.',
             ajHnNomEcart: (w, b) => 'Nessun numero da aggiungere automaticamente: in WME i segmenti di questa via si chiamano «' + w + '», non «' + b + '» come nella BAN. Dai loro il nome della BAN.',
             ajHnRenommer: (w, b) => 'Nulla inserito, e nessun RPP creato al suo posto: la via esiste in WME come «' + w + '», non «' + b + '» (nome da verificare). Rinomina prima la via in WME, salva, poi riprova.',
-            ajHnQuota: h => 'Quota raggiunta (500 numeri all’ora): prossima aggiunta possibile alle ' + h + '.',
+            ajHnQuota: h => 'Quota raggiunta (500 modifiche all’ora): prossima aggiunta possibile alle ' + h + '.',
             ajHnRunning: 'Aggiunta dei numeri…',
             rhnToRppRunning: 'Conversione del numero in RPP…',
             rhnRunning: 'Conversione del RPP in numero…',
@@ -2186,7 +2290,7 @@
             rhnCity: v => 'Questo RPP appartiene a «' + v + '», non al comune: non viene convertito.',
             rhnStreet: r => 'Questo RPP porta la via «' + r + '», non il nome BAN della via: non viene convertito.',
             rhnNoSeg: 'Nessun segmento della via (nome BAN come principale, comune come città) entro 80 m: l’RPP è probabilmente fuori dal centro abitato, resta.',
-            rhnLegit: v => 'Il punto di accesso dell’RPP dà su «' + v + '», non sulla sua via: l’RPP esprime uno scarto che un numero di segmento non può, resta.',
+            rhnLegit: v => 'Il punto di ingresso dell’RPP dà su «' + v + '», non sulla sua via: l’RPP esprime uno scarto che un numero di segmento non può, resta.',
             rhnUnsure: 'Niente di netto (un’altra via altrettanto vicina, o troppo lontano da ogni via): l’RPP resta, da vedere a mano.',
             rhnFormat: n => 'Il numero «' + n + '» non si scrive come un numero di segmento: da vedere a mano.',
             rhnErr: m => 'Sostituzione interrotta: ' + m,
@@ -2196,6 +2300,10 @@
             rhnSelVersHn: 'in numero',
             rhnVersRppTip: 'Toglie questo numero dal segmento e crea al suo posto un RPP (stesso numero, stessa via), con il punto di ingresso sul segmento senza nome più vicino o su un accesso (strada privata, viabilità di parcheggio); l’RPP viene poi selezionato per regolarne l’ingresso. Conta nella quota; niente viene salvato.',
             rhnVersRppDone: (n, q) => 'N. ' + n + ' trasformato in RPP — regola il punto di ingresso se serve (è selezionato), poi salva in WME. Quota residua: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'Esiste già un RPP n. ' + n + ' di questa via a ' + d + ' m: nulla è cambiato.',
+            rhnVersRppEntree: (v, d) => v ? 'Punto di ingresso su «' + v + '», a ' + d + ' m.' : 'Punto di ingresso su una strada senza nome, a ' + d + ' m.',
+            illisibleRpp: 'Impossibile leggere gli RPP esistenti in WME: nulla è posato né cambiato.',
+            occupeGeste: 'È in corso una modifica di WBC: attendi che finisca.',
             rhnVersRppAbsent: n => 'Il numero ' + n + ' non si trova in WME (segmento non caricato, o numero già tolto): nulla è cambiato.',
             rhnVersRppTipPose: 'Trasformato in RPP (non ancora salvato).',
             ajHnSkip: n => n + (un1(n) ? ' indirizzo scartato' : ' indirizzi scartati') + ' (dettagli nella console).',
@@ -2207,11 +2315,11 @@
             ajHnSee: n => (un1(n) ? 'È cerchiato' : 'Sono cerchiati') + ' in turchese sulla mappa.',
             ajHnPoseTip: 'Inserito da WBC, non ancora salvato: clicca per centrare la mappa.',
             ajZoom17: 'Ingrandisci al livello 17 o più: al di sotto, WME non carica i luoghi residenziali. La mappa resta dov’è.',
-            ajHnSaved: (c, r, q) => 'Salvataggio: ' + c + (un1(c) ? ' numero contato' : ' numeri contati') + ', ' + r + ' restituiti alla quota (rimossi prima del salvataggio). Quota residua: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'Salvataggio: ' + c + (un1(c) ? ' modifica contata' : ' modifiche contate') + ', ' + r + (un1(r) ? ' restituita' : ' restituite') + ' alla quota (rimosse prima del salvataggio). Quota residua: ' + q + '.',
             ajHnSavedTip: 'Inserito da WBC e salvato.',
             hHnT: 'Aggiungere i numeri',
-            hHnB: '<p><i>Aggiungi i numeri</i> di un’intera via: solo editor <b>L6</b>. <b>Un numero alla volta</b> e le conversioni <b>⇄</b> (numero → RPP, RPP → numero) sono aperti a <b>tutti i livelli</b>, con gli stessi controlli e la stessa quota; senza diritto sul segmento o sul RPP (blocco sopra il tuo livello), WME ne fa un suggerimento al salvataggio — se non ci sono modifiche dirette in sospeso, e per una conversione solo se i due oggetti sono nello stesso caso. Nella riga aperta di una via, <i>Aggiungi i numeri</i> inserisce in WME i suoi indirizzi mancanti — <b>via per via</b>, mai per un intero comune. Per un solo numero: il «+» della sua etichetta (al passaggio del mouse) o un clic sul suo punto sulla mappa. Valgono i diritti di WME: per un solo numero o una conversione, un segmento bloccato sopra il tuo livello (o fuori dalle tue aree di modifica) dà un suggerimento al salvataggio; <i>Aggiungi i numeri</i> di un’intera via salta questi segmenti, e il messaggio lo dice.</p><p><b>Condizioni</b>: il nome principale dei segmenti è quello della BAN (accenti, maiuscole, apostrofi, spazi, trattini e punti tollerati; una grafia diversa è solo segnalata) e la loro città è il comune o «Village (Commune)». Ogni numero va al segmento ammesso più vicino (80 m al massimo); un numero già presente, anche in attesa in questa scheda, non viene mai reinserito; un suffisso diverso (12 b / 12bis) o numerico è lasciato all’editor, salvo se WME ha solo il numero senza suffisso (32 per 32 B): allora viene inserito, con un avviso.</p><p><b>Niente viene salvato</b>: i numeri inseriti sono cerchiati in turchese sulla mappa (anche a finestra chiusa) e segnati con ✚ nella via; controllali, poi salva o annulla in WME.</p><p><b>Quota</b>: 500 numeri per ora mobile. Un numero è riservato quando viene inserito e contato se si trova sul server dopo il salvataggio; rimosso o modificato prima, viene restituito. I numeri inseriti a mano non contano mai. Una volta salvati, risultano «trovati» senza rilanciare l’analisi; un’analisi salvata più vecchia lo segnala («rilancia»). Il badge &#x271A; nell’intestazione della finestra indica quanto resta: arancione sotto il 20 %, rosso sotto il 5 %.</p><p><b>RPP</b>: un indirizzo in fondo a un accesso (strada privata o viabilità di parcheggio entro 80 m, la sua via entro 250 m) diventa un luogo residenziale (RPP), anche con il pulsante della via. Un indirizzo fuori centro abitato (segmento il cui nome principale non ha città e che porta il nome BAN con il comune come alternativo) diventa un RPP, con il pulsante della via come con il «+». L’RPP è creato nella posizione BAN, con il suo indirizzo e il suo punto di ingresso sul segmento (o l’accesso) più vicino; un indirizzo rifiutato rimuove il luogo. Il suo blocco è quello che WME assegna d’ufficio (nessuna tabella per la Francia ne fissa uno per un RPP). Gli RPP contano nella quota. Un indirizzo senza alcun segmento con il nome BAN entro 80 m, ma vicino a una strada percorribile di altro nome, diventa anch’esso un RPP: indirizzo «nome BAN / comune», ingresso da quella strada. Non quando la via esiste in WME con un nome da verificare (articolo, ortografia, tipo…): rinominala prima; nessun RPP viene creato al suo posto (0.30.14).</p><p><b>Numero → RPP</b>: nella bolla del punto di un numero (salvato, o inserito da WBC e non ancora salvato), «⇄ Trasforma questo numero in RPP» toglie il numero e crea al suo posto un RPP (stesso numero, stessa via), con il punto di ingresso sul segmento senza nome o sull’accesso più vicino (rotatoria, strada privata…); l’RPP viene poi selezionato per regolarne l’ingresso. Un numero inserito da WBC cambia solo natura nella quota; un numero salvato conta 2.</p><p><b>RPP → numero</b>: nella via aperta, gli RPP della via hanno le loro etichette; al passaggio del mouse, «⇄» sostituisce UN RPP con un numero sul segmento più vicino della sua via — via e città dell’RPP sono il nome BAN e il comune, quindi nessuna ambiguità: un’altra via più vicina, o un punto di accesso su un’altra via, non blocca più (0.30.14). Lo stesso numero già sulla via entro 150 m rende l’RPP un doppione, semplicemente rimosso. Nessun segmento della via entro 80 m: resta. Rifiutato se l’RPP ha un nome o una foto, un’altra città o un’altra via. Anche con un clic sul suo punto sulla mappa. Stessa quota; niente viene salvato. Il blocco del RPP viene letto: sopra il tuo grado, la sostituzione diventa un suggerimento al salvataggio; altrimenti il messaggio lo indica. Nessuna modifica deve attendere il salvataggio (WME non lascia più leggere agli script ciò che è in sospeso); una sostituzione conta 2 nella quota (RPP rimosso, numero inserito). Anche selezionando il triangolo dell’RPP in WME (finestra di WBC aperta).</p><p><b>Ferma</b>: mentre si riempie una via lunga (la mappa si sposta di zona in zona), il pulsante Ferma interrompe il passaggio; quanto inserito resta, da ricontrollare. Un inserimento fallito è contato nel messaggio. <b>Limite</b>: un numero digitato a mano e non ancora salvato non è visto come doppione — salva prima di aggiungere sulla stessa via. Due schede di WME aperte insieme non vedono i numeri in attesa l’una dell’altra: inserire da una sola scheda.</p>',
-            ajHnQuotaTip: 'Ora mobile: un numero conta per un’ora da quando è inserito. Sono contati solo i numeri inseriti con questo pulsante e salvati davvero.',
+            hHnB: '<p><i>Aggiungi i numeri</i> di un’intera via: solo editor <b>L6</b>. <b>Un numero alla volta</b> e le conversioni <b>⇄</b> (numero → RPP, RPP → numero) sono aperti a <b>tutti i livelli</b>, con gli stessi controlli e la stessa quota; senza diritto sul segmento o sul RPP (blocco sopra il tuo livello), WME ne fa un suggerimento al salvataggio — se non ci sono modifiche dirette in sospeso, e per una conversione solo se i due oggetti sono nello stesso caso. Nella riga aperta di una via, <i>Aggiungi i numeri</i> inserisce in WME i suoi indirizzi mancanti — <b>via per via</b>, mai per un intero comune. Per un solo numero: il «+» della sua etichetta (al passaggio del mouse) o un clic sul suo punto sulla mappa. Valgono i diritti di WME: per un solo numero o una conversione, un segmento bloccato sopra il tuo livello (o fuori dalle tue aree di modifica) dà un suggerimento al salvataggio; <i>Aggiungi i numeri</i> di un’intera via salta questi segmenti, e il messaggio lo dice.</p><p><b>Condizioni</b>: il nome principale dei segmenti è quello della BAN (accenti, maiuscole, apostrofi, spazi, trattini e punti tollerati; una grafia diversa è solo segnalata) e la loro città è il comune o «Village (Commune)». Ogni numero va al segmento ammesso più vicino (80 m al massimo); un numero già presente, anche in attesa in questa scheda, non viene mai reinserito; un suffisso diverso (12 b / 12bis) o numerico è lasciato all’editor, salvo se WME ha solo il numero senza suffisso (32 per 32 B): allora viene inserito, con un avviso.</p><p><b>Niente viene salvato</b>: i numeri inseriti sono cerchiati in turchese sulla mappa (anche a finestra chiusa) e segnati con ✚ nella via; controllali, poi salva o annulla in WME.</p><p><b>Quota</b>: 500 modifiche per ora mobile, per editor e in questo browser: numeri e RPP inseriti da WBC («+», <i>Aggiungi i numeri</i>), «⇄» compreso («↻» è fuori quota). Ogni modifica è riservata quando viene inserita e contata se si trova sul server dopo il salvataggio; rimossa o cambiata prima, viene restituita. Le modifiche fatte a mano non contano mai. Una volta salvati, numeri e RPP risultano «trovati» senza rilanciare l’analisi; un’analisi salvata più vecchia lo segnala («rilancia»). Il badge &#x271A; nell’intestazione della finestra indica quanto resta: arancione sotto il 20 %, rosso sotto il 5 %.</p><p><b>RPP</b>: un indirizzo in fondo a un accesso (strada privata o viabilità di parcheggio entro 80 m, la sua via entro 250 m) diventa un luogo residenziale (RPP), anche con il pulsante della via. Un indirizzo fuori centro abitato (segmento il cui nome principale non ha città e che porta il nome BAN con il comune come alternativo) diventa un RPP, con il pulsante della via come con il «+». L’RPP è creato nella posizione BAN, con il suo indirizzo e il suo punto di ingresso sul segmento (o l’accesso) più vicino; un indirizzo rifiutato rimuove il luogo. Il suo blocco è quello che WME assegna d’ufficio (nessuna tabella per la Francia ne fissa uno per un RPP). Gli RPP contano nella quota. Un indirizzo senza alcun segmento con il nome BAN entro 80 m, ma vicino a una strada percorribile di altro nome, diventa anch’esso un RPP: indirizzo «nome BAN / comune», ingresso da quella strada. Non quando la via esiste in WME con un nome da verificare (articolo, ortografia, tipo…): rinominala prima; nessun RPP viene creato al suo posto (0.30.14).</p><p><b>Numero → RPP</b>: nella bolla del punto di un numero (salvato, o inserito da WBC e non ancora salvato), «⇄ Trasforma questo numero in RPP» toglie il numero e crea al suo posto un RPP (stesso numero, stessa via), con il punto di ingresso sul segmento senza nome o sull’accesso più vicino (rotatoria, strada privata…); l’RPP viene poi selezionato per regolarne l’ingresso. Un numero inserito da WBC cambia solo natura nella quota; un numero salvato conta 2.</p><p><b>RPP → numero</b>: nella via aperta, gli RPP della via hanno le loro etichette; al passaggio del mouse, «⇄» sostituisce UN RPP con un numero sul segmento più vicino della sua via — via e città dell’RPP sono il nome BAN e il comune, quindi nessuna ambiguità: un’altra via più vicina, o un punto di ingresso su un’altra via, non blocca più (0.30.14). Lo stesso numero già sulla via entro 150 m rende l’RPP un doppione, semplicemente rimosso. Nessun segmento della via entro 80 m: resta. Rifiutato se l’RPP ha un nome o una foto, un’altra città o un’altra via. Anche con un clic sul suo punto sulla mappa. Stessa quota; niente viene salvato. Il blocco del RPP viene letto: sopra il tuo grado, la sostituzione diventa un suggerimento al salvataggio; altrimenti il messaggio lo indica. Nessuna modifica deve attendere il salvataggio (WME non lascia più leggere agli script ciò che è in sospeso); una sostituzione conta 2 nella quota (RPP rimosso, numero inserito). Anche selezionando il triangolo dell’RPP in WME (finestra di WBC aperta).</p><p><b>Ferma</b>: mentre si riempie una via lunga (la mappa si sposta di zona in zona), il pulsante Ferma interrompe il passaggio; quanto inserito resta, da ricontrollare. Un inserimento fallito è contato nel messaggio. <b>Limite</b>: un numero digitato a mano e non ancora salvato non è visto come doppione — salva prima di aggiungere sulla stessa via. Due schede di WME aperte insieme non vedono i numeri in attesa l’una dell’altra: inserire da una sola scheda.</p>',
+            ajHnQuotaTip: '500 modifiche per ora mobile, per editor, in questo browser: ogni numero o RPP inserito da WBC conta 1, «⇄» fino a 2. Il posto è riservato all’inserimento, tenuto se la modifica si trova sul server dopo il salvataggio, restituito altrimenti. «↻» è fuori quota; le modifiche fatte a mano non contano mai.',
             ajHnLeft: n => 'Quota: ' + n + ' rimanenti in quest’ora',
             ajHnFull: h => 'Quota raggiunta — prossima aggiunta alle ' + h,
             ajHn1: 'Aggiungi questo numero',
@@ -2227,8 +2335,9 @@
             legTipRppDbl: 'RPP doppione di un numero già inserito sulla via',
             legTipFound: 'Indirizzo BAN trovato in WME',
             corrSaveFail: (n, l) => 'WME non ha salvato, con ' + n + ' correzione/i «↻» in attesa: ' + l + '. Ricarica la pagina: le modifiche in attesa restano. Segnalalo nel thread di WBC.',
+            ajHnSaveFail: n => 'WME non ha salvato, con ' + n + (un1(n) ? ' modifica WBC in attesa' : ' modifiche WBC in attesa') + ' («+», «⇄»). Ricarica la pagina: le modifiche in attesa restano. Segnalalo nel thread di WBC.',
             legPose: 'inserito o corretto da WBC, non ancora salvato',
-            legArret: 'linea verso un punto di arrivo lontano',
+            legArret: 'linea verso un punto di ingresso lontano',
             corrProgress: (n, N, l) => 'Correzione ' + n + '/' + N + (l ? ': ' + l : '') + '…',
             corrZone: (n, N) => 'Correzione ' + n + '/' + N + ': caricamento della zona di questo numero…',
             hovDecale: (m, s) => 'Trovato a ' + m + ' m dal suo punto BAN (oltre ' + s + ' m): verifica la posizione',
@@ -2241,9 +2350,13 @@
             kDecaleOld: 'spostati: rilancia l’analisi (scansione vecchia)',
             sbDecaleActif: 'Segnala i numeri spostati dal loro punto BAN',
             sbDecale: 'Segnala un numero trovato ma spostato dal suo punto BAN oltre',
-            sbDecaleHint: 'Disattivato per impostazione predefinita. Un aiuto per trovare un numero inserito lontano dalla casa, non una regola di posizionamento: il numero può stare al centro dell’edificio — per la navigazione conta il punto di arresto. Distanza tra il numero WME e il suo indirizzo BAN; applicato subito, senza nuova analisi.',
+            sbDecaleHint: 'Disattivato per impostazione predefinita. Un aiuto per trovare un numero inserito lontano dalla casa, non una regola di posizionamento: il numero può stare al centro dell’edificio — per la navigazione conta il punto di ingresso. Distanza tra il numero WME e il suo indirizzo BAN; applicato subito, senza nuova analisi.',
             corrTip: (o, n) => 'Correggi: il numero WME «' + o + '» diventa «' + n + '» (stesso punto). Fuori quota; niente viene salvato.',
             corrLoin: b => 'Era associato da lontano al «' + b + '» della BAN, che tornerà mancante.',
+            corrEntropTip: n => '«' + n + '» non esiste nella BAN: potrebbe essere un indirizzo recente. Verifica sul posto prima di correggere; il «+» resta disponibile.',
+            tropCorr: (w, b) => 'proposto per «↻» per diventare il «' + b + '» della BAN, o indirizzo recente? Da verificare prima di correggere o segnalare.',
+            ajHnVille: (c, v, m) => 'Nulla inserito e nessun RPP creato: il segmento «' + v + '» vicino appartiene alla città «' + c + '» in WME, non a «' + m + '». Verifica la città del segmento, salva, poi riprova.',
+            ajHnHorsCom: n => n + (un1(n) ? ' indirizzo fuori dal comune scartato' : ' indirizzi fuori dal comune scartati') + ': nessun RPP creato sul territorio vicino.',
             corrAdd: n => 'Correggi i numeri (' + n + ')',
             corrAddTip: 'Riscrive in una volta i numeri WME della via posti al posto di un altro indirizzo BAN (via rinumerata) o scritti diversamente dalla forma attesa («2bis» ⇒ «2 bis»). Fuori quota. Niente viene salvato: rileggi, poi salva o annulla in WME.',
             corrRunning: 'Correzione dei numeri…',
@@ -2265,6 +2378,11 @@
             corrRppAbsent: 'non trovato in WME (zoom 18, livello Luoghi visibile?)',
             corrRppChange: 'modificato dopo l’analisi',
             corrRppSkip: l => 'RPP lasciati come sono (da verificare a mano): ' + l + '.',
+            corrHnAbsent: 'non è più sul suo segmento (corretto o eliminato dopo l’analisi?)',
+            corrHnChange: n => 'ora è «' + n + '»',
+            corrHnDeplace: d => 'spostato di ' + d + ' m dopo l’analisi',
+            corrHnNonRelu: 'impossibile rileggerlo in WME',
+            corrHnSkip: l => 'Numeri lasciati come sono (rilancia l’analisi): ' + l + '.',
             corrRppTip: 'Luogo residenziale (RPP): cambia solo il numero; via, città, punto di ingresso e blocco restano.',
             corrPoseTip: 'Corretto da WBC, non ancora salvato.',
             formeT: n => 'Presenti ma errati (' + n + ')',
@@ -2290,11 +2408,11 @@
             cmpCert: 'L’esportazione aveva un’altra impostazione «solo certificati»: le cifre non sono confrontabili.',
             thDelta: 'Δ',
             thDeltaTip: d => 'Variazione in WME dall’esportazione del ' + d,
-            namesCsv: 'Scarti (CSV)',
+            namesCsv: 'Nomi da verificare (CSV)',
             namesCsvTip: 'Le vie il cui nome in WME differisce dalla BAN, con i loro segmenti e un link WME: da correggere o segnalare.',
             namesNone: 'Nessuna differenza di nome da esportare.',
             hTrackT: 'Seguire e segnalare',
-            hTrackB: '<p><b>Mappa del dipartimento</b>: dopo un dipartimento, ogni comune è colorato secondo la copertura (chiaro = poca, scuro = molta). Al passaggio del mouse compaiono le sue cifre; a mappa rimpicciolita, un clic lo apre.</p><p><b>Numero mancante</b>: con la via aperta, una linea tratteggiata porta al segmento che probabilmente dovrebbe portarlo; il suo identificativo è nel CSV.</p><p><b>Seleziona i segmenti</b> di una via dalla sua riga: vengono selezionati in WME.</p><p><b>Avanzamento</b>: l’esportazione CSV fa anche da rilievo. Più tardi, <i>Confronta</i> la rilegge e dà la variazione via per via (o comune per comune). Nulla viene conservato altrove.</p><p><b>Scarti (CSV)</b>: le vie da rinominare, ciascuna con un link WME, da correggere o inviare ai responsabili della zona.</p><p><b>Strumenti della via</b>: nella riga aperta di una via, icone con contatore — selezionare i segmenti, aggiungere i numeri, via successiva, segnalare alla BAN o contattare il municipio; il nome di ciascuna appare al passaggio del mouse.</p><p><b>Confine del comune</b>: l’icona del poligono, accanto alle esportazioni, traccia sulla mappa il confine amministrativo del comune; la scelta viene ricordata.</p>',
+            hTrackB: '<p><b>Mappa del dipartimento</b>: dopo un dipartimento, ogni comune è colorato secondo la copertura (chiaro = poca, scuro = molta). Al passaggio del mouse compaiono le sue cifre; a mappa rimpicciolita, un clic lo apre.</p><p><b>Numero mancante</b>: con la via aperta, una linea tratteggiata porta al segmento che probabilmente dovrebbe portarlo; il suo identificativo è nel CSV.</p><p><b>Seleziona i segmenti</b> di una via dalla sua riga: vengono selezionati in WME.</p><p><b>Avanzamento</b>: l’esportazione CSV fa anche da rilievo. Più tardi, <i>Confronta</i> la rilegge e dà la variazione via per via (o comune per comune). Nulla viene conservato altrove.</p><p><b>Nomi da verificare (CSV)</b>: le vie da rinominare, ciascuna con un link WME, da correggere o inviare ai responsabili della zona.</p><p><b>Strumenti della via</b>: nella riga aperta di una via, icone con contatore — selezionare i segmenti, aggiungere i numeri, via successiva, segnalare alla BAN o contattare il municipio; il nome di ciascuna appare al passaggio del mouse.</p><p><b>Confine del comune</b>: l’icona del poligono, accanto alle esportazioni, traccia sulla mappa il confine amministrativo del comune; la scelta viene ricordata.</p>',
             certOnlyTip: "Solo indirizzi certificati",
             layerSwitchTip: "Numeri mancanti e in più sulla mappa",
             showFoundTip: "Mostra anche i trovati",
@@ -2305,6 +2423,8 @@
             memoBanProg: (i, n) => 'BAN: verifica ' + i + '/' + n,
             memoBanOk: 'BAN invariata',
             memoBanMaj: d => 'BAN aggiornata' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · revisione del ' + d : ''),
+            srcBanTip: 'Data di revisione della Base Adresse Locale del comune, letta dalla BAN; assente se il comune non ha pubblicato alcuna BAL. Fonte da citare se diffondi cifre o un export.',
             memoBanMajN: n => 'BAN aggiornata: ' + n,
             memoBanErr: 'BAN: verifica impossibile',
             dejaHnDepuis: n => n + (un1(n) ? ' numero aggiunto da WBC da allora: rilancia' : ' numeri aggiunti da WBC da allora: rilancia'),
@@ -2335,14 +2455,14 @@
             sbOpen: 'Abrir a janela',
             sbHelp: 'Ajuda',
             hWhatT: 'O que é comparado',
-            hWhatB: "<p>A <b>BAN</b> é a referência: cada endereço que ela lista deveria existir no WME, como número em um segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas ao vivo: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; a data de revisão de cada município é exibida); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de reportes da BAN</b> (signalement.adresse.data.gouv.fr) para o estado dos reportes; e o WME nos mesmos servidores do editor. A área não precisa estar exibida nem carregada. Desde 12/11/2026, o Waze credencia a BAN para a França (exibição e criação assistida de números de casa, página Map Data Attribution); adicionar uma rua inteira continua um gesto de L6; um número por vez está aberto a todos os níveis; tudo com cota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo “Centro do mapa”, o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas buscas de município — sem identidade nem cookie; para a BAN e a API de reportes, o código do município; na inicialização, o GitHub (version-min.json, versão mínima: uma versão retirada não inicia) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas marcada: a extensão da vista, a partir do zoom 18, sem cookie. Nada mais; o seu nome de usuário não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Reportar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) em uma nova aba, na rua ou no número; o WBC não envia nada, é você quem preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido traz o endereço lido no Waze (“Adresse présente dans Waze: …”): revise, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas marcada e nenhuma análise exibida nesse lugar, os endereços BAN da vista aparecem a partir do zoom 18, em cinza (somente leitura); circulados de verde quando o WME já tem o mesmo número na mesma rua ou a menos de 30 m (números salvos, pontos residenciais). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município no centro é analisado, ou a sua varredura recente reaberta, e mostrado no mapa sem abrir a janela. Enquanto a janela do WBC está aberta, as camadas do WME “Números de casa” e “Residencial” ficam visíveis; ao fechá-la, voltam ao estado anterior.</p>",
+            hWhatB: "<p>A <b>BAN</b> é a referência: cada endereço que ela lista deveria existir no WME, como número em um segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas ao vivo: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; a data de revisão da Base Adresse Locale do município é exibida sob o seu nome quando a BAN a publica); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de reportes da BAN</b> (signalement.adresse.data.gouv.fr) para o estado dos reportes; e o WME nos mesmos servidores do editor. A área não precisa estar exibida nem carregada. Desde 12/11/2026, o Waze credencia a BAN para a França (exibição e criação assistida de números de casa, página Map Data Attribution); adicionar uma rua inteira continua um gesto de L6; um número por vez está aberto a todos os níveis; tudo com cota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo “Centro do mapa”, o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas buscas de município — sem identidade nem cookie; para a BAN e a API de reportes, o código do município; na inicialização, no máximo uma vez por dia, o GitHub (version-min.json, versão mínima: uma versão retirada não inicia) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas marcada: a extensão da vista, a partir do zoom 18, sem cookie. Nada mais; o seu nome de usuário não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Reportar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) em uma nova aba, na rua ou no número; o WBC não envia nada, é você quem preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido traz o endereço lido no Waze (“Adresse présente dans Waze: …”): revise, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas marcada e nenhuma análise exibida nesse lugar, os endereços BAN da vista aparecem a partir do zoom 18, em cinza (somente leitura); circulados de verde quando o WME já tem o mesmo número na mesma rua ou a menos de 30 m (números salvos, pontos residenciais). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município no centro é analisado, ou a sua varredura recente reaberta, e mostrado no mapa sem abrir a janela. Enquanto a janela do WBC está aberta, as camadas do WME “Números de casa” e “Residencial” ficam visíveis; ao fechá-la, voltam ao estado anterior.</p>",
             hMatchT: 'Quando um número é encontrado',
             hMatchB: '<p>Um endereço da BAN é encontrado quando o WME tem o mesmo número (sufixos incluídos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>em uma rua com o mesmo nome (principal ou alternativo), ou que só difere por um artigo (“Avenue Sembrancher” = “Avenue de Sembrancher”; a diferença de nome continua sinalizada);</td></tr><tr><td>2</td><td>ou em um segmento que leva os endereços dessa rua, <b>com ou sem nome</b>;</td></tr><tr><td>3</td><td>ou a menos de 30 m do endereço.</td></tr></table><p>A regra 1 é tentada primeiro em todo lugar, depois a 2, depois a 3. Um número do WME só serve uma vez.</p>',
             hNamesT: 'A coluna «Rua WME»',
             hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>os segmentos próximos dos endereços têm o nome da BAN.</td></tr><tr><td><i>nome</i></td><td>têm outro nome: o nome a verificar.</td></tr><tr><td><i>sem nome</i></td><td>não têm nome.</td></tr><tr><td><i>nenhum segmento</i></td><td>nenhum segmento a menos de 80 m dos endereços.</td></tr><tr><td>&#x2713; alt</td><td>o nome da BAN está como nome <b>alternativo</b>; o nome principal aparece ao lado.</td></tr><tr><td>nº de rodovia</td><td>o nome principal é um número de rodovia e o nome da BAN falta nos alternativos: adicionar.</td></tr><tr><td>tipo</td><td>só o tipo de via difere (Rue / Chemin…).</td></tr><tr><td>artigo · grafia · parcial</td><td>nomes parecidos: um artigo, uma ou duas letras, ou uma forma abreviada. <i>ausente do WME</i>: a rua não existe no WME, o nome mostrado é o da vizinha.</td></tr><tr><td>&#x2713; estacionamento</td><td>nenhum segmento com nome, mas um local Estacionamento próximo tem o nome da BAN: nada a renomear.</td></tr><tr><td>&#x2713; grafia BAN</td><td>mesmo nome a menos de um hífen ou ponto (“Rue Paul-Louis Courier” / “Rue Paul Louis Courier”): nada a renomear.</td></tr></table><p>Um número faltando em laranja com <b>≠</b> existe no WME com outro sufixo (12 b / 12bis): verificar. Se o WME só tem o número sem sufixo (32 / 32 B), ele é colocado mesmo assim e o aviso continua.</p><p>&#x26A0; indica um nome da BAN que nenhum segmento do município tem.</p>',
             hLimitsT: 'Bom saber',
-            hLimitsB: "<p>Um departamento inteiro leva alguns minutos: a BAN é lida município por município, o WME em quadrados de cerca de 5 km. O botão Parar interrompe; o que foi feito continua visível e os municípios com erro podem ser refeitos sozinhos.</p><p>Paris, Marselha e Lyon são lidas distrito por distrito. As varreduras ficam somente neste navegador (IndexedDB), nunca em outro lugar, com as suas preferências (área, interruptores, posição da janela, cores dos pontos); são sinalizadas quando a BAN ou o WME mudaram desde então.</p>",
-            hSafeB: "O script só altera o mapa a pedido de um editor: o “+” de um endereço (um número ou um RPP, todos os níveis); e, para um L6, “Adicionar os números” (rua por rua: números, e RPP no fim de um acesso), “⇄” (um RPP substituído por um número) e “Transformar este número em RPP” — no máximo 500 por hora móvel, por editor; nunca salva. Os resultados ficam neste navegador.",
+            hLimitsB: "<p>Um departamento inteiro leva alguns minutos: a BAN é lida município por município, o WME em quadrados de cerca de 5 km. O botão Parar interrompe; o que foi feito continua visível e os municípios com erro podem ser refeitos sozinhos.</p><p>Paris, Marselha e Lyon são lidas distrito por distrito. As varreduras ficam somente neste navegador (IndexedDB), nunca em outro lugar, com as suas preferências (área, interruptores, posição da janela, cores dos pontos); são sinalizadas quando a BAN ou o WME mudaram desde então.</p><p><b>Janela destacada</b> (⧉ no cabeçalho, só Chrome e Edge): a janela do WBC passa para uma janela própria, numa segunda tela por exemplo; ⧉ ou fechar essa janela a devolve ao WME. O mapa, seus balões e os avisos ficam na janela do WME, e os atalhos do WME (Ctrl+Z…) não funcionam na janela destacada.</p>",
+            hSafeB: "O script só altera o mapa a pedido de um editor. Todos os níveis: o “+” de um endereço (um número ou um RPP), “⇄” (um RPP substituído por um número, ou um número transformado em RPP) e “↻” (um número reescrito). Para um L6: “Adicionar os números” e “Corrigir os números” de uma rua inteira. No máximo 500 edições por hora móvel, por editor (“↻” fora da cota); nunca salva. Os resultados ficam neste navegador.",
             remTitle: "Você continua responsável pelas suas edições",
             remBody: "<p>O WME BAN Coverage <b>propõe</b>: ele nunca salva nada sozinho.</p><p>Cada número, RPP ou conversão “⇄” chega ao WME como uma edição pendente. Confira no mapa e depois salve ou desfaça no WME.</p><p>O que você salva é a sua edição, como se a tivesse feito à mão.</p>",
             remNote: "Este lembrete aparece uma vez por navegador; você pode revê-lo na aba do script.",
@@ -2358,11 +2478,13 @@
             modeCommune: 'Outro município',
             modeDep: 'Departamento',
             modeLbl: 'Área',
+            filtreLbl: 'Vias exibidas',
             hereHint: 'O município sob o centro do mapa, tomado ao iniciar a análise.',
             searchPh: 'Nome, CEP ou código INSEE',
             searchNone: 'Nenhum município encontrado',
             depChoose: 'Escolher um departamento',
             analyse: 'Analisar',
+            analyseCom: c => 'Analisar ' + c,
             stop: 'Parar',
             stLocate: 'Procurando o município…',
             stBan: 'BAN: lendo…',
@@ -2402,7 +2524,7 @@
             filterPh: 'Filtrar ruas',
             filterClear: 'Limpar o filtro',
             filterCount: (n, m) => n + (un1(n) ? ' rua de ' : ' ruas de ') + m,
-            layerSwitch: 'Diferenças',
+            layerSwitch: 'A tratar',
             exportCsv: 'Exportar CSV',
             thStreetBan: 'Rua BAN',
             thStreetWme: 'Rua WME',
@@ -2410,6 +2532,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'Diferença',
+            thGapCourt: 'Dif.',
             thRep: 'Marcas',
             thRepTip: '↻ números a corrigir · ↔ números deslocados do ponto BAN · RPP duplicando um número. Passe o mouse numa marca para o detalhe.',
             thCommune: 'Município',
@@ -2451,6 +2574,8 @@
             hovWmeStreet: r => 'Rua WME: ' + r,
             sizeTip: "Ampliar / restaurar a janela",
             smallTip: "Janela pequena (tamanho original)",
+            detachTip: "Destacar em uma janela própria (ex.: segunda tela). Os atalhos do WME (Ctrl+Z…) não funcionam nela.",
+            attachTip: "Devolver a janela ao WME",
             searching: "Buscando…",
             tipAnalyse: "Analisar a área escolhida. Se já foi varrida, a data aparece antes, com Abrir ou Refazer.",
             tipAnalyseCom: c => "Analisar de novo " + c + ", o município mostrado, e atualizar a sua linha do departamento. Para varrer todo o departamento, volte primeiro a ele.",
@@ -2512,7 +2637,9 @@
             stDoneErr: (s, n) => 'Concluído em ' + s + ' s — ' + n + (un1(n) ? ' município com erro' : ' municípios com erro'),
             noCert: n => 'Nenhum dos ' + n + ' endereços BAN deste município é certificado.',
             errSession: "Sessão do WME expirada: recarregue a página.",
+            errWmeSerie: (n, m) => 'Departamento interrompido: o WME falhou em ' + n + ' municípios seguidos (' + m + '). Os municípios restantes ficam com erro; tente-os novamente mais tarde.',
             errFormat: src => src + ' respondeu num formato inesperado: o script precisa ser atualizado.',
+            ecrCoupee: 'A escrita foi suspensa pelo autor do script até a publicação de uma versão corrigida; a leitura e a análise continuam disponíveis.',
             delNote: "não atribuíveis a um município delegado",
             mapCap: (a, b) => 'Mapa: ' + a + ' pontos mostrados de ' + b + ' na vista (aproxime para ver todos)',
             legExtra: "a mais no WME",
@@ -2546,11 +2673,11 @@
             kSuf: n => 'sendo ' + n + (un1(n) ? ' sufixo a verificar' : ' sufixos a verificar'),
             tipSuf: w => "O WME tem " + w + ": verifique o sufixo",
             kFar: n => 'sendo ' + n + ' longe do ponto BAN',
-            kArret: n => n + ' ponto(s) de chegada distante(s)',
-            hovArret: d => 'Ponto de chegada ' + d + ' m a mais',
-            arrT: (n, s) => 'Pontos de chegada distantes (' + n + ', além de ' + s + ' m)',
-            arrTip: d => 'O ponto de chegada está ' + d + ' m além da rua ao lado do número do WME: verifique no WME',
-            sbArret: 'Sinalizar ponto de chegada distante a partir de',
+            kArret: n => n + ' ponto(s) de entrada distante(s)',
+            hovArret: d => 'Ponto de entrada ' + d + ' m a mais',
+            arrT: (n, s) => 'Pontos de entrada distantes (' + n + ', além de ' + s + ' m)',
+            arrTip: d => 'O ponto de entrada está ' + d + ' m além da rua ao lado do número do WME: verifique no WME',
+            sbArret: 'Sinalizar ponto de entrada distante a partir de',
             sbArretHint: 'Distância entre o número do WME e o local para onde o Waze guia, menos a distância dele até a rua. Aplicado na hora, sem nova análise.',
             tipFar: d => 'Colocado a ' + d + ' m do endereço BAN',
             certOnly: 'Certificados',
@@ -2591,13 +2718,13 @@
             nextStreet: n => 'Próxima rua (' + n + ' a adicionar)',
             tipNextStreet: 'Abre a rua do município onde “Adicionar” tem mais números a colocar (nome da BAN como principal ou alternativo), pulando as ruas já abertas por este botão.',
             nextStreetNone: 'Nenhuma outra rua pronta: as restantes já têm seus números, ou precisam primeiro de correção do nome.',
-            ajHnAddTip: r => 'Somente L6: coloca no WME os números que faltam nesta rua, nos segmentos cujo nome principal é o da BAN (acentos, maiúsculas, hífens e pontos tolerados) e cuja cidade é o município ou “Village (Commune)”; um endereço no fim de um acesso vira RPP. No máximo 500 edições por hora móvel, contadas ao salvar (restam ' + r + '). Nada é salvo: confira e depois salve no WME. Os endereços fora da área urbana também viram RPP.',
+            ajHnAddTip: r => 'Somente L6: coloca no WME os números que faltam nesta rua, nos segmentos cujo nome principal é o da BAN (acentos, maiúsculas, hífens e pontos tolerados) e cuja cidade é o município ou “Village (Commune)”; um endereço no fim de um acesso vira RPP. No máximo 500 edições por hora móvel, reservadas ao colocar, devolvidas se não forem salvas (restam ' + r + '). Nada é salvo: confira e depois salve no WME. Os endereços fora da área urbana também viram RPP.',
             ajHnNoName: 'O nome WME desta rua não é o da BAN: a adição automática exige um nome principal idêntico ao da BAN.',
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
             ajHnLoin: n => 'Nenhum número a adicionar automaticamente: ' + n + ' endereço(s) a mais de 80 m da rua desenhada no WME. Aproxime o segmento se estiver mal colocado.',
             ajHnNomEcart: (w, b) => 'Nenhum número a adicionar automaticamente: no WME, os segmentos desta rua chamam-se «' + w + '», e não «' + b + '» como na BAN. Dê-lhes o nome da BAN.',
             ajHnRenommer: (w, b) => 'Nada foi colocado, e nenhum RPP criado no lugar: a rua existe no WME como “' + w + '”, não “' + b + '” (nome a verificar). Renomeie primeiro a rua no WME, salve e tente de novo.',
-            ajHnQuota: h => 'Cota atingida (500 números por hora): próxima adição possível às ' + h + '.',
+            ajHnQuota: h => 'Cota atingida (500 edições por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'Adicionando os números…',
             rhnToRppRunning: 'Convertendo o número em RPP…',
             rhnRunning: 'Convertendo o RPP em número…',
@@ -2634,7 +2761,7 @@
             rhnCity: v => 'Este RPP pertence a “' + v + '”, não ao município: não é convertido.',
             rhnStreet: r => 'Este RPP tem a rua “' + r + '”, não o nome BAN da rua: não é convertido.',
             rhnNoSeg: 'Nenhum segmento da rua (nome BAN como principal, município como cidade) a menos de 80 m: o RPP está provavelmente fora da área urbana, fica.',
-            rhnLegit: v => 'O ponto de acesso do RPP dá para “' + v + '”, não para a sua rua: o RPP expressa um deslocamento que um número de segmento não consegue, fica.',
+            rhnLegit: v => 'O ponto de entrada do RPP dá para “' + v + '”, não para a sua rua: o RPP expressa um deslocamento que um número de segmento não consegue, fica.',
             rhnUnsure: 'Nada claro (outra rua tão perto quanto, ou longe demais de qualquer rua): o RPP fica, verificar à mão.',
             rhnFormat: n => 'O número “' + n + '” não se escreve como um número de segmento: verificar à mão.',
             rhnErr: m => 'Substituição interrompida: ' + m,
@@ -2644,6 +2771,10 @@
             rhnSelVersHn: 'em número',
             rhnVersRppTip: 'Retira este número do segmento e cria em seu lugar um RPP (mesmo número, mesma rua), com o ponto de entrada no segmento sem nome mais próximo ou num acesso (via particular, via de estacionamento); depois o RPP fica selecionado para ajustar a entrada. Conta na cota; nada é salvo.',
             rhnVersRppDone: (n, q) => 'Nº ' + n + ' transformado em RPP — ajuste o ponto de entrada se preciso (ele está selecionado) e depois salve no WME. Cota restante: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'Já existe um RPP nº ' + n + ' desta rua a ' + d + ' m: nada mudou.',
+            rhnVersRppEntree: (v, d) => v ? 'Ponto de entrada em “' + v + '”, a ' + d + ' m.' : 'Ponto de entrada em uma via sem nome, a ' + d + ' m.',
+            illisibleRpp: 'Não foi possível ler os RPP existentes no WME: nada é colocado nem alterado.',
+            occupeGeste: 'Uma edição do WBC está em andamento: espere terminar.',
             rhnVersRppAbsent: n => 'O número ' + n + ' não foi encontrado no WME (segmento não carregado, ou número já retirado): nada mudou.',
             rhnVersRppTipPose: 'Transformado em RPP (ainda não salvo).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes no console).',
@@ -2655,11 +2786,11 @@
             ajHnSee: n => un1(n) ? 'Ele aparece circulado em turquesa no mapa.' : 'Eles aparecem circulados em turquesa no mapa.',
             ajHnPoseTip: 'Colocado pelo WBC, ainda não salvo: clique para centralizar o mapa nele.',
             ajZoom17: 'Aproxime para o nível 17 ou mais: abaixo dele, o WME não carrega os locais residenciais. O mapa fica onde está.',
-            ajHnSaved: (c, r, q) => 'Salvamento: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à cota (removidos antes de salvar). Cota restante: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'Salvamento: ' + c + (un1(c) ? ' edição contada' : ' edições contadas') + ', ' + r + (un1(r) ? ' devolvida' : ' devolvidas') + ' à cota (removidas antes de salvar). Cota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e salvo.',
             hHnT: 'Adicionar os números',
-            hHnB: '<p><i>Adicionar os números</i> de uma rua inteira: só editores <b>L6</b>. <b>Um número por vez</b> e as conversões <b>⇄</b> (número → RPP, RPP → número) estão abertos a <b>todos os níveis</b>, com as mesmas verificações e a mesma cota; sem direito sobre o segmento ou o RPP (bloqueio acima do seu nível), o WME faz disso uma sugestão ao salvar — se não houver edições diretas pendentes, e numa conversão só se os dois objetos estiverem no mesmo caso. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços que faltam — <b>rua por rua</b>, nunca para o município inteiro. Para um só número: o “+” da sua etiqueta (ao passar o mouse) ou um clique no seu ponto no mapa. Valem os direitos do WME: para um só número ou uma conversão, um segmento bloqueado acima do seu nível (ou fora das suas áreas de edição) gera uma sugestão ao salvar; <i>Adicionar os números</i> de uma rua inteira pula esses segmentos, e a mensagem diz isso.</p><p><b>Condições</b>: o nome principal dos segmentos é o da BAN (acentos, maiúsculas, apóstrofos, espaços, hífens e pontos tolerados; uma grafia diferente é apenas sinalizada) e a cidade deles é o município ou “Village (Commune)”. Cada número vai para o segmento admitido mais próximo (80 m no máximo); um número já presente, mesmo pendente nesta aba, nunca é colocado de novo; um sufixo diferente (12 b / 12bis) ou numérico fica para o editor, a não ser que o WME só tenha o número sem sufixo (32 para 32 B): ele é então colocado, com um aviso.</p><p><b>Nada é salvo</b>: os números colocados aparecem circulados em turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; confira e depois salve ou desfaça no WME.</p><p><b>Cota</b>: 500 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor após salvar; retirado ou alterado antes, ele é devolvido. Números digitados à mão nunca contam. Depois de salvos, passam a «encontrados» sem refazer a análise; uma varredura guardada mais antiga avisa («refaça»). O selo &#x271A; no cabeçalho da janela mostra o que resta: laranja abaixo de 20 %, vermelho abaixo de 5 %.</p><p><b>RPP</b>: um endereço no fim de um acesso (via particular ou via de estacionamento a menos de 80 m, sua rua a menos de 250 m) vira um lugar residencial (RPP), inclusive pelo botão da rua. Um endereço fora da área urbana (segmento cujo nome principal não tem cidade e que leva o nome BAN com o município como alternativo) vira RPP, pelo botão da rua como pelo “+”. O RPP é criado na posição BAN, com seu endereço e seu ponto de entrada no segmento (ou acesso) mais próximo; um endereço recusado remove o lugar. Seu bloqueio é o que o WME dá por padrão (nenhuma tabela da França fixa um para RPP). Os RPP contam na cota. Um endereço sem nenhum segmento com o nome BAN a menos de 80 m, mas perto de uma via trafegável de outro nome, também vira um RPP: endereço “nome BAN / município”, entrada por essa via. Não quando a rua existe no WME com um nome a verificar (artigo, ortografia, tipo…): renomeie-a primeiro; nenhum RPP é criado no lugar (0.30.14).</p><p><b>Número → RPP</b>: no balão do ponto de um número (salvo, ou colocado pelo WBC e ainda não salvo), “⇄ Transformar este número em RPP” retira o número e cria em seu lugar um RPP (mesmo número, mesma rua), com o ponto de entrada no segmento sem nome ou acesso mais próximo (rotatória, via particular…); depois o RPP fica selecionado para ajustar a entrada. Um número colocado pelo WBC só muda de tipo na cota; um número salvo conta 2.</p><p><b>RPP → número</b>: na rua aberta, os RPP da rua têm suas etiquetas; ao passar o mouse, “⇄” substitui UM RPP por um número no segmento mais próximo da própria rua — rua e cidade do RPP são o nome BAN e o município, então não há ambiguidade: outra rua mais próxima, ou um ponto de acesso para outra rua, não bloqueia mais (0.30.14). O mesmo número já na rua a menos de 150 m torna o RPP uma duplicata, simplesmente removida. Nenhum segmento da rua a menos de 80 m: ele fica. Recusado se o RPP tiver nome ou foto, outra cidade ou outra rua. Também com um clique no seu ponto no mapa. Mesma cota; nada é salvo. O bloqueio do RPP é lido: acima do seu nível, a substituição vira uma sugestão ao salvar; senão a mensagem o indica. Nenhuma alteração pode estar aguardando salvamento (o WME não deixa mais os scripts lerem o que está pendente); uma substituição conta 2 na cota (RPP removido, número colocado). Também selecionando o triângulo do RPP no WME (janela do WBC aberta).</p><p><b>Parar</b>: enquanto uma rua longa é preenchida (o mapa se move de zona em zona), o botão Parar interrompe a passada; o que foi colocado fica, para revisar. Uma colocação que falhou é contada na mensagem. <b>Limite</b>: um número digitado à mão e ainda não salvo não é visto como duplicado — salve antes de adicionar na mesma rua. Duas abas do WME abertas ao mesmo tempo não veem os números pendentes uma da outra: coloque a partir de uma só aba.</p>',
-            ajHnQuotaTip: 'Hora móvel: um número conta durante uma hora a partir de quando é colocado. Só contam os números colocados por este botão e realmente salvos.',
+            hHnB: '<p><i>Adicionar os números</i> de uma rua inteira: só editores <b>L6</b>. <b>Um número por vez</b> e as conversões <b>⇄</b> (número → RPP, RPP → número) estão abertos a <b>todos os níveis</b>, com as mesmas verificações e a mesma cota; sem direito sobre o segmento ou o RPP (bloqueio acima do seu nível), o WME faz disso uma sugestão ao salvar — se não houver edições diretas pendentes, e numa conversão só se os dois objetos estiverem no mesmo caso. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços que faltam — <b>rua por rua</b>, nunca para o município inteiro. Para um só número: o “+” da sua etiqueta (ao passar o mouse) ou um clique no seu ponto no mapa. Valem os direitos do WME: para um só número ou uma conversão, um segmento bloqueado acima do seu nível (ou fora das suas áreas de edição) gera uma sugestão ao salvar; <i>Adicionar os números</i> de uma rua inteira pula esses segmentos, e a mensagem diz isso.</p><p><b>Condições</b>: o nome principal dos segmentos é o da BAN (acentos, maiúsculas, apóstrofos, espaços, hífens e pontos tolerados; uma grafia diferente é apenas sinalizada) e a cidade deles é o município ou “Village (Commune)”. Cada número vai para o segmento admitido mais próximo (80 m no máximo); um número já presente, mesmo pendente nesta aba, nunca é colocado de novo; um sufixo diferente (12 b / 12bis) ou numérico fica para o editor, a não ser que o WME só tenha o número sem sufixo (32 para 32 B): ele é então colocado, com um aviso.</p><p><b>Nada é salvo</b>: os números colocados aparecem circulados em turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; confira e depois salve ou desfaça no WME.</p><p><b>Cota</b>: 500 edições por hora móvel, por editor e neste navegador: números e RPP colocados pelo WBC («+», <i>Adicionar os números</i>), «⇄» incluído («↻» fica fora da cota). Cada edição é reservada ao ser colocada e contada se estiver no servidor após salvar; retirada ou alterada antes, ela é devolvida. Edições feitas à mão nunca contam. Depois de salvos, números e RPP passam a «encontrados» sem refazer a análise; uma varredura guardada mais antiga avisa («refaça»). O selo &#x271A; no cabeçalho da janela mostra o que resta: laranja abaixo de 20 %, vermelho abaixo de 5 %.</p><p><b>RPP</b>: um endereço no fim de um acesso (via particular ou via de estacionamento a menos de 80 m, sua rua a menos de 250 m) vira um lugar residencial (RPP), inclusive pelo botão da rua. Um endereço fora da área urbana (segmento cujo nome principal não tem cidade e que leva o nome BAN com o município como alternativo) vira RPP, pelo botão da rua como pelo “+”. O RPP é criado na posição BAN, com seu endereço e seu ponto de entrada no segmento (ou acesso) mais próximo; um endereço recusado remove o lugar. Seu bloqueio é o que o WME dá por padrão (nenhuma tabela da França fixa um para RPP). Os RPP contam na cota. Um endereço sem nenhum segmento com o nome BAN a menos de 80 m, mas perto de uma via trafegável de outro nome, também vira um RPP: endereço “nome BAN / município”, entrada por essa via. Não quando a rua existe no WME com um nome a verificar (artigo, ortografia, tipo…): renomeie-a primeiro; nenhum RPP é criado no lugar (0.30.14).</p><p><b>Número → RPP</b>: no balão do ponto de um número (salvo, ou colocado pelo WBC e ainda não salvo), “⇄ Transformar este número em RPP” retira o número e cria em seu lugar um RPP (mesmo número, mesma rua), com o ponto de entrada no segmento sem nome ou acesso mais próximo (rotatória, via particular…); depois o RPP fica selecionado para ajustar a entrada. Um número colocado pelo WBC só muda de tipo na cota; um número salvo conta 2.</p><p><b>RPP → número</b>: na rua aberta, os RPP da rua têm suas etiquetas; ao passar o mouse, “⇄” substitui UM RPP por um número no segmento mais próximo da própria rua — rua e cidade do RPP são o nome BAN e o município, então não há ambiguidade: outra rua mais próxima, ou um ponto de entrada para outra rua, não bloqueia mais (0.30.14). O mesmo número já na rua a menos de 150 m torna o RPP uma duplicata, simplesmente removida. Nenhum segmento da rua a menos de 80 m: ele fica. Recusado se o RPP tiver nome ou foto, outra cidade ou outra rua. Também com um clique no seu ponto no mapa. Mesma cota; nada é salvo. O bloqueio do RPP é lido: acima do seu nível, a substituição vira uma sugestão ao salvar; senão a mensagem o indica. Nenhuma alteração pode estar aguardando salvamento (o WME não deixa mais os scripts lerem o que está pendente); uma substituição conta 2 na cota (RPP removido, número colocado). Também selecionando o triângulo do RPP no WME (janela do WBC aberta).</p><p><b>Parar</b>: enquanto uma rua longa é preenchida (o mapa se move de zona em zona), o botão Parar interrompe a passada; o que foi colocado fica, para revisar. Uma colocação que falhou é contada na mensagem. <b>Limite</b>: um número digitado à mão e ainda não salvo não é visto como duplicado — salve antes de adicionar na mesma rua. Duas abas do WME abertas ao mesmo tempo não veem os números pendentes uma da outra: coloque a partir de uma só aba.</p>',
+            ajHnQuotaTip: '500 edições por hora móvel, por editor, neste navegador: cada número ou RPP colocado pelo WBC conta 1, “⇄” até 2. A vaga é reservada ao colocar, mantida se a edição estiver no servidor após salvar, devolvida caso contrário. “↻” fica fora da cota; edições feitas à mão nunca contam.',
             ajHnLeft: n => 'Cota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' nesta hora',
             ajHnFull: h => 'Cota atingida — próxima adição às ' + h,
             ajHn1: 'Adicionar este número',
@@ -2675,8 +2806,9 @@
             legTipRppDbl: 'RPP duplicando um número já colocado na rua',
             legTipFound: 'Endereço BAN encontrado no WME',
             corrSaveFail: (n, l) => 'O WME não salvou, com ' + n + ' correção(ões) “↻” pendente(s): ' + l + '. Recarregue a página: as edições pendentes são mantidas. Avise no tópico do WBC.',
+            ajHnSaveFail: n => 'O WME não salvou, com ' + n + (un1(n) ? ' edição do WBC pendente' : ' edições do WBC pendentes') + ' (“+”, “⇄”). Recarregue a página: as edições pendentes são mantidas. Avise no tópico do WBC.',
             legPose: 'colocado ou corrigido pelo WBC, ainda não salvo',
-            legArret: 'linha até um ponto de chegada distante',
+            legArret: 'linha até um ponto de entrada distante',
             corrProgress: (n, N, l) => 'Corrigindo ' + n + '/' + N + (l ? ': ' + l : '') + '…',
             corrZone: (n, N) => 'Corrigindo ' + n + '/' + N + ': carregando a área deste número…',
             hovDecale: (m, s) => 'Encontrado a ' + m + ' m do seu ponto BAN (além de ' + s + ' m): confira a posição',
@@ -2689,9 +2821,13 @@
             kDecaleOld: 'deslocados: rode a análise de novo (varredura antiga)',
             sbDecaleActif: 'Sinalizar os números deslocados do ponto BAN',
             sbDecale: 'Sinalizar um número encontrado, mas deslocado do seu ponto BAN, além de',
-            sbDecaleHint: 'Desativado por padrão. Uma ajuda para achar um número colocado longe da casa, não uma regra de posicionamento: o número pode ficar no centro do prédio — para a navegação vale o ponto de parada. Distância entre o número do WME e seu endereço BAN; aplicado na hora, sem nova análise.',
+            sbDecaleHint: 'Desativado por padrão. Uma ajuda para achar um número colocado longe da casa, não uma regra de posicionamento: o número pode ficar no centro do prédio — para a navegação vale o ponto de entrada. Distância entre o número do WME e seu endereço BAN; aplicado na hora, sem nova análise.',
             corrTip: (o, n) => 'Corrigir: o número WME “' + o + '” passa a ser “' + n + '” (mesmo ponto). Fora da cota; nada é salvo.',
             corrLoin: b => 'Ele estava associado de longe ao “' + b + '” da BAN, que voltará a faltar.',
+            corrEntropTip: n => '“' + n + '” não existe na BAN: pode ser um endereço recente. Verifique no local antes de corrigir; o “+” continua disponível.',
+            tropCorr: (w, b) => 'proposto para “↻” para virar o “' + b + '” da BAN, ou endereço recente? Verifique antes de corrigir ou avisar.',
+            ajHnVille: (c, v, m) => 'Nada foi colocado e nenhum RPP criado: o segmento “' + v + '” próximo pertence à cidade “' + c + '” no WME, não a “' + m + '”. Verifique a cidade do segmento, salve e tente de novo.',
+            ajHnHorsCom: n => n + (un1(n) ? ' endereço fora do município ignorado' : ' endereços fora do município ignorados') + ': nenhum RPP criado no território vizinho.',
             corrAdd: n => 'Corrigir os números (' + n + ')',
             corrAddTip: 'Reescreve de uma vez os números WME da via colocados no lugar de outro endereço BAN (rua renumerada) ou escritos de forma diferente da esperada (“2bis” ⇒ “2 bis”). Fora da cota. Nada é salvo: revise e depois salve ou desfaça no WME.',
             corrRunning: 'Corrigindo os números…',
@@ -2713,6 +2849,11 @@
             corrRppAbsent: 'não encontrado no WME (zoom 18, camada Lugares visível?)',
             corrRppChange: 'alterado desde a análise',
             corrRppSkip: l => 'RPP deixados como estão (verificar à mão): ' + l + '.',
+            corrHnAbsent: 'não está mais no seu segmento (corrigido ou excluído desde a análise?)',
+            corrHnChange: n => 'agora é “' + n + '”',
+            corrHnDeplace: d => 'movido ' + d + ' m desde a análise',
+            corrHnNonRelu: 'não foi possível reler no WME',
+            corrHnSkip: l => 'Números deixados como estão (rode a análise de novo): ' + l + '.',
             corrRppTip: 'Lugar residencial (RPP): só o número muda; rua, cidade, ponto de entrada e bloqueio são mantidos.',
             corrPoseTip: 'Corrigido pelo WBC, ainda não salvo.',
             formeT: n => 'Presentes mas incorretos (' + n + ')',
@@ -2738,11 +2879,11 @@
             cmpCert: 'A exportação tinha outra configuração “só certificados”: os números não se comparam.',
             thDelta: 'Δ',
             thDeltaTip: d => 'Mudança no WME desde a exportação de ' + d,
-            namesCsv: 'Diferenças (CSV)',
+            namesCsv: 'Nomes a verificar (CSV)',
             namesCsvTip: 'As ruas cujo nome no WME difere da BAN, com seus segmentos e um link WME: para corrigir ou relatar.',
             namesNone: 'Nenhuma diferença de nome para exportar.',
             hTrackT: 'Acompanhar e relatar',
-            hTrackB: '<p><b>Mapa do departamento</b>: depois de um departamento, cada município é colorido pela cobertura (claro = pouca, escuro = muita). Passando o mouse aparecem seus números; com o mapa afastado, um clique o abre.</p><p><b>Número faltando</b>: com a rua aberta, uma linha pontilhada leva ao segmento que provavelmente deveria levá-lo; seu identificador está no CSV.</p><p><b>Selecionar os segmentos</b> de uma rua pela sua linha: eles ficam selecionados no WME.</p><p><b>Avanço</b>: a exportação CSV serve também de registro. Mais tarde, <i>Comparar</i> a relê e dá a mudança rua por rua (ou município por município). Nada é guardado em outro lugar.</p><p><b>Diferenças (CSV)</b>: as ruas a renomear, cada uma com um link WME, para corrigir ou enviar aos responsáveis da área.</p><p><b>Ferramentas da rua</b>: na linha aberta de uma rua, ícones com contador — selecionar os segmentos, adicionar os números, próxima rua, reportar à BAN ou contatar a prefeitura; o nome de cada um aparece ao passar o mouse.</p><p><b>Limite do município</b>: o ícone de polígono, ao lado das exportações, desenha no mapa o limite administrativo do município; a escolha é lembrada.</p>',
+            hTrackB: '<p><b>Mapa do departamento</b>: depois de um departamento, cada município é colorido pela cobertura (claro = pouca, escuro = muita). Passando o mouse aparecem seus números; com o mapa afastado, um clique o abre.</p><p><b>Número faltando</b>: com a rua aberta, uma linha pontilhada leva ao segmento que provavelmente deveria levá-lo; seu identificador está no CSV.</p><p><b>Selecionar os segmentos</b> de uma rua pela sua linha: eles ficam selecionados no WME.</p><p><b>Avanço</b>: a exportação CSV serve também de registro. Mais tarde, <i>Comparar</i> a relê e dá a mudança rua por rua (ou município por município). Nada é guardado em outro lugar.</p><p><b>Nomes a verificar (CSV)</b>: as ruas a renomear, cada uma com um link WME, para corrigir ou enviar aos responsáveis da área.</p><p><b>Ferramentas da rua</b>: na linha aberta de uma rua, ícones com contador — selecionar os segmentos, adicionar os números, próxima rua, reportar à BAN ou contatar a prefeitura; o nome de cada um aparece ao passar o mouse.</p><p><b>Limite do município</b>: o ícone de polígono, ao lado das exportações, desenha no mapa o limite administrativo do município; a escolha é lembrada.</p>',
             certOnlyTip: "Somente endereços certificados",
             layerSwitchTip: "Números faltando e a mais no mapa",
             showFoundTip: "Mostrar também os encontrados",
@@ -2753,6 +2894,8 @@
             memoBanProg: (i, n) => 'BAN: verificando ' + i + '/' + n,
             memoBanOk: 'BAN sem mudança',
             memoBanMaj: d => 'BAN atualizada' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · revisão de ' + d : ''),
+            srcBanTip: 'Data de revisão da Base Adresse Locale do município, lida na BAN; ausente quando o município não publicou nenhuma BAL. Fonte a citar se divulgar números ou uma exportação.',
             memoBanMajN: n => 'BAN atualizada: ' + n,
             memoBanErr: 'BAN: verificação impossível',
             dejaHnDepuis: n => n + (un1(n) ? ' número adicionado pelo WBC desde então: reinicie' : ' números adicionados pelo WBC desde então: reinicie'),
@@ -2783,14 +2926,14 @@
             sbOpen: 'Abrir a janela',
             sbHelp: 'Ajuda',
             hWhatT: 'O que é comparado',
-            hWhatB: "<p>A <b>BAN</b> é a referência: cada morada que lista deveria existir no WME, como número num segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas em direto: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; é mostrada a data de revisão de cada município); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de comunicações da BAN</b> (signalement.adresse.data.gouv.fr) para o estado das comunicações; e o WME nos mesmos servidores do editor. A zona não precisa de estar visível nem carregada. Desde 12/11/2026, o Waze acredita a BAN para França (apresentação e criação assistida de números de porta, página Map Data Attribution); adicionar uma rua inteira continua a ser um gesto de L6; um número de cada vez está aberto a todos os níveis; tudo com quota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo «Centro do mapa», o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas pesquisas de município — sem identidade nem cookie; para a BAN e a API de comunicações, o código do município; no arranque, o GitHub (version-min.json, versão mínima: uma versão retirada não arranca) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas assinalada: a extensão da vista, a partir do zoom 18, sem cookie. Mais nada; o seu nome de utilizador não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Comunicar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) num novo separador, na rua ou no número; o WBC não envia nada, é o próprio que preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido leva a morada lida no Waze («Adresse présente dans Waze: …»): reveja, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas assinalada e nenhuma análise mostrada nesse sítio, as moradas BAN da vista aparecem a partir do zoom 18, a cinzento (só leitura); rodeadas de verde quando o WME já tem o mesmo número na mesma rua ou a menos de 30 m (números guardados, pontos residenciais). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município ao centro é analisado, ou o seu varrimento recente reaberto, e mostrado no mapa sem abrir a janela. Enquanto a janela do WBC está aberta, as camadas do WME «Números de porta» e «Residencial» ficam visíveis; ao fechá-la, voltam ao estado anterior.</p>",
+            hWhatB: "<p>A <b>BAN</b> é a referência: cada morada que lista deveria existir no WME, como número num segmento (HN) ou como ponto residencial (RPP).</p><p><b>Fontes</b>, lidas em direto: a <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, Estado francês; Licence Ouverte Etalab 2.0; a data de revisão da Base Adresse Locale do município é mostrada sob o seu nome quando a BAN a publica); os limites e listas de municípios do <b>geo.api.gouv.fr</b> (API Découpage administratif, dados do INSEE e do IGN, Licence Ouverte Etalab 2.0); a <b>API pública de comunicações da BAN</b> (signalement.adresse.data.gouv.fr) para o estado das comunicações; e o WME nos mesmos servidores do editor. A zona não precisa de estar visível nem carregada. Desde 12/11/2026, o Waze acredita a BAN para França (apresentação e criação assistida de números de porta, página Map Data Attribution); adicionar uma rua inteira continua a ser um gesto de L6; um número de cada vez está aberto a todos os níveis; tudo com quota.</p><p><b>O que sai do navegador</b>: para o geo.api.gouv.fr, no modo «Centro do mapa», o centro do mapa ARREDONDADO a 3 casas decimais (cerca de 100 m) e as suas pesquisas de município — sem identidade nem cookie; para a BAN e a API de comunicações, o código do município; no arranque, no máximo uma vez por dia, o GitHub (version-min.json, versão mínima: uma versão retirada não arranca) e o GreasyFork (nova versão) são apenas lidos. Para o data.geopf.fr (Géoplateforme do IGN), com a caixa WBC do menu Camadas assinalada: a extensão da vista, a partir do zoom 18, sem cookie. Mais nada; o seu nome de utilizador não vai para nenhum terceiro (só para o Discuss do Waze, para o botão Copiar).</p><p><b>Comunicar à BAN</b>: abre a ferramenta oficial (signalement.adresse.data.gouv.fr) num novo separador, na rua ou no número; o WBC não envia nada, é o próprio que preenche e envia o formulário. Para um número do WME ausente da BAN, o comentário pré-preenchido leva a morada lida no Waze («Adresse présente dans Waze: …»): reveja, altere ou apague antes de enviar.</p><p><b>BAN da vista</b>: com a caixa WBC do menu Camadas assinalada e nenhuma análise mostrada nesse sítio, as moradas BAN da vista aparecem a partir do zoom 18, a cinzento (só leitura); rodeadas de verde quando o WME já tem o mesmo número na mesma rua ou a menos de 30 m (números guardados, pontos residenciais). <b>Ctrl+clique</b> (Cmd+clique no Mac) no botão do mapa: o município ao centro é analisado, ou o seu varrimento recente reaberto, e mostrado no mapa sem abrir a janela. Enquanto a janela do WBC está aberta, as camadas do WME «Números de porta» e «Residencial» ficam visíveis; ao fechá-la, voltam ao estado anterior.</p>",
             hMatchT: 'Quando um número é encontrado',
             hMatchB: '<p>Uma morada da BAN é encontrada quando o WME tem o mesmo número (sufixos incluídos: <i>bis</i>, <i>ter</i>, letras) a menos de 150 m, e:</p><table class="wbc-help-table"><tr><td>1</td><td>numa rua com o mesmo nome (principal ou alternativo), ou que só difere por um artigo («Avenue Sembrancher» = «Avenue de Sembrancher»; a diferença de nome continua assinalada);</td></tr><tr><td>2</td><td>ou num segmento que tem as moradas dessa rua, <b>com ou sem nome</b>;</td></tr><tr><td>3</td><td>ou a menos de 30 m da morada.</td></tr></table><p>A regra 1 é tentada primeiro em todo o lado, depois a 2, depois a 3. Um número do WME só serve uma vez.</p>',
             hNamesT: 'A coluna «Rua WME»',
             hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>os segmentos perto das moradas têm o nome da BAN.</td></tr><tr><td><i>nome</i></td><td>têm outro nome: o nome a verificar.</td></tr><tr><td><i>sem nome</i></td><td>não têm nome.</td></tr><tr><td><i>nenhum segmento</i></td><td>nenhum segmento a menos de 80 m das moradas.</td></tr><tr><td>&#x2713; alt</td><td>o nome da BAN está como nome <b>alternativo</b>; o nome principal aparece ao lado.</td></tr><tr><td>n.º de estrada</td><td>o nome principal é um número de estrada e o nome da BAN falta nos alternativos: acrescentar.</td></tr><tr><td>tipo</td><td>só o tipo de via difere (Rue / Chemin…).</td></tr><tr><td>artigo · grafia · parcial</td><td>nomes parecidos: um artigo, uma ou duas letras, ou uma forma abreviada. <i>ausente do WME</i>: a rua não existe no WME, o nome mostrado é o da vizinha.</td></tr><tr><td>&#x2713; parque</td><td>nenhum segmento com nome, mas um local Parque de estacionamento próximo tem o nome da BAN: nada a renomear.</td></tr><tr><td>&#x2713; grafia BAN</td><td>mesmo nome a menos de um hífen ou ponto («Rue Paul-Louis Courier» / «Rue Paul Louis Courier»): nada a mudar de nome.</td></tr></table><p>Um número em falta a laranja com <b>≠</b> existe no WME com outro sufixo (12 b / 12bis): verificar. Se o WME só tem o número sem sufixo (32 / 32 B), é colocado na mesma e o aviso mantém-se.</p><p>&#x26A0; assinala um nome da BAN que nenhum segmento do município tem.</p>',
             hLimitsT: 'Bom saber',
-            hLimitsB: "<p>Um departamento inteiro demora alguns minutos: a BAN é lida município a município, o WME em quadrados de cerca de 5 km. O botão Parar interrompe; o que está feito continua visível e os municípios com erro podem ser repetidos sozinhos.</p><p>Paris, Marselha e Lyon são lidas distrito a distrito. Os varrimentos ficam apenas neste navegador (IndexedDB), nunca noutro lado, com as suas preferências (zona, interruptores, posição da janela, cores dos pontos); são assinalados quando a BAN ou o WME mudaram desde então.</p>",
-            hSafeB: "O script só altera o mapa a pedido de um editor: o «+» de uma morada (um número ou um RPP, todos os níveis); e, para um L6, «Adicionar os números» (rua a rua: números, e RPP no fim de um acesso), «⇄» (um RPP substituído por um número) e «Transformar este número em RPP» — no máximo 500 por hora móvel, por editor; nunca guarda. Os resultados ficam neste navegador.",
+            hLimitsB: "<p>Um departamento inteiro demora alguns minutos: a BAN é lida município a município, o WME em quadrados de cerca de 5 km. O botão Parar interrompe; o que está feito continua visível e os municípios com erro podem ser repetidos sozinhos.</p><p>Paris, Marselha e Lyon são lidas distrito a distrito. Os varrimentos ficam apenas neste navegador (IndexedDB), nunca noutro lado, com as suas preferências (zona, interruptores, posição da janela, cores dos pontos); são assinalados quando a BAN ou o WME mudaram desde então.</p><p><b>Janela destacada</b> (⧉ no cabeçalho, só Chrome e Edge): a janela do WBC passa para uma janela própria, num segundo ecrã por exemplo; ⧉ ou fechar essa janela repõe-na no WME. O mapa, os seus balões e os avisos ficam na janela do WME, e os atalhos do WME (Ctrl+Z…) não funcionam na janela destacada.</p>",
+            hSafeB: "O script só altera o mapa a pedido de um editor. Todos os níveis: o «+» de uma morada (um número ou um RPP), «⇄» (um RPP substituído por um número, ou um número transformado em RPP) e «↻» (um número reescrito). Para um L6: «Adicionar os números» e «Corrigir os números» de uma rua inteira. No máximo 500 edições por hora móvel, por editor («↻» fora da quota); nunca guarda. Os resultados ficam neste navegador.",
             remTitle: "Continua responsável pelas suas edições",
             remBody: "<p>O WME BAN Coverage <b>propõe</b>: nunca guarda nada sozinho.</p><p>Cada número, RPP ou conversão «⇄» chega ao WME como uma edição pendente. Verifique-a no mapa e depois guarde-a ou anule-a no WME.</p><p>O que guarda é a sua edição, como se a tivesse feito à mão.</p>",
             remNote: "Este lembrete aparece uma vez por navegador; pode voltar a vê-lo no separador do script.",
@@ -2806,11 +2949,13 @@
             modeCommune: 'Outro município',
             modeDep: 'Departamento',
             modeLbl: 'Zona',
+            filtreLbl: 'Vias mostradas',
             hereHint: 'O município sob o centro do mapa, tomado ao iniciar a análise.',
             searchPh: 'Nome, código postal ou código INSEE',
             searchNone: 'Nenhum município encontrado',
             depChoose: 'Escolher um departamento',
             analyse: 'Analisar',
+            analyseCom: c => 'Analisar ' + c,
             stop: 'Parar',
             stLocate: 'A procurar o município…',
             stBan: 'BAN: a ler…',
@@ -2850,7 +2995,7 @@
             filterPh: 'Filtrar ruas',
             filterClear: 'Limpar o filtro',
             filterCount: (n, m) => n + (un1(n) ? ' rua de ' : ' ruas de ') + m,
-            layerSwitch: 'Diferenças',
+            layerSwitch: 'A tratar',
             exportCsv: 'Exportar CSV',
             thStreetBan: 'Rua BAN',
             thStreetWme: 'Rua WME',
@@ -2858,6 +3003,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'Diferença',
+            thGapCourt: 'Dif.',
             thRep: 'Marcas',
             thRepTip: '↻ números a corrigir · ↔ números deslocados do ponto BAN · RPP em duplicado de um número. Passe o rato numa marca para o detalhe.',
             thCommune: 'Município',
@@ -2899,6 +3045,8 @@
             hovWmeStreet: r => 'Rua WME: ' + r,
             sizeTip: "Ampliar / repor a janela",
             smallTip: "Janela pequena (tamanho original)",
+            detachTip: "Destacar numa janela própria (ex.: segundo ecrã). Os atalhos do WME (Ctrl+Z…) não funcionam nela.",
+            attachTip: "Repor a janela no WME",
             searching: "A procurar…",
             tipAnalyse: "Analisar a área escolhida. Se já foi analisada, a data aparece primeiro, com Abrir ou Voltar a correr.",
             tipAnalyseCom: c => "Analisar de novo " + c + ", o município exibido, e atualizar sua linha do departamento. Para analisar todo o departamento, volte primeiro a ele.",
@@ -2960,7 +3108,9 @@
             stDoneErr: (s, n) => 'Concluído em ' + s + ' s — ' + n + (un1(n) ? ' município com erro' : ' municípios com erro'),
             noCert: n => 'Nenhuma das ' + n + ' moradas BAN deste município está certificada.',
             errSession: "Sessão do WME expirada: recarregue a página.",
+            errWmeSerie: (n, m) => 'Departamento interrompido: o WME falhou em ' + n + ' municípios seguidos (' + m + '). Os municípios restantes ficam com erro; tente-os novamente mais tarde.',
             errFormat: src => src + ' respondeu num formato inesperado: o script tem de ser atualizado.',
+            ecrCoupee: 'A escrita foi suspensa pelo autor do script até à publicação de uma versão corrigida; a leitura e a análise continuam disponíveis.',
             delNote: "não atribuíveis a uma freguesia delegada",
             mapCap: (a, b) => 'Mapa: ' + a + ' pontos mostrados de ' + b + ' na vista (aproxime para ver todos)',
             legExtra: "a mais no WME",
@@ -2994,11 +3144,11 @@
             kSuf: n => 'das quais ' + n + (un1(n) ? ' sufixo a verificar' : ' sufixos a verificar'),
             tipSuf: w => "O WME tem " + w + ": verifique o sufixo",
             kFar: n => 'das quais ' + n + ' longe do ponto BAN',
-            kArret: n => n + ' ponto(s) de chegada distante(s)',
-            hovArret: d => 'Ponto de chegada ' + d + ' m a mais',
-            arrT: (n, s) => 'Pontos de chegada distantes (' + n + ', além de ' + s + ' m)',
-            arrTip: d => 'O ponto de chegada está ' + d + ' m para além da rua junto ao número do WME: verifique no WME',
-            sbArret: 'Assinalar ponto de chegada distante a partir de',
+            kArret: n => n + ' ponto(s) de destino distante(s)',
+            hovArret: d => 'Ponto de destino ' + d + ' m a mais',
+            arrT: (n, s) => 'Pontos de destino distantes (' + n + ', além de ' + s + ' m)',
+            arrTip: d => 'O ponto de destino está ' + d + ' m para além da rua junto ao número do WME: verifique no WME',
+            sbArret: 'Assinalar ponto de destino distante a partir de',
             sbArretHint: 'Distância entre o número do WME e o local para onde o Waze guia, menos a distância dele à sua rua. Aplicado de imediato, sem nova análise.',
             tipFar: d => 'Colocado a ' + d + ' m da morada BAN',
             certOnly: 'Certificadas',
@@ -3039,13 +3189,13 @@
             nextStreet: n => 'Rua seguinte (' + n + ' a adicionar)',
             tipNextStreet: 'Abre a rua do município onde «Adicionar» tem mais números a colocar (nome da BAN como principal ou alternativo), saltando as ruas já abertas por este botão.',
             nextStreetNone: 'Nenhuma outra rua pronta: as restantes já têm os números, ou precisam primeiro de correção do nome.',
-            ajHnAddTip: r => 'Apenas L6: coloca no WME os números em falta nesta rua, nos segmentos cujo nome principal é o da BAN (acentos, maiúsculas, hífenes e pontos tolerados) e cuja cidade é o município ou «Village (Commune)»; uma morada no fim de um acesso passa a RPP. No máximo 500 edições por hora móvel, contadas ao guardar (restam ' + r + '). Nada é guardado: verifique e depois guarde no WME. As moradas fora da localidade também passam a RPP.',
+            ajHnAddTip: r => 'Apenas L6: coloca no WME os números em falta nesta rua, nos segmentos cujo nome principal é o da BAN (acentos, maiúsculas, hífenes e pontos tolerados) e cuja cidade é o município ou «Village (Commune)»; uma morada no fim de um acesso passa a RPP. No máximo 500 edições por hora móvel, reservadas ao colocar, devolvidas se não forem guardadas (restam ' + r + '). Nada é guardado: verifique e depois guarde no WME. As moradas fora da localidade também passam a RPP.',
             ajHnNoName: 'O nome WME desta rua não é o da BAN: a adição automática exige um nome principal idêntico ao da BAN.',
             ajHnNone: 'Nenhum número pode ser adicionado automaticamente nesta rua.',
             ajHnLoin: n => 'Nenhum número a adicionar automaticamente: ' + n + ' endereço(s) a mais de 80 m da rua desenhada no WME. Aproxime o segmento se estiver mal colocado.',
             ajHnNomEcart: (w, b) => 'Nenhum número a adicionar automaticamente: no WME, os segmentos desta rua chamam-se «' + w + '», e não «' + b + '» como na BAN. Dê-lhes o nome da BAN.',
             ajHnRenommer: (w, b) => 'Nada foi colocado, e nenhum RPP criado no seu lugar: a rua existe no WME como «' + w + '», não «' + b + '» (nome a verificar). Mude primeiro o nome da rua no WME, guarde e volte a tentar.',
-            ajHnQuota: h => 'Quota atingida (500 números por hora): próxima adição possível às ' + h + '.',
+            ajHnQuota: h => 'Quota atingida (500 edições por hora): próxima adição possível às ' + h + '.',
             ajHnRunning: 'A adicionar os números…',
             rhnToRppRunning: 'A converter o número em RPP…',
             rhnRunning: 'A converter o RPP em número…',
@@ -3082,7 +3232,7 @@
             rhnCity: v => 'Este RPP pertence a «' + v + '», não ao município: não é convertido.',
             rhnStreet: r => 'Este RPP tem a rua «' + r + '», não o nome BAN da rua: não é convertido.',
             rhnNoSeg: 'Nenhum segmento da rua (nome BAN como principal, município como localidade) a menos de 80 m: o RPP está provavelmente fora da localidade, fica.',
-            rhnLegit: v => 'O ponto de acesso do RPP dá para «' + v + '», não para a sua rua: o RPP exprime um desvio que um número de segmento não consegue, fica.',
+            rhnLegit: v => 'O ponto de destino do RPP dá para «' + v + '», não para a sua rua: o RPP exprime um desvio que um número de segmento não consegue, fica.',
             rhnUnsure: 'Nada claro (outra rua igualmente perto, ou demasiado longe de qualquer rua): o RPP fica, verificar à mão.',
             rhnFormat: n => 'O número «' + n + '» não se escreve como um número de segmento: verificar à mão.',
             rhnErr: m => 'Substituição interrompida: ' + m,
@@ -3090,8 +3240,12 @@
             rhnVersRpp: 'Transformar este número em RPP',
             rhnSelVersRpp: 'em RPP',
             rhnSelVersHn: 'em número',
-            rhnVersRppTip: 'Retira este número do segmento e cria no seu lugar um RPP (mesmo número, mesma rua), com o ponto de entrada no segmento sem nome mais próximo ou num acesso (caminho privado, via de estacionamento); depois o RPP fica selecionado para ajustar a entrada. Conta na quota; nada é guardado.',
-            rhnVersRppDone: (n, q) => 'N.º ' + n + ' transformado em RPP — ajuste o ponto de entrada se necessário (está selecionado) e depois guarde no WME. Quota restante: ' + q + '.',
+            rhnVersRppTip: 'Retira este número do segmento e cria no seu lugar um RPP (mesmo número, mesma rua), com o ponto de destino no segmento sem nome mais próximo ou num acesso (caminho privado, via de estacionamento); depois o RPP fica selecionado para ajustar o ponto de destino. Conta na quota; nada é guardado.',
+            rhnVersRppDone: (n, q) => 'N.º ' + n + ' transformado em RPP — ajuste o ponto de destino se necessário (está selecionado) e depois guarde no WME. Quota restante: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'Já existe um RPP n.º ' + n + ' desta rua a ' + d + ' m: nada mudou.',
+            rhnVersRppEntree: (v, d) => v ? 'Ponto de destino em «' + v + '», a ' + d + ' m.' : 'Ponto de destino numa via sem nome, a ' + d + ' m.',
+            illisibleRpp: 'Não foi possível ler os RPP existentes no WME: nada é colocado nem alterado.',
+            occupeGeste: 'Está em curso uma edição do WBC: aguarde que termine.',
             rhnVersRppAbsent: n => 'O número ' + n + ' não foi encontrado no WME (segmento não carregado, ou número já retirado): nada mudou.',
             rhnVersRppTipPose: 'Transformado em RPP (ainda não guardado).',
             ajHnSkip: n => n + (un1(n) ? ' endereço ignorado' : ' endereços ignorados') + ' (detalhes na consola).',
@@ -3103,11 +3257,11 @@
             ajHnSee: n => (un1(n) ? 'Aparece rodeado' : 'Aparecem rodeados') + ' a turquesa no mapa.',
             ajHnPoseTip: 'Colocado pelo WBC, ainda não guardado: clique para centrar o mapa nele.',
             ajZoom17: 'Aproxime para o nível 17 ou superior: abaixo dele, o WME não carrega os locais residenciais. O mapa fica onde está.',
-            ajHnSaved: (c, r, q) => 'Gravação: ' + c + (un1(c) ? ' número contado' : ' números contados') + ', ' + r + ' devolvidos à quota (retirados antes de guardar). Quota restante: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'Gravação: ' + c + (un1(c) ? ' edição contada' : ' edições contadas') + ', ' + r + (un1(r) ? ' devolvida' : ' devolvidas') + ' à quota (retiradas antes de guardar). Quota restante: ' + q + '.',
             ajHnSavedTip: 'Colocado pelo WBC e guardado.',
             hHnT: 'Adicionar os números',
-            hHnB: '<p><i>Adicionar os números</i> de uma rua inteira: só editores <b>L6</b>. <b>Um número de cada vez</b> e as conversões <b>⇄</b> (número → RPP, RPP → número) estão abertos a <b>todos os níveis</b>, com as mesmas verificações e a mesma quota; sem direito sobre o segmento ou o RPP (bloqueio acima do seu nível), o WME faz disso uma sugestão ao guardar — se não houver edições diretas pendentes, e numa conversão só se os dois objetos estiverem no mesmo caso. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços em falta — <b>rua a rua</b>, nunca para o município inteiro. Para um só número: o «+» da sua etiqueta (ao passar o rato) ou um clique no seu ponto no mapa. Valem os direitos do WME: para um só número ou uma conversão, um segmento bloqueado acima do seu nível (ou fora das suas áreas de edição) dá uma sugestão ao guardar; <i>Adicionar os números</i> de uma rua inteira salta esses segmentos, e a mensagem di-lo.</p><p><b>Condições</b>: o nome principal dos segmentos é o da BAN (acentos, maiúsculas, apóstrofos, espaços, hífenes e pontos tolerados; uma grafia diferente é apenas assinalada) e a sua cidade é o município ou «Village (Commune)». Cada número vai para o segmento admitido mais próximo (80 m no máximo); um número já presente, mesmo pendente neste separador, nunca é colocado de novo; um sufixo diferente (12 b / 12bis) ou numérico fica para o editor, a não ser que o WME só tenha o número sem sufixo (32 para 32 B): é então colocado, com um aviso.</p><p><b>Nada é guardado</b>: os números colocados aparecem rodeados a turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; verifique e depois guarde ou anule no WME.</p><p><b>Quota</b>: 500 números por hora móvel. Um número é reservado ao ser colocado e contado se estiver no servidor depois de guardar; retirado ou alterado antes, é devolvido. Números escritos à mão nunca contam. Depois de guardados, passam a «encontrados» sem voltar a analisar; uma análise guardada mais antiga avisa («volte a correr»). O selo &#x271A; no cabeçalho da janela mostra o que resta: laranja abaixo de 20 %, vermelho abaixo de 5 %.</p><p><b>RPP</b>: uma morada no fim de um acesso (caminho privado ou via de estacionamento a menos de 80 m, a sua rua a menos de 250 m) passa a ser um lugar residencial (RPP), incluindo pelo botão da rua. Uma morada fora da localidade (segmento cujo nome principal não tem cidade e que tem o nome BAN com o município como alternativo) passa a RPP, pelo botão da rua como pelo «+». O RPP é criado na posição BAN, com a sua morada e o seu ponto de entrada no segmento (ou acesso) mais próximo; uma morada recusada retira o lugar. O seu bloqueio é o que o WME atribui por omissão (nenhuma tabela de França fixa um para RPP). Os RPP contam na quota. Uma morada sem nenhum segmento com o nome BAN a menos de 80 m, mas perto de uma via transitável de outro nome, também se torna um RPP: morada «nome BAN / concelho», entrada por essa via. Não quando a rua existe no WME com um nome a verificar (artigo, ortografia, tipo…): mude-lhe primeiro o nome; nenhum RPP é criado no seu lugar (0.30.14).</p><p><b>Número → RPP</b>: no balão do ponto de um número (guardado, ou colocado pelo WBC e ainda não guardado), «⇄ Transformar este número em RPP» retira o número e cria no seu lugar um RPP (mesmo número, mesma rua), com o ponto de entrada no segmento sem nome ou acesso mais próximo (rotunda, caminho privado…); depois o RPP fica selecionado para ajustar a entrada. Um número colocado pelo WBC só muda de tipo na quota; um número guardado conta 2.</p><p><b>RPP → número</b>: na rua aberta, os RPP da rua têm as suas etiquetas; ao passar o rato, «⇄» substitui UM RPP por um número no segmento mais próximo da própria rua — rua e localidade do RPP são o nome BAN e o município, pelo que não há ambiguidade: outra rua mais próxima, ou um ponto de acesso para outra rua, já não bloqueia (0.30.14). O mesmo número já na rua a menos de 150 m faz do RPP um duplicado, simplesmente retirado. Nenhum segmento da rua a menos de 80 m: fica. Recusado se o RPP tiver nome ou fotografia, outra localidade ou outra rua. Também com um clique no seu ponto no mapa. Mesma quota; nada é guardado. O bloqueio do RPP é lido: acima do seu nível, a substituição passa a sugestão ao guardar; caso contrário a mensagem indica-o. Nenhuma alteração pode estar à espera de ser guardada (o WME já não deixa os scripts lerem o que está pendente); uma substituição conta 2 na quota (RPP retirado, número colocado). Também selecionando o triângulo do RPP no WME (janela do WBC aberta).</p><p><b>Parar</b>: enquanto uma rua longa é preenchida (o mapa desloca-se de zona em zona), o botão Parar interrompe a passagem; o que foi colocado fica, para rever. Uma colocação falhada é contada na mensagem. <b>Limite</b>: um número escrito à mão e ainda não guardado não é visto como duplicado — guarde antes de adicionar na mesma rua. Dois separadores do WME abertos ao mesmo tempo não veem os números pendentes um do outro: coloque a partir de um só separador.</p>',
-            ajHnQuotaTip: 'Hora móvel: um número conta durante uma hora a partir de quando é colocado. Só contam os números colocados por este botão e realmente guardados.',
+            hHnB: '<p><i>Adicionar os números</i> de uma rua inteira: só editores <b>L6</b>. <b>Um número de cada vez</b> e as conversões <b>⇄</b> (número → RPP, RPP → número) estão abertos a <b>todos os níveis</b>, com as mesmas verificações e a mesma quota; sem direito sobre o segmento ou o RPP (bloqueio acima do seu nível), o WME faz disso uma sugestão ao guardar — se não houver edições diretas pendentes, e numa conversão só se os dois objetos estiverem no mesmo caso. Na linha aberta de uma rua, <i>Adicionar os números</i> coloca no WME os endereços em falta — <b>rua a rua</b>, nunca para o município inteiro. Para um só número: o «+» da sua etiqueta (ao passar o rato) ou um clique no seu ponto no mapa. Valem os direitos do WME: para um só número ou uma conversão, um segmento bloqueado acima do seu nível (ou fora das suas áreas de edição) dá uma sugestão ao guardar; <i>Adicionar os números</i> de uma rua inteira salta esses segmentos, e a mensagem di-lo.</p><p><b>Condições</b>: o nome principal dos segmentos é o da BAN (acentos, maiúsculas, apóstrofos, espaços, hífenes e pontos tolerados; uma grafia diferente é apenas assinalada) e a sua cidade é o município ou «Village (Commune)». Cada número vai para o segmento admitido mais próximo (80 m no máximo); um número já presente, mesmo pendente neste separador, nunca é colocado de novo; um sufixo diferente (12 b / 12bis) ou numérico fica para o editor, a não ser que o WME só tenha o número sem sufixo (32 para 32 B): é então colocado, com um aviso.</p><p><b>Nada é guardado</b>: os números colocados aparecem rodeados a turquesa no mapa (mesmo com a janela fechada) e marcados com ✚ na rua; verifique e depois guarde ou anule no WME.</p><p><b>Quota</b>: 500 edições por hora móvel, por editor e neste navegador: números e RPP colocados pelo WBC («+», <i>Adicionar os números</i>), «⇄» incluído («↻» fica fora da quota). Cada edição é reservada ao ser colocada e contada se estiver no servidor depois de guardar; retirada ou alterada antes, é devolvida. Edições feitas à mão nunca contam. Depois de guardados, números e RPP passam a «encontrados» sem voltar a analisar; uma análise guardada mais antiga avisa («volte a correr»). O selo &#x271A; no cabeçalho da janela mostra o que resta: laranja abaixo de 20 %, vermelho abaixo de 5 %.</p><p><b>RPP</b>: uma morada no fim de um acesso (caminho privado ou via de estacionamento a menos de 80 m, a sua rua a menos de 250 m) passa a ser um lugar residencial (RPP), incluindo pelo botão da rua. Uma morada fora da localidade (segmento cujo nome principal não tem cidade e que tem o nome BAN com o município como alternativo) passa a RPP, pelo botão da rua como pelo «+». O RPP é criado na posição BAN, com a sua morada e o seu ponto de destino no segmento (ou acesso) mais próximo; uma morada recusada retira o lugar. O seu bloqueio é o que o WME atribui por omissão (nenhuma tabela de França fixa um para RPP). Os RPP contam na quota. Uma morada sem nenhum segmento com o nome BAN a menos de 80 m, mas perto de uma via transitável de outro nome, também se torna um RPP: morada «nome BAN / concelho», ponto de destino nessa via. Não quando a rua existe no WME com um nome a verificar (artigo, ortografia, tipo…): mude-lhe primeiro o nome; nenhum RPP é criado no seu lugar (0.30.14).</p><p><b>Número → RPP</b>: no balão do ponto de um número (guardado, ou colocado pelo WBC e ainda não guardado), «⇄ Transformar este número em RPP» retira o número e cria no seu lugar um RPP (mesmo número, mesma rua), com o ponto de destino no segmento sem nome ou acesso mais próximo (rotunda, caminho privado…); depois o RPP fica selecionado para ajustar o ponto de destino. Um número colocado pelo WBC só muda de tipo na quota; um número guardado conta 2.</p><p><b>RPP → número</b>: na rua aberta, os RPP da rua têm as suas etiquetas; ao passar o rato, «⇄» substitui UM RPP por um número no segmento mais próximo da própria rua — rua e localidade do RPP são o nome BAN e o município, pelo que não há ambiguidade: outra rua mais próxima, ou um ponto de destino para outra rua, já não bloqueia (0.30.14). O mesmo número já na rua a menos de 150 m faz do RPP um duplicado, simplesmente retirado. Nenhum segmento da rua a menos de 80 m: fica. Recusado se o RPP tiver nome ou fotografia, outra localidade ou outra rua. Também com um clique no seu ponto no mapa. Mesma quota; nada é guardado. O bloqueio do RPP é lido: acima do seu nível, a substituição passa a sugestão ao guardar; caso contrário a mensagem indica-o. Nenhuma alteração pode estar à espera de ser guardada (o WME já não deixa os scripts lerem o que está pendente); uma substituição conta 2 na quota (RPP retirado, número colocado). Também selecionando o triângulo do RPP no WME (janela do WBC aberta).</p><p><b>Parar</b>: enquanto uma rua longa é preenchida (o mapa desloca-se de zona em zona), o botão Parar interrompe a passagem; o que foi colocado fica, para rever. Uma colocação falhada é contada na mensagem. <b>Limite</b>: um número escrito à mão e ainda não guardado não é visto como duplicado — guarde antes de adicionar na mesma rua. Dois separadores do WME abertos ao mesmo tempo não veem os números pendentes um do outro: coloque a partir de um só separador.</p>',
+            ajHnQuotaTip: '500 edições por hora móvel, por editor, neste navegador: cada número ou RPP colocado pelo WBC conta 1, «⇄» até 2. O lugar é reservado ao colocar, mantido se a edição estiver no servidor depois de guardar, devolvido caso contrário. «↻» fica fora da quota; edições feitas à mão nunca contam.',
             ajHnLeft: n => 'Quota: ' + n + (un1(n) ? ' restante' : ' restantes') + ' nesta hora',
             ajHnFull: h => 'Quota atingida — próxima adição às ' + h,
             ajHn1: 'Adicionar este número',
@@ -3123,8 +3277,9 @@
             legTipRppDbl: 'RPP em duplicado de um número já colocado na rua',
             legTipFound: 'Endereço BAN encontrado no WME',
             corrSaveFail: (n, l) => 'O WME não guardou, com ' + n + ' correção(ões) «↻» pendente(s): ' + l + '. Recarregue a página: as edições pendentes são mantidas. Assinale-o no tópico do WBC.',
+            ajHnSaveFail: n => 'O WME não guardou, com ' + n + (un1(n) ? ' edição do WBC pendente' : ' edições do WBC pendentes') + ' («+», «⇄»). Recarregue a página: as edições pendentes são mantidas. Assinale-o no tópico do WBC.',
             legPose: 'colocado ou corrigido pelo WBC, ainda não guardado',
-            legArret: 'linha até um ponto de chegada distante',
+            legArret: 'linha até um ponto de destino distante',
             corrProgress: (n, N, l) => 'A corrigir ' + n + '/' + N + (l ? ': ' + l : '') + '…',
             corrZone: (n, N) => 'A corrigir ' + n + '/' + N + ': a carregar a zona deste número…',
             hovDecale: (m, s) => 'Encontrado a ' + m + ' m do seu ponto BAN (além de ' + s + ' m): verifique a posição',
@@ -3137,9 +3292,13 @@
             kDecaleOld: 'deslocados: volte a lançar a análise (varrimento antigo)',
             sbDecaleActif: 'Assinalar os números deslocados do ponto BAN',
             sbDecale: 'Assinalar um número encontrado, mas deslocado do seu ponto BAN, além de',
-            sbDecaleHint: 'Desativado por predefinição. Uma ajuda para encontrar um número colocado longe da casa, não uma regra de posicionamento: o número pode ficar no centro do edifício — para a navegação conta o ponto de paragem. Distância entre o número do WME e o seu endereço BAN; aplicado de imediato, sem nova análise.',
+            sbDecaleHint: 'Desativado por predefinição. Uma ajuda para encontrar um número colocado longe da casa, não uma regra de posicionamento: o número pode ficar no centro do edifício — para a navegação conta o ponto de destino. Distância entre o número do WME e o seu endereço BAN; aplicado de imediato, sem nova análise.',
             corrTip: (o, n) => 'Corrigir: o número WME «' + o + '» passa a ser «' + n + '» (mesmo ponto). Fora da quota; nada é guardado.',
             corrLoin: b => 'Estava associado de longe ao «' + b + '» da BAN, que voltará a faltar.',
+            corrEntropTip: n => '«' + n + '» não existe na BAN: pode ser um endereço recente. Verifique no local antes de corrigir; o «+» continua disponível.',
+            tropCorr: (w, b) => 'proposto para «↻» para passar a ser o «' + b + '» da BAN, ou endereço recente? A verificar antes de corrigir ou assinalar.',
+            ajHnVille: (c, v, m) => 'Nada foi colocado e nenhum RPP criado: o segmento «' + v + '» próximo pertence à cidade «' + c + '» no WME, não a «' + m + '». Verifique a cidade do segmento, guarde e volte a tentar.',
+            ajHnHorsCom: n => n + (un1(n) ? ' endereço fora do município ignorado' : ' endereços fora do município ignorados') + ': nenhum RPP criado no território vizinho.',
             corrAdd: n => 'Corrigir os números (' + n + ')',
             corrAddTip: 'Reescreve de uma vez os números WME da via colocados no lugar de outro endereço BAN (rua renumerada) ou escritos de forma diferente da esperada («2bis» ⇒ «2 bis»). Fora da quota. Nada é guardado: reveja e depois guarde ou anule no WME.',
             corrRunning: 'A corrigir os números…',
@@ -3161,7 +3320,12 @@
             corrRppAbsent: 'não encontrado no WME (zoom 18, camada Locais visível?)',
             corrRppChange: 'alterado desde a análise',
             corrRppSkip: l => 'RPP deixados como estão (verificar à mão): ' + l + '.',
-            corrRppTip: 'Local residencial (RPP): só o número muda; rua, cidade, ponto de entrada e bloqueio mantêm-se.',
+            corrHnAbsent: 'já não está no seu segmento (corrigido ou eliminado desde a análise?)',
+            corrHnChange: n => 'agora é «' + n + '»',
+            corrHnDeplace: d => 'movido ' + d + ' m desde a análise',
+            corrHnNonRelu: 'não foi possível reler no WME',
+            corrHnSkip: l => 'Números deixados como estão (volte a lançar a análise): ' + l + '.',
+            corrRppTip: 'Local residencial (RPP): só o número muda; rua, cidade, ponto de destino e bloqueio mantêm-se.',
             corrPoseTip: 'Corrigido pelo WBC, ainda não guardado.',
             formeT: n => 'Presentes mas incorrectos (' + n + ')',
             fCorr: 'A corrigir',
@@ -3186,11 +3350,11 @@
             cmpCert: 'A exportação tinha outra definição «só certificadas»: os números não se comparam.',
             thDelta: 'Δ',
             thDeltaTip: d => 'Alteração no WME desde a exportação de ' + d,
-            namesCsv: 'Diferenças (CSV)',
+            namesCsv: 'Nomes a verificar (CSV)',
             namesCsvTip: 'As ruas cujo nome no WME difere da BAN, com os seus segmentos e uma ligação WME: para corrigir ou assinalar.',
             namesNone: 'Nenhuma diferença de nome para exportar.',
             hTrackT: 'Acompanhar e assinalar',
-            hTrackB: '<p><b>Mapa do departamento</b>: depois de um departamento, cada município é colorido pela cobertura (claro = pouca, escuro = muita). Ao passar o rato surgem os seus números; com o mapa afastado, um clique abre-o.</p><p><b>Número em falta</b>: com a rua aberta, uma linha pontilhada leva ao segmento que provavelmente o deveria levar; o seu identificador está no CSV.</p><p><b>Selecionar os segmentos</b> de uma rua a partir da sua linha: ficam selecionados no WME.</p><p><b>Avanço</b>: a exportação CSV serve também de registo. Mais tarde, <i>Comparar</i> relê-a e dá a alteração rua a rua (ou município a município). Nada é guardado noutro sítio.</p><p><b>Diferenças (CSV)</b>: as ruas a renomear, cada uma com uma ligação WME, para corrigir ou enviar aos responsáveis da área.</p><p><b>Ferramentas da rua</b>: na linha aberta de uma rua, ícones com contador — selecionar os segmentos, adicionar os números, rua seguinte, comunicar à BAN ou contactar a câmara municipal; o nome de cada um aparece ao passar o rato.</p><p><b>Limite do município</b>: o ícone de polígono, ao lado das exportações, desenha no mapa o limite administrativo do município; a escolha é guardada.</p>',
+            hTrackB: '<p><b>Mapa do departamento</b>: depois de um departamento, cada município é colorido pela cobertura (claro = pouca, escuro = muita). Ao passar o rato surgem os seus números; com o mapa afastado, um clique abre-o.</p><p><b>Número em falta</b>: com a rua aberta, uma linha pontilhada leva ao segmento que provavelmente o deveria levar; o seu identificador está no CSV.</p><p><b>Selecionar os segmentos</b> de uma rua a partir da sua linha: ficam selecionados no WME.</p><p><b>Avanço</b>: a exportação CSV serve também de registo. Mais tarde, <i>Comparar</i> relê-a e dá a alteração rua a rua (ou município a município). Nada é guardado noutro sítio.</p><p><b>Nomes a verificar (CSV)</b>: as ruas a renomear, cada uma com uma ligação WME, para corrigir ou enviar aos responsáveis da área.</p><p><b>Ferramentas da rua</b>: na linha aberta de uma rua, ícones com contador — selecionar os segmentos, adicionar os números, rua seguinte, comunicar à BAN ou contactar a câmara municipal; o nome de cada um aparece ao passar o rato.</p><p><b>Limite do município</b>: o ícone de polígono, ao lado das exportações, desenha no mapa o limite administrativo do município; a escolha é guardada.</p>',
             certOnlyTip: "Só moradas certificadas",
             layerSwitchTip: "Números em falta e a mais no mapa",
             showFoundTip: "Mostrar também os encontrados",
@@ -3201,6 +3365,8 @@
             memoBanProg: (i, n) => 'BAN: a verificar ' + i + '/' + n,
             memoBanOk: 'BAN sem alterações',
             memoBanMaj: d => 'BAN atualizada' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · revisão de ' + d : ''),
+            srcBanTip: 'Data de revisão da Base Adresse Locale do município, lida na BAN; ausente quando o município não publicou nenhuma BAL. Fonte a citar se divulgar números ou uma exportação.',
             memoBanMajN: n => 'BAN atualizada: ' + n,
             memoBanErr: 'BAN: verificação impossível',
             dejaHnDepuis: n => n + (un1(n) ? ' número adicionado pelo WBC desde então: relance' : ' números adicionados pelo WBC desde então: relance'),
@@ -3231,14 +3397,14 @@
             sbOpen: 'פתיחת החלון',
             sbHelp: 'עזרה',
             hWhatT: 'מה משווים',
-            hWhatB: "<p>ה-<b>BAN</b> הוא המקור הקובע: כל כתובת שהוא מונה אמורה להופיע ב-WME, כמספר בית על מקטע (HN) או כנקודת מגורים (RPP).</p><p><b>מקורות</b>, נקראים בזמן אמת: <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, מדינת צרפת; Licence Ouverte Etalab 2.0; תאריך העדכון של כל רשות מוצג); גבולות ורשימות הרשויות של <b>geo.api.gouv.fr</b> (API Découpage administratif, נתוני INSEE ו-IGN, Licence Ouverte Etalab 2.0); <b>ה-API הציבורי של דיווחי ה-BAN</b> (signalement.adresse.data.gouv.fr) למצב הדיווחים; ו-WME מאותם שרתים של העורך. אין צורך להציג או לטעון את האזור. מאז 12/11/2026 Waze מאשר את ה-BAN עבור צרפת (הצגה ויצירה בסיוע של מספרי בתים, דף Map Data Attribution); הוספת רחוב שלם נשארת פעולה של L6; מספר אחד בכל פעם פתוח לכל הדרגות; הכול במסגרת המכסה.</p><p><b>מה יוצא מהדפדפן</b>: אל geo.api.gouv.fr, במצב «מרכז המפה», מרכז המפה מעוגל ל-3 ספרות אחרי הנקודה (כ-100 מ') ואת חיפושי הרשויות — בלי זהות ובלי עוגייה; אל ה-BAN ואל API הדיווחים, קוד הרשות; בהפעלה, GitHub (version-min.json, הגרסה המינימלית: גרסה שהוסרה אינה עולה) ו-GreasyFork (גרסה חדשה) נקראים בלבד. אל data.geopf.fr (Géoplateforme של IGN), כשתיבת WBC בתפריט השכבות מסומנת: גבולות התצוגה, מזום 18, בלי עוגייה. שום דבר אחר; שם המשתמש שלך אינו נשלח לשום צד שלישי (רק ל-Discuss של Waze, עבור כפתור ההעתקה).</p><p><b>דיווח ל-BAN</b>: פותח את הכלי הרשמי (signalement.adresse.data.gouv.fr) בלשונית חדשה, על הרחוב או המספר; WBC אינו שולח דבר, אתה ממלא ושולח את הטופס. למספר ב-WME שחסר ב-BAN, ההערה הממולאת מראש כוללת את הכתובת שנקראה ב-Waze («Adresse présente dans Waze: …»): יש לבדוק, לשנות או למחוק אותה לפני השליחה.</p><p><b>BAN של התצוגה</b>: כשתיבת WBC בתפריט השכבות מסומנת ואין ניתוח מוצג במקום, כתובות ה-BAN של התצוגה מופיעות מזום 18, באפור (קריאה בלבד); מוקפות בירוק כאשר ב-WME כבר יש אותו מספר באותו רחוב או בטווח 30 מ׳ (מספרי בתים שמורים, נקודות מגורים). <b>Ctrl+לחיצה</b> (Cmd+לחיצה ב-Mac) על כפתור המפה: הרשות שבמרכז מנותחת, או שהסריקה האחרונה שלה נפתחת מחדש, ומוצגת במפה בלי לפתוח את החלון. כל עוד חלון WBC פתוח, שכבות WME «מספרי בתים» ו«מגורים» מוצגות; בסגירתו הן חוזרות למצבן הקודם.</p>",
+            hWhatB: "<p>ה-<b>BAN</b> הוא המקור הקובע: כל כתובת שהוא מונה אמורה להופיע ב-WME, כמספר בית על מקטע (HN) או כנקודת מגורים (RPP).</p><p><b>מקורות</b>, נקראים בזמן אמת: <b>Base Adresse Nationale</b> (adresse.data.gouv.fr, מדינת צרפת; Licence Ouverte Etalab 2.0; תאריך העדכון של ה-Base Adresse Locale של הרשות מוצג מתחת לשמה כאשר ה-BAN מפרסם אותו); גבולות ורשימות הרשויות של <b>geo.api.gouv.fr</b> (API Découpage administratif, נתוני INSEE ו-IGN, Licence Ouverte Etalab 2.0); <b>ה-API הציבורי של דיווחי ה-BAN</b> (signalement.adresse.data.gouv.fr) למצב הדיווחים; ו-WME מאותם שרתים של העורך. אין צורך להציג או לטעון את האזור. מאז 12/11/2026 Waze מאשר את ה-BAN עבור צרפת (הצגה ויצירה בסיוע של מספרי בתים, דף Map Data Attribution); הוספת רחוב שלם נשארת פעולה של L6; מספר אחד בכל פעם פתוח לכל הדרגות; הכול במסגרת המכסה.</p><p><b>מה יוצא מהדפדפן</b>: אל geo.api.gouv.fr, במצב «מרכז המפה», מרכז המפה מעוגל ל-3 ספרות אחרי הנקודה (כ-100 מ') ואת חיפושי הרשויות — בלי זהות ובלי עוגייה; אל ה-BAN ואל API הדיווחים, קוד הרשות; בהפעלה, לכל היותר פעם ביום, GitHub (version-min.json, הגרסה המינימלית: גרסה שהוסרה אינה עולה) ו-GreasyFork (גרסה חדשה) נקראים בלבד. אל data.geopf.fr (Géoplateforme של IGN), כשתיבת WBC בתפריט השכבות מסומנת: גבולות התצוגה, מזום 18, בלי עוגייה. שום דבר אחר; שם המשתמש שלך אינו נשלח לשום צד שלישי (רק ל-Discuss של Waze, עבור כפתור ההעתקה).</p><p><b>דיווח ל-BAN</b>: פותח את הכלי הרשמי (signalement.adresse.data.gouv.fr) בלשונית חדשה, על הרחוב או המספר; WBC אינו שולח דבר, אתה ממלא ושולח את הטופס. למספר ב-WME שחסר ב-BAN, ההערה הממולאת מראש כוללת את הכתובת שנקראה ב-Waze («Adresse présente dans Waze: …»): יש לבדוק, לשנות או למחוק אותה לפני השליחה.</p><p><b>BAN של התצוגה</b>: כשתיבת WBC בתפריט השכבות מסומנת ואין ניתוח מוצג במקום, כתובות ה-BAN של התצוגה מופיעות מזום 18, באפור (קריאה בלבד); מוקפות בירוק כאשר ב-WME כבר יש אותו מספר באותו רחוב או בטווח 30 מ׳ (מספרי בתים שמורים, נקודות מגורים). <b>Ctrl+לחיצה</b> (Cmd+לחיצה ב-Mac) על כפתור המפה: הרשות שבמרכז מנותחת, או שהסריקה האחרונה שלה נפתחת מחדש, ומוצגת במפה בלי לפתוח את החלון. כל עוד חלון WBC פתוח, שכבות WME «מספרי בתים» ו«מגורים» מוצגות; בסגירתו הן חוזרות למצבן הקודם.</p>",
             hMatchT: 'מתי מספר נמצא',
             hMatchB: '<p>כתובת BAN נמצאת כאשר ב-WME יש אותו מספר (כולל סיומות: <i>bis</i>, <i>ter</i>, אותיות) במרחק של פחות מ-150 מ\', ו:</p><table class="wbc-help-table"><tr><td>1</td><td>על רחוב באותו שם (שם ראשי או חלופי), או ששונה ממנו רק במילית יידוע (\u2066«Avenue Sembrancher» = «Avenue de Sembrancher»\u2069; הפער בשם עדיין מדווח);</td></tr><tr><td>2</td><td>או על מקטע שנושא את הכתובות של הרחוב הזה, <b>עם שם או בלי</b>;</td></tr><tr><td>3</td><td>או במרחק של פחות מ-30 מ\' מהכתובת.</td></tr></table><p>כלל 1 נבדק ראשון בכל מקום, אחריו 2, אחריו 3. מספר ב-WME משמש פעם אחת בלבד.</p>',
             hNamesT: 'העמודה «רחוב WME»',
             hNamesB: '<table class="wbc-help-table"><tr><td>&#x2713;</td><td>המקטעים הקרובים לכתובות נושאים את השם של ה-BAN.</td></tr><tr><td><i>שם</i></td><td>הם נושאים שם אחר: השם שיש לבדוק.</td></tr><tr><td><i>ללא שם</i></td><td>הם אינם נושאים שם.</td></tr><tr><td><i>אין מקטע</i></td><td>אין מקטע במרחק של פחות מ-80 מ\' מהכתובות.</td></tr><tr><td>&#x2713; חלופי</td><td>השם מה-BAN מופיע כשם <b>חלופי</b>; השם הראשי מוצג לצידו.</td></tr><tr><td>מס׳ כביש</td><td>השם הראשי הוא מספר כביש ושם ה-BAN חסר בשמות החלופיים: יש להוסיף.</td></tr><tr><td>סוג</td><td>רק סוג הרחוב שונה (Rue / Chemin…).</td></tr><tr><td>מילית · כתיב · חלקי</td><td>שמות דומים: מילית, אות או שתיים, או צורה מקוצרת. <i>חסר ב-WME</i>: הרחוב אינו קיים ב-WME, והשם המוצג הוא של הרחוב השכן.</td></tr><tr><td>&#x2713; חניון</td><td>אין מקטע עם שם, אבל מקום חניון סמוך נושא את שם ה-BAN: אין מה לשנות.</td></tr><tr><td>&#x2713; כתיב BAN</td><td>אותו שם פרט למקף או לנקודה («Rue Paul-Louis Courier» / «Rue Paul Louis Courier»): אין מה לשנות.</td></tr></table><p>מספר חסר בכתום עם <b>≠</b> קיים ב-WME עם סיומת אחרת (12 b / 12bis): יש לבדוק. אם ב-WME יש רק המספר בלי סיומת (32 / 32 B), הוא מוצב בכל זאת והאזהרה נשארת.</p><p>&#x26A0; מסמן שם ב-BAN שאף מקטע ברשות אינו נושא.</p>',
             hLimitsT: 'כדאי לדעת',
-            hLimitsB: "<p>מחוז שלם לוקח כמה דקות: ה-BAN נקרא רשות אחר רשות, ו-WME בריבועים של כ-5 ק\"מ. הכפתור עצירה מפסיק את הפעולה; מה שכבר נעשה נשאר מוצג, ואפשר לנסות שוב רק את הרשויות שנכשלו.</p><p>פריז, מרסיי וליון נקראות רובע אחר רובע. הסריקות נשמרות בדפדפן זה בלבד (IndexedDB), אף פעם לא במקום אחר, יחד עם ההעדפות (תחום, מתגים, מיקום החלון, צבעי הנקודות); הן מסומנות כאשר ה-BAN או WME השתנו מאז.</p>",
-            hSafeB: "הסקריפט משנה את המפה רק לבקשת עורך: «+» של כתובת אחת (מספר או RPP, כל הדרגות); ולעורך L6: «הוספת המספרים» (רחוב אחר רחוב: מספרים, ו-RPP בסוף דרך גישה), «⇄» (RPP אחד שמוחלף במספר) ו-«הפיכת המספר הזה ל־RPP» — לכל היותר 500 בשעה נעה, לכל עורך; הוא לעולם אינו שומר. התוצאות נשארות בדפדפן זה.",
+            hLimitsB: "<p>מחוז שלם לוקח כמה דקות: ה-BAN נקרא רשות אחר רשות, ו-WME בריבועים של כ-5 ק\"מ. הכפתור עצירה מפסיק את הפעולה; מה שכבר נעשה נשאר מוצג, ואפשר לנסות שוב רק את הרשויות שנכשלו.</p><p>פריז, מרסיי וליון נקראות רובע אחר רובע. הסריקות נשמרות בדפדפן זה בלבד (IndexedDB), אף פעם לא במקום אחר, יחד עם ההעדפות (תחום, מתגים, מיקום החלון, צבעי הנקודות); הן מסומנות כאשר ה-BAN או WME השתנו מאז.</p><p><b>חלון מנותק</b> (⧉ בכותרת, Chrome ו-Edge בלבד): חלון WBC עובר לחלון נפרד, למשל במסך שני; ⧉ או סגירת החלון הזה מחזירים אותו ל-WME. המפה, הבועות שלה וההודעות נשארים בחלון WME, וקיצורי המקשים של WME (Ctrl+Z…) אינם פועלים בחלון המנותק.</p>",
+            hSafeB: "הסקריפט משנה את המפה רק לבקשת עורך. כל הדרגות: «+» של כתובת אחת (מספר או RPP), «⇄» (RPP שמוחלף במספר, או מספר שהופך ל־RPP) ו-«↻» (מספר אחד שנכתב מחדש). לעורך L6: «הוספת המספרים» ו-«תיקון המספרים» של רחוב שלם. לכל היותר 500 עריכות בשעה נעה, לכל עורך («↻» מחוץ למכסה); הוא לעולם אינו שומר. התוצאות נשארות בדפדפן זה.",
             remTitle: "האחריות על העריכות נשארת שלכם",
             remBody: "<p><bdi>WME BAN Coverage</bdi> <b>מציע</b>: הוא לעולם אינו שומר דבר בעצמו.</p><p>כל מספר בית, <bdi>RPP</bdi> או המרה «⇄» מגיעים ל-WME כעריכה ממתינה. בדקו אותה על המפה, ואז שמרו אותה או בטלו אותה ב-WME.</p><p>מה שאתם שומרים הוא העריכה שלכם, כאילו עשיתם אותה ביד.</p>",
             remNote: "תזכורת זו מוצגת פעם אחת בכל דפדפן; אפשר לראות אותה שוב מלשונית הסקריפט.",
@@ -3254,11 +3420,13 @@
             modeCommune: 'רשות אחרת',
             modeDep: 'מחוז',
             modeLbl: 'תחום',
+            filtreLbl: 'רחובות מוצגים',
             hereHint: 'הרשות שמתחת למרכז המפה, בעת תחילת הניתוח.',
             searchPh: 'שם, מיקוד או קוד INSEE',
             searchNone: 'לא נמצאה רשות',
             depChoose: 'בחירת מחוז',
             analyse: 'ניתוח',
+            analyseCom: c => 'ניתוח ' + c,
             stop: 'עצירה',
             stLocate: 'מחפש את הרשות…',
             stBan: 'BAN: קורא…',
@@ -3268,7 +3436,7 @@
             stCalc: 'מחשב…',
             stDep: (i, n, nom) => 'רשות ' + i + '/' + n + ' — ' + nom,
             stDone: s => 'הסתיים תוך ' + s + ' שנ\'',
-            renomRelance: n => n + ' רחובות ששמם שונה ב-WME מאז הניתוח: נתוני היישוב עודכנו.',
+            renomRelance: n => (un1(n) ? 'רחוב אחד ששמו שונה' : n + ' רחובות ששמם שונה') + ' ב-WME מאז הניתוח: נתוני היישוב עודכנו.',
             renomNeuf: n => 'מקטע חדש ב-WME ליד ' + n + ' רחובות שלא היה להם מקטע: נתוני היישוב עודכנו.',
             stStopped: 'נעצר',
             errNoCommune: 'אין רשות צרפתית מתחת למרכז המפה.',
@@ -3280,14 +3448,14 @@
             errGrant: 'מנהל הסקריפטים סירב לבקשת הרשת (בדקו את ההרשאות של הסקריפט).',
             emptyIntro: 'בחרו תחום והתחילו את הניתוח.',
             kBan: 'כתובות BAN',
-            kCert: n => n + ' מאושרות',
+            kCert: n => n + (un1(n) ? ' מאושרת' : ' מאושרות'),
             kWme: 'נמצאו ב-WME',
             kHnRpp: (h, r) => h + ' HN · ' + r + ' RPP',
             kMiss: 'חסרות',
             kExtra: 'עודפות ב-WME',
-            kDup: n => n + ' כפולים',
+            kDup: n => n + (un1(n) ? ' כפול' : ' כפולים'),
             kCov: 'כיסוי',
-            voiesLine: (c, n) => c + ' רחובות מלאים מתוך ' + n,
+            voiesLine: (c, n) => c + (un1(c) ? ' רחוב מלא מתוך ' : ' רחובות מלאים מתוך ') + n,
             vNoName: n => n + ' ללא שם',
             vOtherName: n => n + ' בשם אחר',
             vNoSeg: n => n + ' ללא מקטע',
@@ -3298,7 +3466,7 @@
             filterPh: 'סינון רחובות',
             filterClear: 'ניקוי הסינון',
             filterCount: (n, m) => n + ' מתוך ' + m,
-            layerSwitch: 'פערים',
+            layerSwitch: 'לטיפול',
             exportCsv: 'ייצוא CSV',
             thStreetBan: 'רחוב BAN',
             thStreetWme: 'רחוב WME',
@@ -3306,6 +3474,7 @@
             thBan: 'BAN',
             thWme: 'WME',
             thGap: 'פער',
+            thGapCourt: 'פער',
             thRep: 'סימונים',
             thRepTip: '↻ מספרים לתיקון · ↔ מספרים מוזזים מנקודת ה-BAN · RPP כפול למספר. רחפו מעל סימון לפרטים.',
             thCommune: 'רשות',
@@ -3347,6 +3516,8 @@
             hovWmeStreet: r => 'רחוב ב-WME: ' + r,
             sizeTip: "הגדלה / שחזור של החלון",
             smallTip: "חלון קטן (גודל מקורי)",
+            detachTip: "ניתוק לחלון נפרד (למשל מסך שני). קיצורי המקשים של WME (Ctrl+Z…) אינם פועלים בו.",
+            attachTip: "החזרת החלון ל-WME",
             searching: "מחפש…",
             tipAnalyse: "ניתוח האזור שנבחר. אם כבר נסרק, התאריך שלו מוצג קודם, עם פתיחה או הרצה מחדש.",
             tipAnalyseCom: c => "ניתוח מחדש של " + c + ", היישוב המוצג, ועדכון השורה שלו במחוז. כדי לסרוק את כל המחוז, חזרו אליו קודם.",
@@ -3404,11 +3575,13 @@
             dejaRelaunch: "הרצה מחדש",
             dejaRelaunchTip: "מריץ שוב את כל הניתוח.",
             lastMissing: "אין עוד מספר חסר בטבלה.",
-            retryFailed: n => 'נסו שוב את ' + n + ' הרשויות שנכשלו',
-            stDoneErr: (s, n) => 'הסתיים תוך ' + s + ' שנ׳ — ' + n + ' רשויות נכשלו',
+            retryFailed: n => un1(n) ? 'נסו שוב את הרשות שנכשלה' : 'נסו שוב את ' + n + ' הרשויות שנכשלו',
+            stDoneErr: (s, n) => 'הסתיים תוך ' + s + ' שנ׳ — ' + (un1(n) ? 'רשות אחת נכשלה' : n + ' רשויות נכשלו'),
             noCert: n => 'אף אחת מ-' + n + ' כתובות ה-BAN של הרשות אינה מאושרת.',
             errSession: "פג תוקף ההתחברות ל-WME: טענו את הדף מחדש.",
+            errWmeSerie: (n, m) => 'הסריקה של המחוז נעצרה: WME נכשל ב-' + n + ' רשויות ברציפות (' + m + '). הרשויות שנותרו סומנו ככושלות; נסו שוב מאוחר יותר.',
             errFormat: src => src + ' ענה בפורמט לא צפוי: יש לעדכן את הסקריפט.',
+            ecrCoupee: 'הכתיבה הושעתה על ידי מחבר הסקריפט עד לפרסום גרסה מתוקנת; הקריאה והניתוח ממשיכים לפעול.',
             delNote: "לא ניתן לשייך לרשות מאוחדת",
             mapCap: (a, b) => 'מפה: מוצגות ' + a + ' נקודות מתוך ' + b + ' בתצוגה (התקרבו כדי לראות את כולן)',
             legExtra: "עודף ב-WME",
@@ -3437,18 +3610,18 @@
             vAlt: n => n + ' בשם חלופי',
             vRoute: n => n + ' תחת מספר כביש',
             vType: n => n + ' בשם דומה',
-            kSuf: n => 'מהן ' + n + ' סיומות לבדיקה',
+            kSuf: n => 'מהן ' + (un1(n) ? 'סיומת אחת לבדיקה' : n + ' סיומות לבדיקה'),
             tipSuf: w => "ב-WME מופיע " + w + ": יש לבדוק את הסיומת",
-            kFar: n => 'מהן ' + n + ' רחוקות מנקודת ה-BAN',
-            kArret: n => n + ' נקודות הגעה רחוקות',
-            hovArret: d => 'נקודת ההגעה רחוקה ב-' + d + ' מ׳ מדי',
-            arrT: (n, s) => 'נקודות הגעה רחוקות (' + n + ', מעל ' + s + ' מ׳)',
-            arrTip: d => 'נקודת ההגעה רחוקה ב-' + d + ' מ׳ יותר מהרחוב שליד המספר ב-WME: יש לבדוק ב-WME',
-            sbArret: 'סימון נקודת הגעה רחוקה מעל',
+            kFar: n => 'מהן ' + n + (un1(n) ? ' רחוקה' : ' רחוקות') + ' מנקודת ה-BAN',
+            kArret: n => n + (un1(n) ? ' נקודת כניסה רחוקה' : ' נקודות כניסה רחוקות'),
+            hovArret: d => 'נקודת הכניסה רחוקה ב-' + d + ' מ׳ מדי',
+            arrT: (n, s) => 'נקודות כניסה רחוקות (' + n + ', מעל ' + s + ' מ׳)',
+            arrTip: d => 'נקודת הכניסה רחוקה ב-' + d + ' מ׳ יותר מהרחוב שליד המספר ב-WME: יש לבדוק ב-WME',
+            sbArret: 'סימון נקודת כניסה רחוקה מעל',
             sbArretHint: 'המרחק בין המספר ב-WME למקום שאליו Waze מנחה, פחות המרחק שלו לרחוב. מוחל מיד, ללא ניתוח חדש.',
             tipFar: d => 'ממוקם במרחק ' + d + ' מ׳ מכתובת ה-BAN',
             certOnly: 'מאושרות',
-            certNote: n => 'כתובות מאושרות בלבד: ' + n + ' לא מאושרות הושמטו',
+            certNote: n => 'כתובות מאושרות בלבד: ' + (un1(n) ? 'כתובת אחת לא מאושרת הושמטה' : n + ' לא מאושרות הושמטו'),
             nextMissing: "החסר הבא",
             eta: m => '≈ ' + m + ' דק׳ נותרו',
             etaSoon: "פחות מדקה",
@@ -3475,7 +3648,7 @@
             sigTip: 'כל הדיווחים שנשלחו ל-BAN עבור רשות זו (מכל אחד), עם תוצאתם. לחיצה ממרכזת את המפה.',
             sigVoieT: n => 'דיווחים ל-BAN על רחוב זה (' + n + ')',
             sigSt: s => ({ PENDING: 'ממתין', PROCESSED: 'טופל', IGNORED: 'נדחה', EXPIRED: 'פג תוקף' })[s] || s,
-            sigDem: (k, v) => ({ nom: 'שם → ' + v, num: 'מספר → ' + v, voie: 'רחוב → ' + v, del: 'מחיקה', create: 'יצירה', missing: 'כתובת חסרה', autre: 'מיקום או חלקות' })[k] || k,
+            sigDem: (k, v) => ({ nom: 'שם ← ' + v, num: 'מספר ← ' + v, voie: 'רחוב ← ' + v, del: 'מחיקה', create: 'יצירה', missing: 'כתובת חסרה', autre: 'מיקום או חלקות' })[k] || k,
             sigMotif: m => 'סיבה: ' + m,
             sigDeja: (d, st) => 'כבר דווח ב-' + d + ' (' + st + ').',
             snbT: (v, a) => 'רחובות ללא שם ב-BAN (' + v + ' רחובות, ' + a + ' כתובות)',
@@ -3487,13 +3660,13 @@
             nextStreet: n => 'הרחוב הבא (' + n + ' להוספה)',
             tipNextStreet: 'פותח את הרחוב ברשות שבו ל«הוספה» יש הכי הרבה מספרים להציב (שם ה-BAN כשם ראשי או חלופי), ומדלג על רחובות שכבר נפתחו בכפתור זה.',
             nextStreetNone: 'אין עוד רחוב מוכן: לרחובות הנותרים כבר יש מספרים, או שיש לתקן קודם את שמם.',
-            ajHnAddTip: r => 'L6 בלבד: מציב ב-WME את המספרים החסרים ברחוב זה, על המקטעים ששמם הראשי הוא שם ה-BAN (סובלנות לניקוד, לאותיות רישיות, למקפים ולנקודות) ושהעיר שלהם היא הרשות או «Village (Commune)»; כתובת בסוף דרך גישה הופכת ל-RPP. לכל היותר 500 עריכות בשעה נעה, נספרות בשמירה (נותרו ' + r + '). דבר אינו נשמר: בדקו ואז שמרו ב-WME. גם כתובות מחוץ לשטח בנוי הופכות ל-RPP.',
+            ajHnAddTip: r => 'L6 בלבד: מציב ב-WME את המספרים החסרים ברחוב זה, על המקטעים ששמם הראשי הוא שם ה-BAN (סובלנות לניקוד, לאותיות רישיות, למקפים ולנקודות) ושהעיר שלהם היא הרשות או «Village (Commune)»; כתובת בסוף דרך גישה הופכת ל-RPP. לכל היותר 500 עריכות בשעה נעה, נשמרות במכסה בעת ההצבה ומוחזרות אם לא נשמרו (נותרו ' + r + '). דבר אינו נשמר: בדקו ואז שמרו ב-WME. גם כתובות מחוץ לשטח בנוי הופכות ל-RPP.',
             ajHnNoName: 'שם הרחוב ב-WME אינו השם ב-BAN: הוספה אוטומטית דורשת שם ראשי זהה לשם ב-BAN.',
             ajHnNone: 'לא ניתן להוסיף אוטומטית אף מספר ברחוב זה.',
             ajHnLoin: n => 'לא ניתן להוסיף מספרים אוטומטית: ' + n + ' כתובות במרחק של יותר מ-80 מטר מהרחוב כפי שצויר ב-WME. קרבו את המקטע אם הוא ממוקם שלא כראוי.',
             ajHnNomEcart: (w, b) => 'לא ניתן להוסיף מספרים אוטומטית: ב-WME המקטעים של רחוב זה נקראים "' + w + '" ולא "' + b + '" כמו ב-BAN. תנו להם את השם של ה-BAN.',
             ajHnRenommer: (w, b) => 'דבר לא הוצב, ולא נוצר RPP במקום: הרחוב קיים ב־WME בשם „' + w + '”, ולא „' + b + '” (שם לבדיקה). שנו קודם את שם הרחוב ב־WME, שמרו ונסו שוב.',
-            ajHnQuota: h => 'המכסה נוצלה (500 מספרים בשעה): ההוספה הבאה אפשרית בשעה ' + h + '.',
+            ajHnQuota: h => 'המכסה נוצלה (500 עריכות בשעה): ההוספה הבאה אפשרית בשעה ' + h + '.',
             ajHnRunning: 'מוסיף את המספרים…',
             rhnToRppRunning: 'ממיר את המספר ל-RPP…',
             rhnRunning: 'ממיר את ה-RPP למספר…',
@@ -3530,7 +3703,7 @@
             rhnCity: v => 'ה־RPP הזה שייך ל„' + v + '”, לא לרשות: הוא לא מומר.',
             rhnStreet: r => 'ה־RPP הזה נושא את הרחוב „' + r + '”, לא את שם ה־BAN של הרחוב: הוא לא מומר.',
             rhnNoSeg: 'אין מקטע של הרחוב (שם BAN כשם ראשי, הרשות כעיר) בטווח 80 מ׳: ה־RPP כנראה מחוץ לשטח הבנוי, הוא נשאר.',
-            rhnLegit: v => 'נקודת הגישה של ה־RPP פונה אל „' + v + '”, לא אל הרחוב שלו: ה־RPP מבטא היסט שמספר על מקטע לא יכול לבטא, הוא נשאר.',
+            rhnLegit: v => 'נקודת הכניסה של ה־RPP פונה אל „' + v + '”, לא אל הרחוב שלו: ה־RPP מבטא היסט שמספר על מקטע לא יכול לבטא, הוא נשאר.',
             rhnUnsure: 'אין שום דבר חד־משמעי (רחוב אחר קרוב באותה מידה, או רחוק מדי מכל רחוב): ה־RPP נשאר, לבדיקה ידנית.',
             rhnFormat: n => 'המספר „' + n + '” אינו כתוב כמו מספר על מקטע: לבדיקה ידנית.',
             rhnErr: m => 'ההחלפה הופסקה: ' + m,
@@ -3540,6 +3713,10 @@
             rhnSelVersHn: 'למספר',
             rhnVersRppTip: 'מסיר את המספר הזה מהמקטע ויוצר במקומו RPP (אותו מספר, אותו רחוב), עם נקודת כניסה על המקטע הקרוב ביותר ללא שם או על דרך גישה (דרך פרטית, דרך חניון); לאחר מכן ה־RPP נבחר כדי לכוונן את הכניסה. נספר במכסה; דבר אינו נשמר.',
             rhnVersRppDone: (n, q) => 'מס׳ ' + n + ' הפך ל־RPP — יש לכוונן את נקודת הכניסה במידת הצורך (הוא נבחר) ואז לשמור ב-WME. יתרת המכסה: ' + q + '.',
+            rhnVersRppDbl: (n, d) => 'כבר קיים RPP מס׳ ' + n + ' של רחוב זה במרחק ' + d + ' מ׳: דבר לא שונה.',
+            rhnVersRppEntree: (v, d) => v ? 'נקודת הכניסה על «' + v + '», במרחק ' + d + ' מ׳.' : 'נקודת הכניסה על דרך ללא שם, במרחק ' + d + ' מ׳.',
+            illisibleRpp: 'לא ניתן לקרוא את ה־RPP הקיימים ב־WME: דבר לא הוצב ולא שונה.',
+            occupeGeste: 'עריכה של WBC מתבצעת: יש להמתין לסיומה.',
             rhnVersRppAbsent: n => 'המספר ' + n + ' לא נמצא ב-WME (המקטע לא נטען, או שהמספר כבר הוסר): דבר לא שונה.',
             rhnVersRppTipPose: 'הפך ל־RPP (עדיין לא נשמר).',
             ajHnSkip: n => (un1(n) ? 'כתובת אחת דולגה' : n + ' כתובות דולגו') + ' (פרטים במסוף).',
@@ -3551,11 +3728,11 @@
             ajHnSee: n => un1(n) ? 'הוא מוקף בטורקיז על המפה.' : 'הם מוקפים בטורקיז על המפה.',
             ajHnPoseTip: 'הוצב על ידי WBC, טרם נשמר: יש ללחוץ כדי למרכז את המפה עליו.',
             ajZoom17: 'יש להתקרב לרמה 17 ומעלה: מתחת לכך WME אינו טוען מקומות מגורים. המפה נשארת במקומה.',
-            ajHnSaved: (c, r, q) => 'שמירה: ' + (un1(c) ? 'מספר אחד נספר' : c + ' מספרים נספרו') + ', ' + r + ' הוחזרו למכסה (הוסרו לפני השמירה). יתרת המכסה: ' + q + '.',
+            ajHnSaved: (c, r, q) => 'שמירה: ' + (un1(c) ? 'עריכה אחת נספרה' : c + ' עריכות נספרו') + ', ' + r + ' הוחזרו למכסה (הוסרו לפני השמירה). יתרת המכסה: ' + q + '.',
             ajHnSavedTip: 'הוצב על ידי WBC ונשמר.',
             hHnT: 'הוספת המספרים',
-            hHnB: '<p><i>הוספת המספרים</i> לרחוב שלם: לעורכי <b>L6</b> בלבד. <b>מספר אחד בכל פעם</b> והמרות <b>⇄</b> (מספר → RPP, RPP → מספר) פתוחים <b>לכל הדרגות</b>, עם אותן בדיקות ואותה מכסה; ללא הרשאה על המקטע או על ה־RPP (נעילה מעל הדרגה שלך), WME הופך את העריכה להצעה בשמירה — אם אין עריכות ישירות ממתינות, ובהמרה רק אם שני האובייקטים באותו מצב. בשורה הפתוחה של רחוב, <i>הוספת המספרים</i> מציבה ב-WME את הכתובות החסרות שלו — <b>רחוב אחר רחוב</b>, לעולם לא לרשות שלמה. למספר בודד: ה־„+” שעל התווית שלו (במעבר העכבר), או לחיצה על הנקודה שלו במפה. הרשאות WME חלות: למספר בודד או להמרה, מקטע הנעול מעל הדרגה שלך (או מחוץ לאזורי העריכה שלך) הופך להצעה בשמירה; <i>הוספת המספרים</i> לרחוב שלם מדלג על מקטעים כאלה, וההודעה אומרת זאת.</p><p><b>תנאים</b>: השם הראשי של המקטעים הוא שם ה-BAN (סובלנות לניקוד, לאותיות רישיות, לגרשים, לרווחים, למקפים ולנקודות; כתיב שונה רק מסומן) והעיר שלהם היא הרשות או «Village (Commune)». כל מספר עובר למקטע המותר הקרוב ביותר (80 מ׳ לכל היותר); מספר שכבר קיים, גם אם ממתין בלשונית זו, לעולם לא מוצב שוב; סיומת שונה (12 b / 12bis) או מספרית נשארת לעורך, אלא אם ב-WME יש רק המספר בלי סיומת (32 עבור 32 B): אז הוא מוצב, עם אזהרה.</p><p><b>דבר אינו נשמר</b>: המספרים שהוצבו מוקפים בטורקיז על המפה (גם כשהחלון סגור) ומסומנים ✚ ברחוב; יש לבדוק אותם ואז לשמור או לבטל ב-WME.</p><p><b>מכסה</b>: 500 מספרים בשעה נעה. מספר נשמר במכסה בעת ההצבה, ונספר אם הוא נמצא בשרת אחרי השמירה; אם הוסר או שונה לפני כן, הוא מוחזר. מספרים שהוקלדו ידנית לעולם אינם נספרים. לאחר השמירה הם עוברים ל«נמצאו» בלי להריץ שוב את הניתוח; סריקה שמורה ישנה יותר מציינת זאת («הרצה מחדש»). התג &#x271A; בכותרת החלון מציג את מה שנותר: כתום מתחת ל-20%, אדום מתחת ל-5%.</p><p><b>RPP</b>: כתובת בסוף דרך גישה (דרך פרטית או דרך חניון במרחק של עד 80 מ׳, והרחוב שלה במרחק של עד 250 מ׳) הופכת למקום מגורים (RPP), גם דרך כפתור הרחוב. כתובת מחוץ לשטח בנוי (מקטע שלשמו הראשי אין עיר ושנושא את שם ה-BAN עם הרשות כשם חלופי) הופכת ל-RPP, דרך כפתור הרחוב כמו דרך «+». ה-RPP נוצר במיקום ה-BAN, עם הכתובת שלו ונקודת הכניסה שלו על המקטע (או דרך הגישה) הקרוב ביותר; כתובת שנדחתה מסירה את המקום. הנעילה שלו היא זו ש-WME נותן כברירת מחדל (אין טבלה לצרפת שקובעת נעילה ל-RPP). RPP נספרים במכסה. כתובת שאין לה מקטע עם שם ה־BAN בטווח 80 מ׳, אך היא קרובה לדרך נסיעה בשם אחר, הופכת גם היא ל־RPP: כתובת „שם BAN / רשות”, כניסה מאותה דרך. לא כאשר הרחוב קיים ב־WME בשם לבדיקה (מילית יידוע, איות, סוג…): שנו קודם את שמו; שום RPP לא נוצר במקומו (0.30.14).</p><p><b>מספר ← RPP</b>: בבועה של נקודת מספר (שמור, או שהוצב על ידי WBC ועדיין לא נשמר), «⇄ הפיכת המספר הזה ל־RPP» מסיר את המספר ויוצר במקומו RPP (אותו מספר, אותו רחוב), עם נקודת כניסה על המקטע ללא שם או דרך הגישה הקרובים ביותר (כיכר, דרך פרטית…); לאחר מכן ה-RPP נבחר כדי לכוונן את הכניסה. מספר שהוצב על ידי WBC רק משנה את סוגו במכסה; מספר שמור נספר כ-2.</p><p><b>RPP ← מספר</b>: ברחוב הפתוח, ל־RPP של הרחוב יש תוויות משלהם; במעבר העכבר, „⇄” מחליף RPP אחד במספר על המקטע הקרוב ביותר של הרחוב שלו — הרחוב והעיר של ה־RPP הם שם ה־BAN והרשות, ולכן אין עמימות: רחוב אחר קרוב יותר, או נקודת גישה לרחוב אחר, כבר אינם חוסמים (0.30.14). אותו מספר כבר ברחוב בטווח 150 מ׳ הופך את ה־RPP לכפול, שפשוט מוסר. אין מקטע של הרחוב בטווח 80 מ׳: הוא נשאר. נדחה אם ל־RPP יש שם או תמונה, עיר אחרת או רחוב אחר. גם בלחיצה על הנקודה שלו במפה. אותה מכסה; דבר אינו נשמר. נעילת ה-RPP נקראת: מעל הדרגה שלך, ההחלפה הופכת להצעה בשמירה; אחרת ההודעה מציינת אותה. אסור ששינוי כלשהו ימתין לשמירה (WME כבר אינו מאפשר לסקריפטים לקרוא את מה שממתין); החלפה נספרת 2 במכסה (RPP הוסר, מספר הוצב). גם בבחירת המשולש של ה-RPP ב-WME (חלון WBC פתוח).</p><p><b>עצירה</b>: בזמן מילוי רחוב ארוך (המפה זזה מאזור לאזור), הכפתור עצירה מפסיק את המעבר; מה שהוצב נשאר, לבדיקה. הצבה שנכשלה נספרת בהודעה. <b>מגבלה</b>: מספר שהוקלד ידנית ועדיין לא נשמר אינו מזוהה ככפול — יש לשמור לפני הוספה באותו רחוב. שתי לשוניות WME פתוחות בו־זמנית אינן רואות זו את המספרים הממתינים של זו: הציבו מלשונית אחת בלבד.</p>',
-            ajHnQuotaTip: 'שעה נעה: מספר נספר במשך שעה מרגע הצבתו. נספרים רק מספרים שהוצבו בכפתור זה ונשמרו בפועל.',
+            hHnB: '<p><i>הוספת המספרים</i> לרחוב שלם: לעורכי <b>L6</b> בלבד. <b>מספר אחד בכל פעם</b> והמרות <b>⇄</b> (מספר → RPP, RPP → מספר) פתוחים <b>לכל הדרגות</b>, עם אותן בדיקות ואותה מכסה; ללא הרשאה על המקטע או על ה־RPP (נעילה מעל הדרגה שלך), WME הופך את העריכה להצעה בשמירה — אם אין עריכות ישירות ממתינות, ובהמרה רק אם שני האובייקטים באותו מצב. בשורה הפתוחה של רחוב, <i>הוספת המספרים</i> מציבה ב-WME את הכתובות החסרות שלו — <b>רחוב אחר רחוב</b>, לעולם לא לרשות שלמה. למספר בודד: ה־„+” שעל התווית שלו (במעבר העכבר), או לחיצה על הנקודה שלו במפה. הרשאות WME חלות: למספר בודד או להמרה, מקטע הנעול מעל הדרגה שלך (או מחוץ לאזורי העריכה שלך) הופך להצעה בשמירה; <i>הוספת המספרים</i> לרחוב שלם מדלג על מקטעים כאלה, וההודעה אומרת זאת.</p><p><b>תנאים</b>: השם הראשי של המקטעים הוא שם ה-BAN (סובלנות לניקוד, לאותיות רישיות, לגרשים, לרווחים, למקפים ולנקודות; כתיב שונה רק מסומן) והעיר שלהם היא הרשות או «Village (Commune)». כל מספר עובר למקטע המותר הקרוב ביותר (80 מ׳ לכל היותר); מספר שכבר קיים, גם אם ממתין בלשונית זו, לעולם לא מוצב שוב; סיומת שונה (12 b / 12bis) או מספרית נשארת לעורך, אלא אם ב-WME יש רק המספר בלי סיומת (32 עבור 32 B): אז הוא מוצב, עם אזהרה.</p><p><b>דבר אינו נשמר</b>: המספרים שהוצבו מוקפים בטורקיז על המפה (גם כשהחלון סגור) ומסומנים ✚ ברחוב; יש לבדוק אותם ואז לשמור או לבטל ב-WME.</p><p><b>מכסה</b>: 500 עריכות בשעה נעה, לכל עורך ובדפדפן זה: מספרים ו-RPP ש-WBC מציב («+», <i>הוספת המספרים</i>), כולל «⇄» («↻» מחוץ למכסה). כל עריכה נשמרת במכסה בעת ההצבה, ונספרת אם היא נמצאת בשרת אחרי השמירה; אם הוסרה או שונתה לפני כן, היא מוחזרת. עריכות ידניות לעולם אינן נספרות. לאחר השמירה המספרים וה-RPP עוברים ל«נמצאו» בלי להריץ שוב את הניתוח; סריקה שמורה ישנה יותר מציינת זאת («הרצה מחדש»). התג &#x271A; בכותרת החלון מציג את מה שנותר: כתום מתחת ל-20%, אדום מתחת ל-5%.</p><p><b>RPP</b>: כתובת בסוף דרך גישה (דרך פרטית או דרך חניון במרחק של עד 80 מ׳, והרחוב שלה במרחק של עד 250 מ׳) הופכת למקום מגורים (RPP), גם דרך כפתור הרחוב. כתובת מחוץ לשטח בנוי (מקטע שלשמו הראשי אין עיר ושנושא את שם ה-BAN עם הרשות כשם חלופי) הופכת ל-RPP, דרך כפתור הרחוב כמו דרך «+». ה-RPP נוצר במיקום ה-BAN, עם הכתובת שלו ונקודת הכניסה שלו על המקטע (או דרך הגישה) הקרוב ביותר; כתובת שנדחתה מסירה את המקום. הנעילה שלו היא זו ש-WME נותן כברירת מחדל (אין טבלה לצרפת שקובעת נעילה ל-RPP). RPP נספרים במכסה. כתובת שאין לה מקטע עם שם ה־BAN בטווח 80 מ׳, אך היא קרובה לדרך נסיעה בשם אחר, הופכת גם היא ל־RPP: כתובת „שם BAN / רשות”, כניסה מאותה דרך. לא כאשר הרחוב קיים ב־WME בשם לבדיקה (מילית יידוע, איות, סוג…): שנו קודם את שמו; שום RPP לא נוצר במקומו (0.30.14).</p><p><b>מספר ← RPP</b>: בבועה של נקודת מספר (שמור, או שהוצב על ידי WBC ועדיין לא נשמר), «⇄ הפיכת המספר הזה ל־RPP» מסיר את המספר ויוצר במקומו RPP (אותו מספר, אותו רחוב), עם נקודת כניסה על המקטע ללא שם או דרך הגישה הקרובים ביותר (כיכר, דרך פרטית…); לאחר מכן ה-RPP נבחר כדי לכוונן את הכניסה. מספר שהוצב על ידי WBC רק משנה את סוגו במכסה; מספר שמור נספר כ-2.</p><p><b>RPP ← מספר</b>: ברחוב הפתוח, ל־RPP של הרחוב יש תוויות משלהם; במעבר העכבר, „⇄” מחליף RPP אחד במספר על המקטע הקרוב ביותר של הרחוב שלו — הרחוב והעיר של ה־RPP הם שם ה־BAN והרשות, ולכן אין עמימות: רחוב אחר קרוב יותר, או נקודת כניסה לרחוב אחר, כבר אינם חוסמים (0.30.14). אותו מספר כבר ברחוב בטווח 150 מ׳ הופך את ה־RPP לכפול, שפשוט מוסר. אין מקטע של הרחוב בטווח 80 מ׳: הוא נשאר. נדחה אם ל־RPP יש שם או תמונה, עיר אחרת או רחוב אחר. גם בלחיצה על הנקודה שלו במפה. אותה מכסה; דבר אינו נשמר. נעילת ה-RPP נקראת: מעל הדרגה שלך, ההחלפה הופכת להצעה בשמירה; אחרת ההודעה מציינת אותה. אסור ששינוי כלשהו ימתין לשמירה (WME כבר אינו מאפשר לסקריפטים לקרוא את מה שממתין); החלפה נספרת 2 במכסה (RPP הוסר, מספר הוצב). גם בבחירת המשולש של ה-RPP ב-WME (חלון WBC פתוח).</p><p><b>עצירה</b>: בזמן מילוי רחוב ארוך (המפה זזה מאזור לאזור), הכפתור עצירה מפסיק את המעבר; מה שהוצב נשאר, לבדיקה. הצבה שנכשלה נספרת בהודעה. <b>מגבלה</b>: מספר שהוקלד ידנית ועדיין לא נשמר אינו מזוהה ככפול — יש לשמור לפני הוספה באותו רחוב. שתי לשוניות WME פתוחות בו־זמנית אינן רואות זו את המספרים הממתינים של זו: הציבו מלשונית אחת בלבד.</p>',
+            ajHnQuotaTip: '500 עריכות בשעה נעה, לכל עורך, בדפדפן זה: כל מספר או RPP ש-WBC מציב נספר 1, «⇄» עד 2. המקום נשמר במכסה בעת ההצבה, נשאר אם העריכה נמצאת בשרת אחרי השמירה, ומוחזר אחרת. «↻» מחוץ למכסה; עריכות ידניות לעולם אינן נספרות.',
             ajHnLeft: n => 'מכסה: נותרו ' + n + ' בשעה זו',
             ajHnFull: h => 'המכסה נוצלה — ההוספה הבאה בשעה ' + h,
             ajHn1: 'הוספת המספר הזה',
@@ -3571,27 +3748,32 @@
             legTipRppDbl: 'RPP כפול למספר שכבר הוצב ברחוב',
             legTipFound: 'כתובת BAN נמצאה ב-WME',
             corrSaveFail: (n, l) => 'WME לא שמר, עם ' + n + ' תיקוני „↻” ממתינים: ' + l + '. רעננו את הדף: העריכות הממתינות נשמרות. אנא דווחו בשרשור של WBC.',
+            ajHnSaveFail: n => 'WME לא שמר, עם ' + n + (un1(n) ? ' עריכת WBC ממתינה' : ' עריכות WBC ממתינות') + ' („+”, „⇄”). רעננו את הדף: העריכות הממתינות נשמרות. אנא דווחו בשרשור של WBC.',
             legPose: 'הוצב או תוקן על ידי WBC, טרם נשמר',
-            legArret: 'קו לנקודת הגעה רחוקה',
+            legArret: 'קו לנקודת כניסה רחוקה',
             corrProgress: (n, N, l) => 'מתקן ' + n + '/' + N + (l ? ': ' + l : '') + '…',
             corrZone: (n, N) => 'מתקן ' + n + '/' + N + ': טוען את האזור של מספר זה…',
             hovDecale: (m, s) => 'נמצא ' + m + ' מ׳ מנקודת ה-BAN שלו (מעבר ל-' + s + ' מ׳): בדקו את מיקומו',
             hovDup: 'כפול: כתובת BAN זו כבר מכוסה במספר WME אחר',
-            tagDecale: n => n + ' מוזזים',
-            tagDecaleTip: (n, s) => n + ' מספרים ברחוב זה נמצאו במרחק של יותר מ-' + s + ' מ׳ מנקודת ה-BAN שלהם',
+            tagDecale: n => n + (un1(n) ? ' מוזז' : ' מוזזים'),
+            tagDecaleTip: (n, s) => (un1(n) ? 'מספר אחד ברחוב זה נמצא' : n + ' מספרים ברחוב זה נמצאו') + ' במרחק של יותר מ-' + s + ' מ׳ מנקודת ה-BAN ' + (un1(n) ? 'שלו' : 'שלהם'),
             tagRppDbl: n => 'RPP כפול (' + n + ')',
             tagRppDblTip: l => 'RPP שמכפילים מספר שכבר הוצב ברחוב: ' + l + '. ברחוב, „⇄” על ה-RPP מסיר אותו.',
-            kDecale: (n, s) => n + ' מוזזים ביותר מ-' + s + ' מ׳',
+            kDecale: (n, s) => n + (un1(n) ? ' מוזז' : ' מוזזים') + ' ביותר מ-' + s + ' מ׳',
             kDecaleOld: 'מוזזים: הריצו שוב את הניתוח (סריקה ישנה)',
             sbDecaleActif: 'סמנו מספרים מוזזים מנקודת ה-BAN שלהם',
             sbDecale: 'סמנו מספר שנמצא אך מוזז מנקודת ה-BAN שלו מעבר ל-',
-            sbDecaleHint: 'כבוי כברירת מחדל. עזרה לאתר מספר שהוצב רחוק מהבית, לא כלל מיקום: אפשר להציב את המספר במרכז הבניין — לניווט חשובה נקודת העצירה. המרחק בין מספר ה-WME לכתובת ה-BAN שלו; מוחל מיד, ללא ניתוח חדש.',
+            sbDecaleHint: 'כבוי כברירת מחדל. עזרה לאתר מספר שהוצב רחוק מהבית, לא כלל מיקום: אפשר להציב את המספר במרכז הבניין — לניווט חשובה נקודת הכניסה. המרחק בין מספר ה-WME לכתובת ה-BAN שלו; מוחל מיד, ללא ניתוח חדש.',
             corrTip: (o, n) => 'תיקון: המספר ב־WME „' + o + '” הופך ל„' + n + '” (אותה נקודה). מחוץ למכסה; דבר אינו נשמר.',
             corrLoin: b => 'הוא שויך מרחוק למספר „' + b + '” של BAN, שיחזור להיות חסר.',
+            corrEntropTip: n => '„' + n + '” לא קיים ב־BAN: ייתכן שזו כתובת חדשה. בדקו בשטח לפני התיקון; „+” נשאר זמין.',
+            tropCorr: (w, b) => 'מוצע ל־„↻” כדי להפוך ל־„' + b + '” של BAN, או כתובת חדשה? יש לבדוק לפני תיקון או דיווח.',
+            ajHnVille: (c, v, m) => 'דבר לא הוצב ולא נוצר RPP: המקטע „' + v + '” הסמוך משויך ב־WME לעיר „' + c + '”, ולא „' + m + '”. בדקו את עיר המקטע, שמרו ונסו שוב.',
+            ajHnHorsCom: n => (un1(n) ? 'כתובת אחת מחוץ ליישוב דולגה' : n + ' כתובות מחוץ ליישוב דולגו') + ': לא נוצר RPP בשטח השכן.',
             corrAdd: n => 'תיקון המספרים (' + n + ')',
             corrAddTip: 'כותב מחדש בבת אחת את מספרי ה־WME של הרחוב שהוצבו במקום כתובת BAN אחרת (רחוב שמוספר מחדש) או שנכתבו אחרת מהצורה הצפויה („2bis” ⇒ „2 bis”). מחוץ למכסה. דבר אינו נשמר: יש לבדוק ואז לשמור או לבטל ב־WME.',
             corrRunning: 'מתקן את המספרים…',
-            corrDone: n => n + ' מספרים תוקנו: יש לבדוק ואז לשמור או לבטל ב־WME.',
+            corrDone: n => (un1(n) ? 'מספר אחד תוקן' : n + ' מספרים תוקנו') + ': יש לבדוק ואז לשמור או לבטל ב־WME.',
             corrRefus: l => 'נשארו כפי שהם: ' + l + ' (מספר שלא נמצא או החלפה מעגלית).',
             corrLockSkip: n => n + (un1(n) ? ' מספר לא תוקן' : ' מספרים לא תוקנו') + ': מקטע ש־WME אינו מאפשר לך לערוך (נעילה או אזורי עריכה). תקנו אותם אחד אחד עם „↻”: כל אחד יהפוך להצעה בשמירה.',
             ajHnZoom18: 'הגדילו לפחות לרמה 18: WME טוען מספרי בתים רק מרמה זו.',
@@ -3609,15 +3791,20 @@
             corrRppAbsent: 'לא נמצא ב־WME (זום 18, שכבת המקומות מוצגת?)',
             corrRppChange: 'השתנה מאז הניתוח',
             corrRppSkip: l => 'RPP שנותרו כפי שהם (לבדיקה ידנית): ' + l + '.',
+            corrHnAbsent: 'כבר לא נמצא על המקטע שלו (תוקן או נמחק מאז הניתוח?)',
+            corrHnChange: n => 'כעת «' + n + '»',
+            corrHnDeplace: d => 'הוזז ב־' + d + ' מ׳ מאז הניתוח',
+            corrHnNonRelu: 'לא ניתן לקרוא שוב ב־WME',
+            corrHnSkip: l => 'מספרים שנותרו כפי שהם (יש להריץ שוב את הניתוח): ' + l + '.',
             corrRppTip: 'מקום מגורים (RPP): רק המספר משתנה; רחוב, עיר, נקודת כניסה ונעילה נשמרים.',
             corrPoseTip: 'תוקן על ידי WBC, טרם נשמר.',
             formeT: n => 'קיימים אך שגויים (' + n + ')',
             fCorr: 'לתיקון',
             tipFCorr: "רחובות שבהם מספרי WME קיימים אך שגויים: מספר אחר במקום כתובת ה-BAN (רחוב שמוספר מחדש) או המספר הנכון בכתיב אחר (2bis ⇒ 2 bis).",
             kCorr: n => 'מהן ' + n + ' לתיקון (↻)',
-            corrBtn: (o, n) => 'תיקון: ' + o + ' → ' + n,
+            corrBtn: (o, n) => 'תיקון: \u2066' + o + ' → ' + n + '\u2069',
             hovCorr: (o, n) => 'במקום הזה WME מציג את המספר „' + o + '”: „↻” משנה אותו ל„' + n + '”.',
-            corrTag: n => n + ' מספרים לתיקון ברחוב הזה (↻)',
+            corrTag: n => (un1(n) ? 'מספר אחד' : n + ' מספרים') + ' לתיקון ברחוב הזה (↻)',
             ajHn1Exists: n => 'המספר ' + n + ' כבר קיים ב־WME ברחוב הזה: לא הוצב דבר.',
             ajHn1Rights: 'WME לא זיהה אותך כעורך (שם ודרגה אינם קריאים): טען מחדש את WME ונסה שוב.',
             ajHn1Lock: (n, v) => 'מספר ' + n + ' יהפוך להצעה בשמירה: ' + (v ? 'המקטע שלו נעול ברמה ' + v + ', מעל הדרגה שלך' : 'WME לא מאפשר לך לערוך ישירות את מספרי הבתים של המקטע') + '; עורך בדרגה מספקת יאשר אותה.',
@@ -3634,11 +3821,11 @@
             cmpCert: 'בייצוא הייתה הגדרה אחרת של „מאושרות בלבד“: אי אפשר להשוות את המספרים.',
             thDelta: 'Δ',
             thDeltaTip: d => 'שינוי ב-WME מאז הייצוא של ' + d,
-            namesCsv: 'פערים (CSV)',
+            namesCsv: 'שמות לבדיקה (CSV)',
             namesCsvTip: 'הרחובות ששמם ב-WME שונה מה-BAN, עם המקטעים שלהם וקישור WME: לתיקון או לדיווח.',
             namesNone: 'אין פערי שמות לייצוא.',
             hTrackT: 'מעקב ודיווח',
-            hTrackB: '<p><b>מפת המחוז</b>: אחרי מחוז, כל רשות צבועה לפי הכיסוי (בהיר = מעט, כהה = הרבה). ריחוף מציג את המספרים; במפה מוקטנת, לחיצה פותחת אותה.</p><p><b>מספר חסר</b>: כשהרחוב פתוח, קו מנוקד מוביל למקטע שכנראה אמור לשאת אותו; המזהה שלו מופיע ב-CSV.</p><p><b>בחירת המקטעים</b> של רחוב מהשורה שלו: הם נבחרים ב-WME.</p><p><b>התקדמות</b>: ייצוא ה-CSV משמש גם כתיעוד. מאוחר יותר, <i>השוואה</i> קורא אותו שוב ומציג את השינוי רחוב אחר רחוב (או רשות אחר רשות). דבר אינו נשמר במקום אחר.</p><p><b>פערים (CSV)</b>: הרחובות לשינוי שם, כל אחד עם קישור WME, לתיקון או לשליחה לאחראי האזור.</p><p><b>כלי הרחוב</b>: בשורה הפתוחה של רחוב, סמלים עם מונה — בחירת המקטעים, הוספת המספרים, הרחוב הבא, דיווח ל-BAN או פנייה לעירייה; שם כל סמל מופיע במעבר העכבר.</p><p><b>גבול הרשות</b>: סמל המצולע, ליד הייצואים, משרטט במפה את הגבול המנהלי של הרשות; הבחירה נשמרת.</p>',
+            hTrackB: '<p><b>מפת המחוז</b>: אחרי מחוז, כל רשות צבועה לפי הכיסוי (בהיר = מעט, כהה = הרבה). ריחוף מציג את המספרים; במפה מוקטנת, לחיצה פותחת אותה.</p><p><b>מספר חסר</b>: כשהרחוב פתוח, קו מנוקד מוביל למקטע שכנראה אמור לשאת אותו; המזהה שלו מופיע ב-CSV.</p><p><b>בחירת המקטעים</b> של רחוב מהשורה שלו: הם נבחרים ב-WME.</p><p><b>התקדמות</b>: ייצוא ה-CSV משמש גם כתיעוד. מאוחר יותר, <i>השוואה</i> קורא אותו שוב ומציג את השינוי רחוב אחר רחוב (או רשות אחר רשות). דבר אינו נשמר במקום אחר.</p><p><b>שמות לבדיקה (CSV)</b>: הרחובות לשינוי שם, כל אחד עם קישור WME, לתיקון או לשליחה לאחראי האזור.</p><p><b>כלי הרחוב</b>: בשורה הפתוחה של רחוב, סמלים עם מונה — בחירת המקטעים, הוספת המספרים, הרחוב הבא, דיווח ל-BAN או פנייה לעירייה; שם כל סמל מופיע במעבר העכבר.</p><p><b>גבול הרשות</b>: סמל המצולע, ליד הייצואים, משרטט במפה את הגבול המנהלי של הרשות; הבחירה נשמרת.</p>',
             certOnlyTip: "כתובות מאושרות בלבד",
             layerSwitchTip: "מספרים חסרים ועודפים על המפה",
             showFoundTip: "להציג גם את הכתובות שנמצאו",
@@ -3649,6 +3836,8 @@
             memoBanProg: (i, n) => 'BAN: בבדיקה ' + i + '/' + n,
             memoBanOk: 'BAN ללא שינוי',
             memoBanMaj: d => 'BAN עודכן' + (d ? ' (' + d + ')' : ''),
+            srcBan: d => 'BAN · Licence Ouverte 2.0' + (d ? ' · עדכון מ-' + d : ''),
+            srcBanTip: 'תאריך העדכון של ה-Base Adresse Locale של הרשות, כפי שנקרא ב-BAN; חסר כאשר הרשות לא פרסמה BAL. המקור שיש לציין כשמפיצים נתונים או ייצוא.',
             memoBanMajN: n => 'BAN עודכן: ' + n,
             memoBanErr: 'BAN: הבדיקה נכשלה',
             dejaHnDepuis: n => (un1(n) ? 'מספר אחד נוסף' : n + ' מספרים נוספו') + ' על ידי WBC מאז: יש להפעיל מחדש',
@@ -3693,6 +3882,15 @@
     };
     // Nombres dans la langue du SCRIPT, pas du navigateur.
     const LOCALES = { en: 'en', fr: 'fr-FR', de: 'de-DE', es: 'es-ES', it: 'it-IT', 'pt-BR': 'pt-BR', 'pt-PT': 'pt-PT', he: 'he-IL' };
+    // Anglais : « 11/05/2026 » se lit 5 novembre aux États-Unis, 11 mai ailleurs ; le mois abrégé (« May 11, 2026 ») ne trompe
+    // personne. Les autres langues gardent leur forme chiffrée, sans ambiguïté.
+    const FORMAT_DATE = () => _lang === 'en' ? { day: 'numeric', month: 'short', year: 'numeric' } : { day: '2-digit', month: '2-digit', year: 'numeric' };
+    // Hébreu : dans une phrase de droite à gauche, « 14 → 12 » s'affichait « 12 → 14 » et « −3 » « 3− ». Ces morceaux sont
+    // isolés de gauche à droite (LRI…PDI). Rien n'est ajouté dans les autres langues : le texte copié reste intact.
+    const ltr = s => _lang === 'he' ? '\u2066' + s + '\u2069' : s;
+    // Sens ET langue de chaque bloc de WBC (fenêtre, bulle, fiche, avis…) : WME en néerlandais, WBC s'affiche en anglais (repli), et un
+    // lecteur d'écran lirait cet anglais avec la voix néerlandaise sans lang (audit du 26/11, rang 46).
+    const poserSens = el => { el.dir = _lang === 'he' ? 'rtl' : 'ltr'; el.lang = LOCALES[_lang] || 'en'; };
     let nf = null, pf = null;
     const nb = n => (nf || (nf = new Intl.NumberFormat(LOCALES[_lang] || 'en'))).format(n);
     const pct = (a, b) => (pf || (pf = new Intl.NumberFormat(LOCALES[_lang] || 'en', { style: 'percent', maximumFractionDigits: 1 }))).format(b ? a / b : 0);
@@ -3700,7 +3898,10 @@
     // ==WBC-CORE== — le calcul, sans toucher à la page : le banc l'extrait et le teste sous Node.
     const Core = (() => {
         // 2 < 2 bis < 2 ter < 3 < 10 : numérique d'abord, puis le suffixe.
-        const ordreNum = (x, y) => String(x.brut).localeCompare(String(y.brut), 'fr', { numeric: true });
+        // 0.30.25 : UN Collator gardé. localeCompare avec options en rebâtit un à chaque comparaison : ce tri prenait 27 % du
+        // calcul de banc-perf (36 000 adresses), cause du passage de ~450 à ~850 ms depuis la 0.19.03. Même ordre (même norme).
+        const COLL_NUM = new Intl.Collator('fr', { numeric: true });
+        const ordreNum = (x, y) => COLL_NUM.compare(String(x.brut), String(y.brut));
         // Globales des boucles chaudes liées une fois (lentes à travers le bac à sable du gestionnaire de scripts).
         const { Math, Map, Set, Number, String, Date, parseFloat, Infinity, Object, Error, isFinite } = globalThis;
 
@@ -3711,8 +3912,10 @@
             // Un suffixe CHIFFRÉ (« 5 » + « 3 ») ne se colle pas au numéro : « 5 3 » n'est pas « 53 ».
             const sf = String(suffixe || '').trim();
             if (/^\d/.test(sf)) return normNum(n) + '/' + sf.toLowerCase().replace(/\s+/g, '');
+            // 0.30.21 — audit du 26/11 : un séparateur ENTRE deux groupes de chiffres reste (« 1-3 », « 1/3 » ⇒ « 1-3 ») : collés,
+            // le RPP « 1-3 » valait la BAN 13 et cachait son « + ». Distinct aussi du suffixe chiffré « 5/3 » (rien n'est présumé).
             const s =(String(n == null ? '' : n) + ' ' + (suffixe || '')).toLowerCase()
-                .normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[\s\-_.\/]+/g, '');
+                .normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/(\d)[\s\-_.\/]+(?=\d)/g, '$1-').replace(/[\s_.\/]+|-(?!\d)|(?<!\d)-/g, '');
             const m = /^0*(\d+)([a-z]*)$/.exec(s);
             if (!m) return s || null;
             return m[1] + (SUFFIXES[m[2]] || m[2]);
@@ -3725,13 +3928,16 @@
             pte: 'porte', res: 'residence', lot: 'lotissement', za: 'zone artisanale', zi: 'zone industrielle',
             st: 'saint', ste: 'sainte', mal: 'marechal', gal: 'general', pdt: 'president', dr: 'docteur', prof: 'professeur',
         };
+        const motsNom = nom => !nom ? [] : String(nom).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
+            .replace(/\u0153/g, 'oe').replace(/\u00e6/g, 'ae')
+            .replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean);
         function normNom(nom) {
-            if (!nom) return '';
-            return String(nom).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
-                .replace(/\u0153/g, 'oe').replace(/\u00e6/g, 'ae')
-                .replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean)
-                .map(m => ABREV[m] || m).join(' ');
+            return motsNom(nom).map(m => ABREV[m] || m).join(' ');
         }
+        // 0.30.27 — audit du 26/11 (rang 43) : ABREV développe aussi des mots réels (« Rue du Lot » ⇒ « rue du lotissement ») et
+        // deux voies BAN distinctes n'en faisaient qu'une. Les adresses BAN se regroupent sur le nom plié SANS abréviations ;
+        // ABREV ne sert plus qu'à rapprocher un nom WME d'un nom BAN (normNom).
+        const cleNomVoie = nom => motsNom(nom).join(' ');
 
         // Nom principal = numéro de route : convention Waze, le nom d'usage BAN va en alternatif.
         const ROUTE_RE = /^\s*(?:[ADNMCR]|RD|RN|RM|CD|CR|VC|VO)\s?-?\s?\d+\s?[a-z]?(?:\s|$|[-–—(])/i;
@@ -3807,6 +4013,12 @@
             if (champ !== '' || ligne.length) { ligne.push(champ); yield ligne; }
         }
         const lireCsv = texte => [...lignesCsv(texte)];
+        // Type de position BAL, de la porte au moins précis ; vide ou inconnu en dernier.
+        const POSITIONS = ['entree', 'batiment', 'cage d\'escalier', 'logement', 'delivrance postale', 'parcelle', 'service technique', 'segment'];
+        const rangPosition = p => {
+            const i = POSITIONS.indexOf(String(p || '').trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').replace(/[\u2018\u2019`\u00b4]/g, "'"));
+            return i < 0 ? POSITIONS.length : i;
+        };
         function lireBan(texte) {
             const l = lignesCsv(texte);
             const tete = l.next();
@@ -3815,15 +4027,23 @@
             const col = n => h.indexOf(n);
             const c = {
                 uid: col('uid_adresse'), cle: col('cle_interop'), voie: col('voie_nom'), num: col('numero'), suf: col('suffixe'), lon: col('long'), lat: col('lat'),
-                cert: col('certification_commune'), del: col('commune_deleguee_nom'),
+                cert: col('certification_commune'), del: col('commune_deleguee_nom'), pos: col('position'),
+                // Format BAL 1.4 : identifiants BAN en colonnes propres, sans le préfixe « @a: ».
+                idA: col('id_ban_adresse'), idV: col('id_ban_toponyme'),
             };
-            if (c.voie < 0 || c.num < 0 || c.lon < 0 || c.lat < 0) throw Object.assign(new Error('BAN : colonnes attendues absentes (' + h.join(', ') + ')'), { format: true, source: 'ban' });
+            // 0.30.26 — audit du 26/11 (rang 30) : seules voie, numéro et coordonnées étaient exigés. Un suffixe, une certification ou
+            // un identifiant renommé passait en silence (« 34 bis » lu « 34 », environ 7 % des adresses). Toute colonne lue est exigée,
+            // sauf « position » (repli sur la première ligne) et la commune déléguée, absentes des communes simples.
+            const manque = ['voie_nom', 'numero', 'suffixe', 'long', 'lat', 'cle_interop', 'certification_commune'].filter(n => col(n) < 0);
+            if (c.uid < 0 && c.idA < 0) manque.push('uid_adresse');
+            if (manque.length) throw Object.assign(new Error('format BAN changé, colonnes absentes : ' + manque.join(', ') + ' (en-tête : ' + h.join(', ') + ')'), { format: true, source: 'ban' });
             // UNE adresse = un @a de uid_adresse (plusieurs lignes = plusieurs positions). La cle_interop ne suffit pas (elle revient entre
             // communes déléguées) ; deux @a de même clé à moins de FUSION_M sont un doublon de la BAN. Sans uid_adresse, repli sur la clé.
+            // 0.30.21 — audit du 26/11 : la PREMIÈRE ligne d'un @a n'est pas la porte. Cherbourg-en-Cotentin, 50129_3234_00008 : ligne 1
+            // « segment » à 9,8 km, ligne 2 « entrée » ; le « + » posait sur la rue homonyme d'une autre déléguée. On garde la meilleure
+            // position du @a (rang POSITIONS, à égalité la première lue) ; colonne facultative : absente, la première ligne vaut.
             const FUSION_M = 150;
-            const vues = new Set();
-            const parCle = new Map();
-            const adresses = [];
+            const parId = new Map();
             let ignorees = 0;
             for (const r of l) {
                 const num = (r[c.num] || '').trim();
@@ -3832,20 +4052,13 @@
                 if (!num || num === '99999' || !Number.isFinite(lon) || !Number.isFinite(lat)) { ignorees++; continue; }
                 const suffixe = c.suf >= 0 ? (r[c.suf] || '').trim() : '';
                 const cle = c.cle >= 0 && r[c.cle] ? r[c.cle].trim() : (r[c.voie] + '|' + num + '|' + suffixe);
-                const ida = c.uid >= 0 ? (/@a:([^\s"]+)/.exec(r[c.uid] || '') || [])[1] : null;
-                const idv = c.uid >= 0 ? (/@v:([^\s"]+)/.exec(r[c.uid] || '') || [])[1] : null;
+                const ida = c.uid >= 0 ? (/@a:([^\s"]+)/.exec(r[c.uid] || '') || [])[1] : ((c.idA >= 0 && (r[c.idA] || '').trim()) || null);
+                const idv = c.uid >= 0 ? (/@v:([^\s"]+)/.exec(r[c.uid] || '') || [])[1] : ((c.idV >= 0 && (r[c.idV] || '').trim()) || null);
                 const id = ida || cle;
-                if (vues.has(id)) continue;
-                vues.add(id);
-                if (ida) {
-                    const m = versMetres(lat);
-                    const [x, y] = m(lon, lat);
-                    const deja = parCle.get(cle) || [];
-                    if (deja.some(p => { const [px, py] = m(p[0], p[1]); return Math.hypot(px - x, py - y) <= FUSION_M; })) continue;
-                    deja.push([lon, lat]);
-                    parCle.set(cle, deja);
-                }
-                adresses.push({
+                const rg = rangPosition(c.pos >= 0 ? r[c.pos] : '');
+                const deja = parId.get(id);
+                if (deja && deja.rg <= rg) continue;
+                const a = {
                     voie: (r[c.voie] || '').trim(),
                     deleguee: c.del >= 0 ? (r[c.del] || '').trim() : '',
                     brut: num + (suffixe ? ' ' + suffixe : ''),
@@ -3855,7 +4068,24 @@
                     // La vraie clé seulement (pas le repli voie|numéro) : elle sert au lien de signalement.
                     cle: c.cle >= 0 ? (r[c.cle] || '').trim() : '',
                     uidA: ida || '', uidV: idv || '',
-                });
+                };
+                // Remplacée sur place : l'ordre de lecture des @a ne change pas.
+                if (deja) { deja.a = a; deja.rg = rg; } else parId.set(id, { a, rg, ida: !!ida, cleF: cle });
+            }
+            // Doublons de clé jugés sur la position RETENUE. Sur toutes les positions du @a, Cherbourg perdrait 70 vraies adresses : un
+            // @a d'une déléguée porte parfois en seconde « entrée » la position de son homonyme d'une autre déléguée.
+            const parCle = new Map();
+            const adresses = [];
+            for (const { a, ida, cleF } of parId.values()) {
+                if (ida) {
+                    const m = versMetres(a.lat);
+                    const [x, y] = m(a.lon, a.lat);
+                    const deja = parCle.get(cleF) || [];
+                    if (deja.some(p => { const [px, py] = m(p[0], p[1]); return Math.hypot(px - x, py - y) <= FUSION_M; })) continue;
+                    deja.push([a.lon, a.lat]);
+                    parCle.set(cleF, deja);
+                }
+                adresses.push(a);
             }
             // Numéros de réserve 9990-9999 écartés seulement sans voisin 9000-9989 ni 10000-10999 sur la voie (numérotation métrique) ;
             // une série à rebours est gardée.
@@ -3986,14 +4216,14 @@
         // Adresse au bout d'une allée : pas de segment de sa voie à SEG_MAX_M, une allée à ALLEE_MAX_M, sa voie à RUE_RPP_M ⇒ RPP à la position BAN.
         const ALLEE_MAX_M = 80, RUE_RPP_M = 250;
         const MARGE_NOM = 0.003;  // ≈ 300 m : un segment du même nom au-delà est un homonyme
-        // Point d'arrivée éloigné : EXCÈS = distance marqueur → arrivée moins distance marqueur → sa rue, par paliers de 10 m (30-200) ;
+        // Point d'entrée éloigné : EXCÈS = distance marqueur → entrée moins distance marqueur → sa rue, par paliers de 10 m (30-200) ;
         // le seuil s'applique à l'affichage, sans relancer l'analyse.
         const PALIERS_ARRET = Array.from({ length: 18 }, (_, i) => 30 + 10 * i);
         const histoArret = () => PALIERS_ARRET.map(() => 0);
         const sommeHisto = hs => { const s = histoArret(); for (const h of hs) if (Array.isArray(h)) h.forEach((n, i) => { if (i < s.length) s[i] += n || 0; }); return s; };
         // 0.30.00 — « trouvé mais décalé » (Ju2P0mme, 24/11 : orange « à 5 m au lieu de 30 » pour vérifier une rue posée à la
         // main). Écart entre le MARQUEUR du numéro WME trouvé et son point BAN (dmMarq, 0.30.02), au-delà d'un seuil RÉGLABLE,
-        // appliqué à l'affichage. 0.30.01 prenait dm = min(marqueur, point d'arrêt) : un marqueur à 25 m dont l'arrêt tombe
+        // appliqué à l'affichage. 0.30.01 prenait dm = min(marqueur, point d'entrée) : un marqueur à 25 m dont l'entrée tombe
         // au point BAN « entrée » passait inaperçu (essai du 25/11 : 2 décalés affichés au lieu de 19). Sans dmMarq
         // (analyse d'avant 0.30.02) : rien n'est compté, la vue dit de relancer. Mesure du 25/11, rue Victor Hugo à Tours
         // (298 adresses BAN, toutes « entrée », 291 trouvées, médiane 3,5 m) : au-delà de 5 m 110, de 10 m 19, de 15 m 8,
@@ -4008,13 +4238,14 @@
             const top = nom => { const n = Date.now(); chrono[nom] = n - topPrec; topPrec = n; };
             const lat0 = d.adresses.length ? d.adresses[0].lat : 46;
             const m = versMetres(lat0);
-            const dist = (a, b) => { const [ax, ay] = m(a.lon, a.lat), [bx, by] = m(b.lon, b.lat); return Math.hypot(ax - bx, ay - by); };
-            // Distance au numéro WME : la plus courte de son marqueur et de son point d'arrêt (au bout d'une allée, le marqueur est loin).
+            // Mêmes opérations que m() (lon × kx, lat × 110540), sans les tableaux qu'il crée : appelées par couple adresse × numéro.
+            const KXM = 111320 * Math.cos(lat0 * Math.PI / 180);
+            const dist = (a, b) => Math.hypot(a.lon * KXM - b.lon * KXM, a.lat * 110540 - b.lat * 110540);
+            // Distance au numéro WME : la plus courte de son marqueur et de son point d'entrée (au bout d'une allée, le marqueur est loin).
             const distWme = (a, x) => {
                 const d1 = dist(a, x);
                 if (!x.arret) return d1;
-                const [ax, ay] = m(a.lon, a.lat), [bx, by] = m(x.arret[0], x.arret[1]);
-                return Math.min(d1, Math.hypot(ax - bx, ay - by));
+                return Math.min(d1, Math.hypot(a.lon * KXM - x.arret[0] * KXM, a.lat * 110540 - x.arret[1] * 110540));
             };
 
             const rues = new Map();
@@ -4079,7 +4310,7 @@
             const kx = 111320 * Math.cos(lat0 * Math.PI / 180);
             const ci = lon => Math.floor(lon * kx / RAYON_M), cj = lat => Math.floor(lat * 110540 / RAYON_M);
             const cleCase = (i, j) => (i + 1048576) * 2097152 + (j + 1048576);
-            // Rangé dans la case de son marqueur ET de son point d'arrêt : l'un ou l'autre peut être le seul à portée.
+            // Rangé dans la case de son marqueur ET de son point d'entrée : l'un ou l'autre peut être le seul à portée.
             const ranger = (parCase, k, x) => { const l = parCase.get(k); if (l) l.push(x); else parCase.set(k, [x]); };
             const indexer = (cle, x, idx) => {
                 let parCase = idx.get(cle);
@@ -4107,7 +4338,11 @@
                 for (const a of d.adresses) { emp[0] = Math.min(emp[0], a.lon); emp[1] = Math.min(emp[1], a.lat); emp[2] = Math.max(emp[2], a.lon); emp[3] = Math.max(emp[3], a.lat); }
             }
             const dansEmprise = s => s.coords.some(([x, y]) => x >= emp[0] - MARGE_NOM && x <= emp[2] + MARGE_NOM && y >= emp[1] - MARGE_NOM && y <= emp[3] + MARGE_NOM);
-            const nomsBan = new Set(d.adresses.map(a => normNom(a.voie)));
+            // 0.30.25 : normNom, nomRemplacement et nomGraphie sont pures, appelées par ADRESSE pour quelques centaines de noms :
+            // mémorisées le temps de l'analyse.
+            const memo = f => { const c = new Map(); return x => { let r = c.get(x); if (r === undefined) c.set(x, r = f(x)); return r; }; };
+            const nnV = memo(normNom), rempV = memo(nomRemplacement), graphV = memo(nomGraphie), cleV = memo(cleNomVoie);
+            const nomsBan = new Set(d.adresses.map(a => nnV(a.voie)));
             // Clé « cœur + type » : l'ARTICLE ne distingue pas deux voies, le TYPE si.
             const cleArticle = norm => { const c = coeurNom(norm); return c ? c + '|' + typeDe(norm) : ''; };
             const parCoeur = new Map();
@@ -4119,10 +4354,17 @@
             }
             const voies = new Map();
             for (const a of d.adresses) {
-                const remp = nomRemplacement(a.voie);
-                const k = remp ? '\u2205' + (idVoieBan(a.cle) || a.uidV || '?') + '|' + a.deleguee : normNom(a.voie) + '|' + a.deleguee;
-                if (!voies.has(k)) voies.set(k, { nom: a.voie, norm: normNom(a.voie), deleguee: a.deleguee, adresses: [], remplacement: remp });
-                voies.get(k).adresses.push(a);
+                const remp = rempV(a.voie);
+                const k = remp ? '\u2205' + (idVoieBan(a.cle) || a.uidV || '?') + '|' + a.deleguee : cleV(a.voie) + '|' + a.deleguee;
+                if (!voies.has(k)) voies.set(k, { nom: a.voie, norm: nnV(a.voie), deleguee: a.deleguee, adresses: [], remplacement: remp, graphies: new Map() });
+                const v = voies.get(k);
+                v.adresses.push(a);
+                v.graphies.set(a.voie, (v.graphies.get(a.voie) || 0) + 1);
+            }
+            // Graphies d'une même voie (casse, accents, ponctuation) : la plus fréquente donne le nom, plus la première lue.
+            for (const v of voies.values()) {
+                if (!v.remplacement) { let n = 0; for (const [nom, x] of v.graphies) if (x > n) { n = x; v.nom = nom; } }
+                delete v.graphies;
             }
             for (const v of voies.values()) {
                 v.segs = new Set();
@@ -4136,13 +4378,13 @@
                     a.proche = pp;
                     if (!pp) continue;
                     v.segs.add(pp.seg);
-                    const cle = pn ? v.norm : normNom(pp.seg.nom);
+                    const cle = pn ? v.norm : nnV(pp.seg.nom);
                     const vote = votes.get(cle) || { n: 0, nom: pn ? v.nom : pp.seg.nom, enAlt: 0, principaux: new Map() };
                     vote.n++;
                     // Écart de ponctuation seul : le nom WME vaut, avec un avertissement.
                     if (pn && pp.seg.principal === v.norm) {
                         vote.prin = (vote.prin || 0) + 1;
-                        if (nomGraphie(pp.seg.nom) !== nomGraphie(v.nom)) { vote.ponct = (vote.ponct || 0) + 1; vote.brut = pp.seg.nom; }
+                        if (graphV(pp.seg.nom) !== graphV(v.nom)) { vote.ponct = (vote.ponct || 0) + 1; vote.brut = pp.seg.nom; }
                     }
                     // Nom BAN seulement en alternatif : on retient le principal qui le porte, pour le dire.
                     if (pn && pp.seg.principal !== v.norm) {
@@ -4208,13 +4450,17 @@
             const nomsSegsVoie = new Map();
             const nomsDesSegs = v => { let s = nomsSegsVoie.get(v); if (!s) { s = new Set(); for (const sg of v.segs) sg.noms.forEach(n => s.add(n)); nomsSegsVoie.set(v, s); } return s; };
             const parSegment = (x, v) => !!x.seg && v.segs.has(x.seg) && (x.type !== 'RPP' || !x.noms.size || [...x.noms].some(n => nomsDesSegs(v).has(n)));
+            // 0.30.21 — audit du 26/11 : numéro de segment dont le nom PRINCIPAL est celui d'une AUTRE voie BAN (ni ce nom ni une
+            // variante). À un angle, le « 3 » de la rue voisine rendait « trouvé » le 3 manquant (règle 3) ; il appartient à sa rue.
+            const surAutreVoieBan = (x, v) => x.type === 'HN' && !!x.seg && !!x.seg.principal && x.seg.principal !== v.norm
+                && !v.variantes.has(x.seg.principal) && nomsBan.has(x.seg.principal);
             for (const v of voies.values()) {
                 for (const a of v.adresses) {
                     a.trouve = null;
                     for (const x of autourDe(a.num, a.lon, a.lat)) {
                         const dm = distWme(a, x);
                         if (dm > RAYON_M) continue;
-                        const regle = memeNom(x, v) ? 1 : parSegment(x, v) ? 2 : dm <= PROCHE_M ? 3 : 0;
+                        const regle = memeNom(x, v) ? 1 : parSegment(x, v) ? 2 : dm <= PROCHE_M && !surAutreVoieBan(x, v) ? 3 : 0;
                         if (regle) couples.push({ a, x, regle, dm, v });
                     }
                 }
@@ -4253,28 +4499,35 @@
                 const l = parNumTous.get(x.num);
                 if (l) l.push(x); else parNumTous.set(x.num, [x]);
             }
+            // 0.30.21 — couples tranchés au plus près pour toute la commune, comme les règles 1 à 3 : voie par voie, la première lue
+            // (homonyme d'une autre déléguée, à 900 m) prenait le numéro de celle qui est à 200 m.
             const contourCommune = d.contour;
+            const candLoin = [];
             for (const v of voies.values()) for (const a of v.adresses) {
                 if (a.trouve || a.suffixe) continue;
-                let meilleur = null, dmin = LOIN_MAX_M;
                 for (const x of parNumTous.get(a.num) || []) {
                     if (pris.has(x) || !(memeNom(x, v) || parSegment(x, v)) || !dansContour(x.lon, x.lat, contourCommune)) continue;
                     const dm = distWme(a, x);
-                    if (dm <= dmin) { meilleur = x; dmin = dm; }
+                    if (dm <= LOIN_MAX_M) candLoin.push({ a, x, dm });
                 }
-                if (meilleur) {
-                    a.trouve = meilleur.type;
-                    a.wme = meilleur;
-                    a.dm = dmin;
-                    a.loin = true;
-                    pris.add(meilleur);
-                }
+            }
+            candLoin.sort((p, q) => p.dm - q.dm);
+            for (const c of candLoin) {
+                if (c.a.trouve || pris.has(c.x)) continue;
+                Object.assign(c.a, { trouve: c.x.type, wme: c.x, dm: c.dm, loin: true });
+                pris.add(c.x);
             }
             // 0.29.00 — Correction (milkyway35, 23/11 : rue renumérotée). Adresse BAN manquante dont l'EMPLACEMENT porte un autre numéro
             // de segment de la même voie, lui-même sans adresse BAN (en trop, doublon) ou rattaché « loin » à la sienne : WBC propose de lui
             // donner le numéro BAN. Au plus près, à CORR_M au plus, même parité (l'autre trottoir n'est pas l'emplacement) ; chaque numéro
             // WME ne sert qu'une fois. Certifiée ou non (décision de l'auteur). Rien n'est écrit ici.
-            const CORR_M = PROCHE_M;
+            // 0.30.21 — audit du 26/11 : un numéro « en trop » (sans adresse BAN, ni « loin » ni doublon) peut être JUSTE (adresse
+            // récente, pas encore dans la BAN). Il n'est candidat que sur un segment qui porte le nom de la voie (ou une variante),
+            // jamais par la seule proximité d'un segment rattaché (rue voisine), et à CORR_TROP_M au plus (« 16 » juste à 13 m du
+            // « 14 » manquant : pas de ↻). Marqué entrop : hors du lot « Corriger », « + » gardé.
+            const CORR_M = PROCHE_M, CORR_TROP_M = 10;
+            const admissibles = new Set(couples.filter(c => c.regle <= 2).map(c => c.x));
+            const enTropX = x => !pris.has(x) && !admissibles.has(x);
             const parite = n => { const b = base(n); return b ? Number(b.slice(-1)) % 2 : -1; };
             const loinDe = new Map();
             for (const v of voies.values()) for (const a of v.adresses) if (a.loin && a.wme) loinDe.set(a.wme, a);
@@ -4286,18 +4539,20 @@
                 a.corr = null;
                 if (a.trouve || a.suffixe || !numeroHn(a.brut)) continue;
                 for (const x of autour(parTous, '', a.lon, a.lat)) {
-                    if (x.num === a.num || parite(x.num) !== parite(a.num) || !(memeNom(x, v) || parSegment(x, v))) continue;
+                    if (x.num === a.num || parite(x.num) !== parite(a.num)) continue;
+                    const trop = enTropX(x);
+                    if (trop ? !memeNom(x, v) : !(memeNom(x, v) || parSegment(x, v))) continue;
                     const dm = distWme(a, x);
-                    if (dm <= CORR_M) candCorr.push({ a, x, dm });
+                    if (dm <= (trop ? CORR_TROP_M : CORR_M)) candCorr.push({ a, x, dm });
                 }
             }
             candCorr.sort((p, q) => p.dm - q.dm);
-            const corrPris = new Set();
+            const corrPris = new Map();
             for (const c of candCorr) {
                 if (c.a.corr || corrPris.has(c.x)) continue;
                 c.a.corr = c.x;
                 c.a.corrDm = c.dm;
-                corrPris.add(c.x);
+                corrPris.set(c.x, c.a);
             }
             // Excès mesuré depuis le MARQUEUR WME, pas le point BAN ; rue de même nom si elle a des segments, sinon le segment le plus proche.
             for (const v of voies.values()) for (const a of v.adresses) {
@@ -4315,8 +4570,7 @@
             }
             // Numéro WME seul alors qu'une adresse admissible existait : doublon, pas « en trop ».
             top('couples');
-            // Doublon seulement par règle 1 ou 2 ; par la seule proximité (règle 3), c'est « en trop ».
-            const admissibles = new Set(couples.filter(c => c.regle <= 2).map(c => c.x));
+            // Doublon seulement par règle 1 ou 2 ; par la seule proximité (règle 3), c'est « en trop » (admissibles, plus haut).
             const dehors = wme.filter(x => !pris.has(x) && !suffixes.has(x) && dansContour(x.lon, x.lat, d.contour));
             const doublons = dehors.filter(x => admissibles.has(x));
             // 0.30.00 — voie d'un doublon (Ju2P0mme, 24/11 : « voir d'un coup d'œil la présence de RPP […] en plus du HN ») :
@@ -4388,7 +4642,8 @@
                         wbrut: a.trouve ? a.wme.brut : null, formeHn: a.trouve === 'HN' ? formeAttendueHn(a.wme.brut) : null,
                         wid: a.trouve === 'HN' && a.wme.id != null ? String(a.wme.id) : null, wseg: a.trouve === 'HN' && a.wme.seg ? a.wme.seg.id : null,
                         corr: a.corr ? { id: String(a.corr.id), brut: a.corr.brut, type: a.corr.type, seg: a.corr.type === 'HN' && a.corr.seg ? a.corr.seg.id : null, lon: a.corr.lon, lat: a.corr.lat,
-                            dm: Math.round(a.corrDm), forme: !!a.corrForme, loin: !a.corrForme && loinDe.has(a.corr) ? loinDe.get(a.corr).brut : null } : null })),
+                            dm: Math.round(a.corrDm), forme: !!a.corrForme, loin: !a.corrForme && loinDe.has(a.corr) ? loinDe.get(a.corr).brut : null,
+                            entrop: !a.corrForme && enTropX(a.corr) } : null })),
                     bbox: v.bbox,
                     segs: v.segsVoie.map(x => x.id),
                 });
@@ -4397,12 +4652,15 @@
             for (const v of liste) if (v.idVoie) nIdV.set(v.idVoie, (nIdV.get(v.idVoie) || 0) + 1);
             for (const v of liste) v.idVoieDouble = !!v.idVoie && nIdV.get(v.idVoie) > 1;
             const sortie = x => ({ type: x.type, brut: x.brut, rue: x.rue, lon: x.lon, lat: x.lat });
+            // Numéro en trop proposé à « ↻ » pour une adresse BAN : dit dans la liste (il peut aussi être une adresse récente, d'où
+            // l'alerte BAN gardée). Non certifiée écartée du compte : rien à dire.
+            const sortieTrop = x => { const a = corrPris.get(x); return Object.assign(sortie(x), a && a.corr === x && !a.corrForme && compte(a) ? { corrBan: a.brut } : {}); };
             const tot = liste.reduce((s, v) => ({ ban: s.ban + v.ban, hn: s.hn + v.hn, rpp: s.rpp + v.rpp, suf: s.suf + v.suffixes, elo: s.elo + v.eloignes }), { ban: 0, hn: 0, rpp: 0, suf: 0, elo: 0 });
             return {
                 chrono: Object.assign(chrono, { fin: Date.now() - topPrec, total: Date.now() - top0 }),
                 voies: liste,
                 sansNomBan: sansNomBan.sort((x, y) => y.ban - x.ban),
-                enTrop: enTrop.map(sortie),
+                enTrop: enTrop.map(sortieTrop),
                 doublons: doublons.map(sortie),
                 totaux: {
                     ban: tot.ban, cert: d.adresses.filter(a => a.cert).length, hn: tot.hn, rpp: tot.rpp, presents: tot.hn + tot.rpp,
@@ -4569,8 +4827,12 @@
             };
             const deLaVoie = new Set([...(voie.segs || [])].concat([...probables]));
             const nomsVoie = [...new Set(segs.filter(s => deLaVoie.has(s.id) && !bonNom(s) && !horsAgglo(s) && s.nom).map(s => s.nom))];
-            const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0, rppLot: 0, corriger: 0, renommer: 0 };
+            const ecartes = { existe: 0, suffixe: 0, format: 0, loin: 0, quota: 0, dejaPose: 0, rppLot: 0, corriger: 0, renommer: 0, ville: 0, horsCom: 0 };
             const sousAutreNom = voieSousAutreNom(voie);
+            // 0.30.21 — audit du 26/11 : segment au nom BAN, à SEG_MAX_M, écarté pour sa seule VILLE (non vide) : la voie est là, sa
+            // ville est à vérifier. Repli RPP interdit (le lot posait des RPP « nom BAN / commune » à côté d'elle, objet de mauvais type).
+            const villeAutre = segs.filter(s => bonNom(s) && nomSouple(s.ville) && !villeHnOk(s.ville, commune) && !horsAgglo(s) && traceOk(s));
+            const villesWme = new Set();
             // 0.28.10 — option « RPP en lot » (L6, par éditeur ; demandée par milkyway35, décision de l'auteur 20/11) : coupée, « Ajouter les
             // numéros » d'une voie ne pose que des numéros de segment, comme avant ; les RPP restent au « + », un par un.
             const sansRppLot = !!(opt && opt.lot && opt.rppLot === false);
@@ -4581,7 +4843,9 @@
             for (const a of ordre) {
                 if (a.trouve) continue;
                 // 0.29.03 — un autre numéro (ou le même mal écrit) est à cet emplacement : il se corrige (« ↻ »), on n'en pose pas un second.
-                if (a.corr) { ecartes.corriger++; continue; }
+                // 0.30.21 — sauf, au « + » d'UN numéro, un candidat « en trop » (entrop) : il peut être juste (adresse récente). En lot,
+                // jamais : poser à côté d'un numéro peut-être renuméroté se décide un par un.
+                if (a.corr && (!a.corr.entrop || (opt && opt.lot))) { ecartes.corriger++; continue; }
                 if (a.hnPose || a.hnEnregistre) { ecartes.dejaPose++; continue; }
                 if (suffixeBloque(a)) { ecartes.suffixe++; continue; }
                 const number = numeroHn(a.brut);
@@ -4596,12 +4860,17 @@
                     if (dd <= bd) { bd = dd; best = s; }
                 }
                 if (!best) {
+                    const vAutre = villeAutre.find(s => distTrace(a.lon, a.lat, s.coords) <= SEG_MAX_M);
+                    if (vAutre) { ecartes.ville++; villesWme.add(vAutre.ville); continue; }
                     const r = rppAuBoutDeLAllee(a, admis, segs);
                     if (!r) {
                         // Aucun segment au nom BAN à portée, mais une voie roulable d'un autre nom : RPP « nom BAN / commune »
                         // (il porte sa propre adresse), entrée sur cette voie ; en lot comme au « + ». Pas si la voie existe sous
                         // un nom à vérifier (0.30.14) : elle se renomme d'abord.
                         if (sousAutreNom) { ecartes.renommer++; continue; }
+                        // 0.30.21 — audit du 26/11 (Ju2P0mme, Chemin du Calvaire) : point BAN hors de sa commune ⇒ pas de RPP « nom BAN /
+                        // commune » sur le territoire voisin. Seulement ici : un numéro sur un segment admis reste posable.
+                        if (a.horsCom != null) { ecartes.horsCom++; continue; }
                         const libre = voieRoulableProche(a, segs);
                         if (!libre) { ecartes.loin++; continue; }
                         if (sansRppLot) { ecartes.rppLot++; continue; }
@@ -4625,7 +4894,7 @@
                 vus.add(cle);
                 poses.push({ number, lon: a.lon, lat: a.lat, segmentId: best.id, adresse: a, rpp: alt ? { rue: alt.nom, ville: villeRpp(alt.ville) } : null });
             }
-            return { poses, ecartes, admis: admis.length, hors: horsA.length, refus, nomsVoie };
+            return { poses, ecartes, admis: admis.length, hors: horsA.length, refus, nomsVoie, villesWme: [...villesWme] };
         }
         // Segment où le « + » d'UN numéro poserait (même choix que planHn, doublons non comptés) ; rpp : la pose deviendrait un RPP.
         function segmentProbableHn(voie, a, commune, segs) {
@@ -4948,7 +5217,39 @@
             }
             return vus;
         }
-        return { ordreNum, rppEnAttente, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, distContour, formeAttendueHn, HORS_COM_M, analyser, PALIERS_ARRET, PALIERS_DECALE, DECALE_DEF, decale, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, niveauQuota, rapprocherHn, planHn, segmentProbableHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, suffixeBloque, segsPresDesOrphelines, placementBulle, placementBoutonSel, voieSousAutreNom };
+        // 0.30.24 (audit du 26/11, normes-03) : date de révision de la Base Adresse Locale, réponse d'api/district/cog/<code>.
+        // Sans BAL publiée, rien : lastRecordDate est alors une date de chargement commune à ces communes (15/01/2026 relevé
+        // le 27/11 à Montpellier, Saint-Denis 97411, L'Abergement-Clémenciat), pas une révision de la commune.
+        function revisionBal(j) {
+            const d = j && Array.isArray(j.response) ? j.response[0] : null;
+            const x = d && d.meta && d.meta.bal && d.meta.bal.dateRevision;
+            const ms = typeof x === 'string' ? Date.parse(x) : NaN;
+            return Number.isFinite(ms) ? ms : null;
+        }
+        // 0.30.26 — audit du 26/11 (rang 31) : /Features et /HouseNumbers sont lus hors SDK, et seul segments.objects était contrôlé.
+        // Une clé renommée ne lève rien : hasHNs perdu, 100 % des numéros passent « manquants » et le balayage est gardé tel quel.
+        // Rend '' si la réponse a la forme lue, sinon le nom de ce qui manque. « residential » n'est exigé que d'un lieu classé
+        // résidentiel : on ne présume pas que WME écrive la clé sur les autres lieux.
+        const CAT_RPP = ['RESIDENCE_HOME', 'RESIDENTIAL'];
+        function formeWme(r, quoi) {
+            if (quoi === 'hn') {
+                const o = r && r.segmentHouseNumbers && r.segmentHouseNumbers.objects;
+                if (!Array.isArray(o)) return 'segmentHouseNumbers.objects';
+                if (o.length && !o.some(h => h && 'number' in h)) return 'number';
+                if (o.length && !o.some(h => h && 'segID' in h)) return 'segID';
+                return '';
+            }
+            const s = r && r.segments && r.segments.objects;
+            if (!Array.isArray(s)) return 'segments.objects';
+            if (s.length && !s.some(x => x && 'hasHNs' in x)) return 'hasHNs';
+            if (s.length && !(r.streets && Array.isArray(r.streets.objects))) return 'streets.objects';
+            const v = r.venues && r.venues.objects;
+            if (v != null && !Array.isArray(v)) return 'venues.objects';
+            const rpp = (v || []).filter(x => x && Array.isArray(x.categories) && x.categories.some(c => CAT_RPP.includes(c)));
+            if (rpp.length && !rpp.some(x => x.residential === true)) return 'residential';
+            return '';
+        }
+        return { formeWme, ordreNum, rppEnAttente, revisionBal, nomRemplacement, lienCarteBan, lienAlerte, resumeSignalement, signalementsVoie, dernierSignalement, alerteProche, lienSignalement, voieDeCles, inseeCle, normNum, normNom, coeurNom, ecartNoms, lireCsv, lireBan, lireExport, dansContour, distContour, formeAttendueHn, HORS_COM_M, analyser, PALIERS_ARRET, PALIERS_DECALE, DECALE_DEF, decale, sommeHisto, arretsAuDela, nomSouple, villeHnOk, villeRpp, numeroHn, distTrace, voieLaPlusProche, verdictRppHn, RPP_DOUBLON_M, quotaHn, niveauQuota, rapprocherHn, planHn, segmentProbableHn, segsDesExistants, zonesHn, pointLePlusProche, entreeRpp, suffixeBloque, segsPresDesOrphelines, placementBulle, placementBoutonSel, voieSousAutreNom };
     })();
     // ==/WBC-CORE==
 
@@ -4977,30 +5278,46 @@
         }
         return f();
     }
-    const gm = (url, surProgres, complet) => avecEssais(() => gmUneFois(url, surProgres, complet));
+    const gm = (url, surProgres, complet, jeton) => avecEssais(() => gmUneFois(url, surProgres, complet, jeton));
     const etagDe = h => { const m = /^etag:\s*(.+)$/im.exec(h || ''); return m ? m[1].trim() : ''; };
     // HEAD : l'ETag, stable et identique au GET, dit si le fichier BAN a changé.
     const gmTete = url => avecEssais(() => new Promise((ok, ko) => {
         const hote = url.split('/')[2];
         if (typeof GM_xmlhttpRequest !== 'function') { ko(new Error(t('errGrant'))); return; }
         GM_xmlhttpRequest({
-            method: 'HEAD', url, timeout: 30000,
+            method: 'HEAD', url, timeout: 30000, anonymous: true,
             onload: r => r.status === 404 ? ok('404') : (r.status >= 200 && r.status < 300) ? ok(etagDe(r.responseHeaders)) : ko(errReseau(hote + ' HTTP ' + r.status, r.status, 'ext')),
             onerror: () => ko(errReseau(hote, 0, 'ext')),
             ontimeout: () => ko(errReseau(hote + ' (timeout)', 0, 'ext')),
         });
     }));
-    // anonyme : ni cookie ni identifiant envoyés avec la requête.
-    function gmUneFois(url, surProgres, complet, anonyme) {
+    // 0.30.25 — audit du 26/11 (rang 32) : 90 s au TOTAL coupaient le fichier BAN d'une grande commune sur une connexion lente,
+    // et « Arrêter » laissait la requête courir. Délai d'INACTIVITÉ, réarmé à chaque morceau reçu, plus un plafond total large.
+    const GM_INACTIF_MS = 45000, GM_TOTAL_MS = 600000;
+    // 0.30.26 — audit du 26/11 (rang 34) : l'aide promet « sans identité ni cookie » ; seule la BAN de la vue l'appliquait. Toutes
+    // les requêtes du gestionnaire de scripts partent anonymes : services publics lus sans compte (relevé le 27/11 : aucun ne pose
+    // de cookie). jeton : « Arrêter » coupe la requête (Arret).
+    function gmUneFois(url, surProgres, complet, jeton) {
         const hote = url.split('/')[2];
         return new Promise((ok, ko) => {
             if (typeof GM_xmlhttpRequest !== 'function') { ko(new Error(t('errGrant'))); return; }
-            GM_xmlhttpRequest({
-                method: 'GET', url, timeout: 90000, anonymous: !!anonyme,
-                onprogress: surProgres ? p => { if (p) surProgres(p.lengthComputable && p.total ? Math.min(1, p.loaded / p.total) : null, p.loaded || 0); } : undefined,
-                onload: r => (r.status >= 200 && r.status < 300) ? ok(complet ? { texte: r.responseText, entetes: r.responseHeaders || '' } : r.responseText) : ko(errReseau(hote + ' HTTP ' + r.status, r.status, 'ext')),
-                onerror: () => ko(errReseau(hote, 0, 'ext')),
-                ontimeout: () => ko(errReseau(hote + ' (timeout)', 0, 'ext')),
+            if (jeton && jeton.stop) { ko(Arret()); return; }
+            const sig = jeton && jeton.coupe && jeton.coupe.signal;
+            let req = null, minuteur = null, fini = false;
+            const abandon = () => { try { if (req && typeof req.abort === 'function') req.abort(); } catch (e) { } };
+            const finir = (f, v) => { if (fini) return; fini = true; clearTimeout(minuteur); if (sig) sig.removeEventListener('abort', couper); f(v); };
+            // Conclu AVANT d'abandonner : abort() peut rappeler onabort sur-le-champ, qui conclurait en « arrêt ».
+            const couper = () => { finir(ko, Arret()); abandon(); };
+            const armer = () => { clearTimeout(minuteur); minuteur = setTimeout(() => { finir(ko, errReseau(hote + ' (timeout)', 0, 'ext')); abandon(); }, GM_INACTIF_MS); };
+            if (sig) sig.addEventListener('abort', couper);
+            armer();
+            req = GM_xmlhttpRequest({
+                method: 'GET', url, timeout: GM_TOTAL_MS, anonymous: true,
+                onprogress: p => { armer(); if (surProgres && p) surProgres(p.lengthComputable && p.total ? Math.min(1, p.loaded / p.total) : null, p.loaded || 0); },
+                onload: r => (r.status >= 200 && r.status < 300) ? finir(ok, complet ? { texte: r.responseText, entetes: r.responseHeaders || '' } : r.responseText) : finir(ko, errReseau(hote + ' HTTP ' + r.status, r.status, 'ext')),
+                onerror: () => finir(ko, errReseau(hote, 0, 'ext')),
+                ontimeout: () => finir(ko, errReseau(hote + ' (timeout)', 0, 'ext')),
+                onabort: () => finir(ko, Arret()),
             });
         });
     }
@@ -5049,28 +5366,48 @@
 
     // WBC ne couvre que la France (serveur « row ») : chemin pris tel quel.
     const cheminWme = (cle, repli) => repli;
-    const wmeJson = url => avecEssais(() => wmeUneFois(url));
-    async function wmeUneFois(url) {
-        let r;
-        try { r = await pw.fetch(url, { credentials: 'same-origin' }); }
-        catch (e) { throw errReseau(e.message, 0, 'wme'); }
-        if (!r.ok) throw errReseau('HTTP ' + r.status, r.status, 'wme');
-        // Décodé en TEXTE : parcourir depuis le script les objets de `r.json()`, qui appartiennent à la page, est lent.
-        const txt = await r.text();
-        try { return JSON.parse(txt); } catch (e) { throw errFormat('wme'); }
+    const wmeJson = (url, jeton) => avecEssais(() => wmeUneFois(url, jeton));
+    // 0.30.25 — audit du 26/11 (rang 32) : sans délai ni coupure, une lecture pendante bloquait l'analyse et « Arrêter » restait
+    // sans effet. Contrôleur de la PAGE (pw), comme le fetch qu'il coupe. Le délai est un échec passager (deux nouveaux essais).
+    const WME_DELAI_MS = 60000;
+    async function wmeUneFois(url, jeton) {
+        if (jeton && jeton.stop) throw Arret();
+        const AC = pw.AbortController || AbortController, ctrl = new AC(), sig = jeton && jeton.coupe && jeton.coupe.signal;
+        let delai = false;
+        const minuteur = setTimeout(() => { delai = true; ctrl.abort(); }, WME_DELAI_MS);
+        const couper = () => ctrl.abort();
+        if (sig) sig.addEventListener('abort', couper);
+        const echec = e => (jeton && jeton.stop) ? Arret() : errReseau(delai ? 'timeout' : e.message, 0, 'wme');
+        try {
+            let r;
+            try { r = await pw.fetch(url, { credentials: 'same-origin', signal: ctrl.signal }); }
+            catch (e) { throw echec(e); }
+            if (!r.ok) throw errReseau('HTTP ' + r.status, r.status, 'wme');
+            // Décodé en TEXTE : parcourir depuis le script les objets de `r.json()`, qui appartiennent à la page, est lent.
+            let txt;
+            try { txt = await r.text(); } catch (e) { throw echec(e); }
+            try { return JSON.parse(txt); } catch (e) { throw errFormat('wme'); }
+        } finally {
+            clearTimeout(minuteur);
+            if (sig) sig.removeEventListener('abort', couper);
+        }
     }
 
     async function parPaquets(taches, n, jeton, surFin) {
         const res = new Array(taches.length);
-        let i = 0, faites = 0;
+        let i = 0, faites = 0, echec = false;
+        // 0.30.25 — audit du 26/11 (rang 29) : après l'échec d'un ouvrier, les autres continuaient de lancer des requêtes pour
+        // un résultat déjà perdu (charge ajoutée sous un 429). Le premier échec les arrête tous.
         const ouvrier = async () => {
-            while (i < taches.length) {
-                if (jeton.stop) throw Arret();
-                const k = i++;
-                res[k] = await taches[k]();
-                faites++;
-                if (surFin) surFin(faites, taches.length);
-            }
+            try {
+                while (i < taches.length && !echec) {
+                    if (jeton.stop) throw Arret();
+                    const k = i++;
+                    res[k] = await taches[k]();
+                    faites++;
+                    if (surFin) surFin(faites, taches.length);
+                }
+            } catch (e) { echec = true; throw e; }
         };
         await Promise.all(Array.from({ length: Math.min(n, taches.length) }, ouvrier));
         return res;
@@ -5109,32 +5446,36 @@
         let departements = null;
         const empriseDep = new Map();
 
-        async function adresses(code, avance) {
+        async function adresses(code, avance, jeton) {
             const codes = ARRONDISSEMENTS[code] || [code];
             const recus = new Array(codes.length).fill(0);
             let finis = 0;
             const total = () => recus.reduce((a, b) => a + b, 0);
             const parts = new Array(codes.length), etags = new Array(codes.length).fill('');
             let reserve = 0;
-            let suivant = 0;
+            let suivant = 0, echec = false;
+            // Paris, Marseille, Lyon : un arrondissement en échec (ou « Arrêter ») arrête les autres ouvriers (rang 29).
             const ouvrier = async () => {
-                while (suivant < codes.length) {
-                    const k = suivant++;
-                    let texte;
-                    try {
-                        const lire = /^98/.test(codes[k]) ? gmUneFois : gm;
-                        const rep = await lire(BAN_URL(codes[k]), (f, o) => { recus[k] = o; avance(codes.length > 1 ? finis / codes.length : f, total()); }, true);
-                        texte = rep.texte;
-                        etags[k] = etagDe(rep.entetes);
+                try {
+                    while (suivant < codes.length && !echec) {
+                        if (jeton && jeton.stop) throw Arret();
+                        const k = suivant++;
+                        let texte;
+                        try {
+                            const prog = (f, o) => { recus[k] = o; avance(codes.length > 1 ? finis / codes.length : f, total()); };
+                            const rep = await (/^98/.test(codes[k]) ? gmUneFois(BAN_URL(codes[k]), prog, true, jeton) : gm(BAN_URL(codes[k]), prog, true, jeton));
+                            texte = rep.texte;
+                            etags[k] = etagDe(rep.entetes);
+                        }
+                        catch (e) { if (e.status === 404 || sansBanCom(codes[k], e)) { etags[k] = '404'; finis++; continue; } throw e; }
+                        recus[k] = texte.length;
+                        finis++;
+                        avance(codes.length > 1 ? finis / codes.length : null, total());
+                        const lu = Core.lireBan(texte);
+                        parts[k] = lu.adresses;
+                        reserve += lu.reserve;
                     }
-                    catch (e) { if (e.status === 404 || sansBanCom(codes[k], e)) { etags[k] = '404'; finis++; continue; } throw e; }
-                    recus[k] = texte.length;
-                    finis++;
-                    avance(codes.length > 1 ? finis / codes.length : null, total());
-                    const lu = Core.lireBan(texte);
-                    parts[k] = lu.adresses;
-                    reserve += lu.reserve;
-                }
+                } catch (e) { echec = true; throw e; }
             };
             await Promise.all(Array.from({ length: Math.min(4, codes.length) }, ouvrier));
             const adresses = parts.filter(Boolean).flat();
@@ -5197,20 +5538,52 @@
                 }
                 return l.join('|');
             },
+            // Une requête d'environ 500 octets ; null si la commune n'a pas de BAL publiée, ou pour Paris, Marseille et Lyon
+            // (le code de la commune rend 404, chaque arrondissement a sa propre révision).
             dateRevision: async code => {
-                try {
-                    const j = await gmJson('https://plateforme.adresse.data.gouv.fr/api/district/cog/' + encodeURIComponent(code));
-                    const d = j && j.response && j.response[0];
-                    const x = d && ((d.meta && d.meta.bal && d.meta.bal.dateRevision) || d.lastRecordDate);
-                    return x ? Date.parse(x) : null;
-                } catch (e) { return null; }
+                if (ARRONDISSEMENTS[code]) return null;
+                try { return Core.revisionBal(await gmJson('https://plateforme.adresse.data.gouv.fr/api/district/cog/' + encodeURIComponent(code))); }
+                catch (e) { return null; }
             },
         };
     })();
     const PAYS = { FR: PAYS_FR };
     const pays = PAYS.FR;
 
+    // ==WBC-CARREAUX== — cache des carreaux WME (banc-carreaux le fait tourner sur les communes du Gard).
+    // 0.30.25 — audit du 26/11 (rang 28) : 48 carreaux ne couvraient pas deux rangées du serpentin d'un département, d'où ×1,4 à
+    // ×1,7 de lectures /Features (mesuré : Gard, Hérault, Gironde, Nord, Bouches-du-Rhône) ; 120 ramènent à ×1,00-1,12.
+    const CARREAUX_GARDES = 120;
     function nouveauCache() { return { carreaux: new Map(), hn: new Map() }; }
+    // Carreau déjà lu : remis en tête (le plus récent), sinon null.
+    function prendreCarreau(cache, k) {
+        if (!cache.carreaux.has(k)) return null;
+        const v = cache.carreaux.get(k);
+        cache.carreaux.delete(k);
+        cache.carreaux.set(k, v);
+        return v;
+    }
+    // Un carreau évincé emporte les numéros de ses segments : cache.hn n'était jamais purgé. Un segment à cheval sur un carreau
+    // encore gardé sera relu au besoin (lireWme ne lit que ceux qui manquent).
+    function rangerCarreau(cache, k, v) {
+        cache.carreaux.set(k, v);
+        while (cache.carreaux.size > CARREAUX_GARDES) {
+            const vieux = cache.carreaux.keys().next().value, x = cache.carreaux.get(vieux);
+            cache.carreaux.delete(vieux);
+            for (const sg of x.segments) if (sg.hasHNs) cache.hn.delete(sg.id);
+        }
+    }
+    // Ordre spatial en serpentin : des communes successives réutilisent les carreaux WME.
+    function ordreSerpentin(liste) {
+        const centre = c => c.bbox ? [(c.bbox[0] + c.bbox[2]) / 2, (c.bbox[1] + c.bbox[3]) / 2] : [0, 0];
+        return liste.sort((a, b) => {
+            const [xa, ya] = centre(a), [xb, yb] = centre(b);
+            const ba = Math.floor(ya / CARREAU), bb = Math.floor(yb / CARREAU);
+            if (ba !== bb) return bb - ba;
+            return ba % 2 ? xb - xa : xa - xb;
+        });
+    }
+    // ==/WBC-CARREAUX==
     // garder(i, j) : carreau à lire ou non (absent : tout le rectangle).
     async function lireWme(bbox, cache, jeton, prog, sansNumeros, garder) {
         const [w, s, e, n] = bbox;
@@ -5220,11 +5593,13 @@
             for (let j = Math.floor(s / CARREAU); j <= Math.floor(n / CARREAU); j++) if (!garder || garder(i, j)) cles.push([i, j]);
         const taches = cles.map(([i, j]) => async () => {
             const k = i + ':' + j;
-            if (cache.carreaux.has(k)) { const v = cache.carreaux.get(k); cache.carreaux.delete(k); cache.carreaux.set(k, v); return v; }
+            const deja = prendreCarreau(cache, k);
+            if (deja) return deja;
             const b = [i * CARREAU, j * CARREAU, (i + 1) * CARREAU, (j + 1) * CARREAU].map(x => +x.toFixed(6)).join(',');
-            const r = await wmeJson(url + '?bbox=' + b + '&language=' + encodeURIComponent(_lang) + '&v=2&apiV2=true&zoomLevel=17&roadTypes=' + ROAD_TYPES + '&venueLevel=4&venueFilter=1,1,1,1');
-            // Réponse sans liste de segments : format inconnu, signalé comme tel (sinon tout passerait « manquant »).
-            if (!r || !r.segments || !Array.isArray(r.segments.objects)) throw errFormat('wme');
+            const r = await wmeJson(url + '?bbox=' + b + '&language=' + encodeURIComponent(_lang) + '&v=2&apiV2=true&zoomLevel=17&roadTypes=' + ROAD_TYPES + '&venueLevel=4&venueFilter=1,1,1,1', jeton);
+            // Forme inattendue (liste ou clé lue absente) : défaut de FORMAT, sinon tout passerait « manquant ».
+            const forme = Core.formeWme(r);
+            if (forme) { log('WME /Features : forme inattendue (' + forme + ')'); throw errFormat('wme'); }
             const v = {
                 segments: ((r.segments && r.segments.objects) || []).map(x => ({ id: x.id, geometry: x.geometry, primaryStreetID: x.primaryStreetID, streetIDs: x.streetIDs, hasHNs: x.hasHNs, date: x.updatedOn || x.createdOn || 0 })),
                 streets: ((r.streets && r.streets.objects) || []).map(x => ({ id: x.id, name: x.name })),
@@ -5232,8 +5607,7 @@
                     .map(x => ({ id: x.id, name: x.name, geometry: x.geometry })),
                 rpps: ((r.venues && r.venues.objects) || []).filter(x => x.residential).map(x => ({ id: x.id, geometry: x.geometry, streetID: x.streetID, houseNumber: x.houseNumber, entryExitPoints: (x.entryExitPoints || []).filter(e => e && e.point).map(e => ({ point: e.point, primary: !!e.primary })), date: x.updatedOn || x.createdOn || 0 })),
             };
-            cache.carreaux.set(k, v);
-            while (cache.carreaux.size > CARREAUX_GARDES) cache.carreaux.delete(cache.carreaux.keys().next().value);
+            rangerCarreau(cache, k, v);
             return v;
         });
         prog(t('stWme', 0, taches.length), 0);
@@ -5253,8 +5627,9 @@
         for (let i = 0; i < aLire.length; i += 100) lots.push(aLire.slice(i, i + 100));
         const finLot = (f, tot) => prog(t('stHn'), 0.8 + 0.2 * f / tot);
         await parPaquets(lots.map(ids => async () => {
-            const r = await wmeJson(urlHn + '?ids=' + ids.join(','));
-            if (!r || !r.segmentHouseNumbers || !Array.isArray(r.segmentHouseNumbers.objects)) throw errFormat('wme');
+            const r = await wmeJson(urlHn + '?ids=' + ids.join(','), jeton);
+            const forme = Core.formeWme(r, 'hn');
+            if (forme) { log('WME /HouseNumbers : forme inattendue (' + forme + ')'); throw errFormat('wme'); }
             ids.forEach(id => cache.hn.set(id, []));
             for (const h of (r.segmentHouseNumbers && r.segmentHouseNumbers.objects) || []) {
                 if (!cache.hn.has(h.segID)) cache.hn.set(h.segID, []);
@@ -5264,6 +5639,22 @@
         const hns = [];
         for (const x of segments.values()) if (x.hasHNs) hns.push(...(cache.hn.get(x.id) || []));
         return { segments: [...segments.values()], streets: [...streets.values()], rpps: [...rpps.values()], parkings: [...parkings.values()], hns };
+    }
+
+    // 0.30.26 — audit du 26/11 (rang 31) : sonde légère, une fois par chargement, sur 300 m autour du centre de la carte : la forme
+    // des réponses lues hors SDK est dite dans la console avant toute analyse. Rien à l'écran, rien de gardé.
+    async function sonderWme() {
+        try {
+            const c = await sdk.Map.getMapCenter();
+            if (!c || !Number.isFinite(c.lon) || !Number.isFinite(c.lat)) return;
+            const d = 0.0015, b = [c.lon - d, c.lat - d, c.lon + d, c.lat + d].map(x => +x.toFixed(6)).join(',');
+            const r = await wmeJson(cheminWme('features', '/row-Descartes/app/Features') + '?bbox=' + b + '&language=' + encodeURIComponent(_lang) + '&v=2&apiV2=true&zoomLevel=17&roadTypes=' + ROAD_TYPES + '&venueLevel=4&venueFilter=1,1,1,1');
+            let forme = Core.formeWme(r);
+            const segs = (r && r.segments && r.segments.objects) || [];
+            const porteur = segs.find(x => x && x.hasHNs === true);
+            if (!forme && porteur) forme = Core.formeWme(await wmeJson(cheminWme('houseNumbers', '/row-Descartes/app/HouseNumbers') + '?ids=' + porteur.id), 'hn');
+            log('sonde WME : ' + (forme ? 'forme inattendue (' + forme + ')' : 'forme attendue (' + segs.length + ' segments' + (porteur ? ', numéros lus' : '') + ')'));
+        } catch (e) { log('sonde WME : ' + e.message); }
     }
 
     const mo = o => new Intl.NumberFormat(LOCALES[_lang] || 'en', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(o / 1048576);
@@ -5293,7 +5684,7 @@
     async function analyserCommune(com, cache, jeton, prog, banPret, sortie) {
         const t0 = Date.now();
         prog(t('stBan'), 0, true);
-        const toutes = await (banPret || pays.adresses(com.code, (f, o) => prog(t('stBanMo', mo(o)), f == null ? 0 : 0.3 * f, f == null)));
+        const toutes = await (banPret || pays.adresses(com.code, (f, o) => prog(t('stBanMo', mo(o)), f == null ? 0 : 0.3 * f, f == null), jeton));
         if (sortie) sortie.adresses = toutes;
         if (jeton.stop) throw Arret();
         const adresses = toutes;
@@ -5509,6 +5900,7 @@
         const trous = anneaux.slice(1).filter(r => r.length >= 4 && r.every(([x, y]) => Core.dansContour(x, y, ext)));
         return { type: 'Polygon', coordinates: [anneaux[0], ...trous] };
     }
+    const contoursSimplifies = new WeakMap();
     async function dessinerCommunes(lignes, signalee) {
         try {
             await sdk.Map.removeAllFeaturesFromLayer({ layerName: LAYER_COM });
@@ -5518,7 +5910,10 @@
             const taille = pg => { const r = pg.coordinates[0]; let a = 0; for (let i = 1; i < r.length; i++) a += r[i - 1][0] * r[i][1] - r[i][0] * r[i - 1][1]; return Math.abs(a); };
             const features = [];
             for (const c of lignes) {
-                const pgs = morceaux(c.commune.contour).map(simplifierPolygone).filter(Boolean);
+                // 0.30.25 — audit du 26/11 (rang 28) : simplifié UNE fois par contour, pas à chaque redessin (toutes les 8 s pendant un
+                // département, ~100 ms de gel). Rangé par l'objet contour lui-même : un contour relu (mémoire) est un autre objet.
+                let pgs = contoursSimplifies.get(c.commune.contour);
+                if (!pgs) contoursSimplifies.set(c.commune.contour, pgs = morceaux(c.commune.contour).map(simplifierPolygone).filter(Boolean));
                 if (!pgs.length) continue;
                 const grand = pgs.reduce((m, pg, k) => taille(pg) > taille(pgs[m]) ? k : m, 0);
                 const lbl = c.totaux && c.totaux.ban ? c.commune.nom + '\n' + pct(c.totaux.presents, c.totaux.ban) : '';
@@ -5545,10 +5940,10 @@
         return l.join('<br>');
     }
     const pastille = etat => '<span class="wbc-pt" style="background:' + couleur(etat) + '"></span>';
-    // 0.30.06 — l'auteur (25/11) : les points à gauche de « Écarts » portaient tous la même infobulle (la liste entière).
+    // 0.30.06 — l'auteur (25/11) : les points à gauche de l’interrupteur (« Écarts », « À traiter » depuis la 0.30.27) portaient tous la même infobulle (la liste entière).
     // Chaque point dit maintenant ce qu'il représente ; l'interrupteur garde l'infobulle générale.
     const TIP_POINT = { manquant: 'legTipMiss', trop: 'legTipExtra', horsCom: 'legTipHorsCom', corriger: 'legTipCorr', decale: 'legTipDecale', doublonRpp: 'legTipRppDbl', present: 'legTipFound' };
-    const pastilleTip = etat => '<span class="wbc-pt" style="background:' + couleur(etat) + '" title="' + esc(t(TIP_POINT[etat])) + '" aria-label="' + esc(t(TIP_POINT[etat])) + '"></span>';
+    const pastilleTip = etat => '<span class="wbc-pt" role="img" style="background:' + couleur(etat) + '" title="' + esc(t(TIP_POINT[etat])) + '" aria-label="' + esc(t(TIP_POINT[etat])) + '"></span>';
     // 0.30.06 — l'auteur (25/11) : « de la même couleur » à 8 px (orange/ambre, rouge/rose, violet/indigo). Défauts éloignés,
     // vérifiés par écart Lab deux à deux, en vision normale et simulée (deutéranopie, protanopie) : pire écart entre états
     // 12 → 20 (le rouge/vert manquant/présent, historique, reste le plus proche à 15). Décalé jaune vif, RPP en double noir,
@@ -5563,11 +5958,28 @@
     const couleur = etat => { const c = opts.couleurs && opts.couleurs[etat]; return HEX_RE.test(c || '') ? c : COULEURS_DEF[etat]; };
     // Couleurs réglées ⇒ variables CSS (--wbc-c-<état>) lues par les pastilles et les listes ; non réglée ⇒ teinte d'origine du CSS.
     function majVarsCouleurs() {
-        const r = document.documentElement;
-        for (const k of ETATS_COULEUR) {
-            const c = opts.couleurs && opts.couleurs[k];
-            if (HEX_RE.test(c || '')) r.style.setProperty('--wbc-c-' + k, c); else r.style.removeProperty('--wbc-c-' + k);
+        const racines = [document.documentElement];
+        if (fenPip) { try { racines.push(fenPip.document.documentElement); } catch (e) { } }
+        const pose = opts.couleurs && HEX_RE.test(opts.couleurs.pose || '') ? texteSurFond(opts.couleurs.pose) : null;
+        for (const r of racines) {
+            for (const k of ETATS_COULEUR) {
+                const c = opts.couleurs && opts.couleurs[k];
+                if (HEX_RE.test(c || '')) r.style.setProperty('--wbc-c-' + k, c); else r.style.removeProperty('--wbc-c-' + k);
+            }
+            for (const [k, v] of [['--wbc-c-pose-txt', pose && pose.texte], ['--wbc-c-pose-survol', pose && pose.survol]])
+                if (v) r.style.setProperty(k, v); else r.style.removeProperty(k);
         }
+    }
+    // 0.30.27 — audit du 26/11 (rang 45) : le « posé » écrit en blanc sur la couleur choisie (blanc sur jaune : 1,4:1). Le texte
+    // prend celui du noir ou du blanc qui contraste le plus ; le survol fonce (texte blanc) ou éclaircit (texte noir) la couleur,
+    // ce qui ne fait que creuser l'écart.
+    function texteSurFond(hex) {
+        const rgb = hex.slice(1).match(/../g).map(x => parseInt(x, 16));
+        const l = rgb.map(v => v / 255).map(v => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+        const L = 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+        const blanc = 1.05 / (L + 0.05) >= (L + 0.05) / 0.05;
+        const survol = '#' + rgb.map(v => Math.round(blanc ? v * 0.75 : v + (255 - v) * 0.3).toString(16).padStart(2, '0')).join('');
+        return { texte: blanc ? '#fff' : '#000', survol, ratio: blanc ? 1.05 / (L + 0.05) : (L + 0.05) / 0.05 };
     }
     // Section « Couleurs » de l'onglet Scripts (0.30.06 — l'auteur, 25/11 : « c'est dans le panneau latéral des scripts qu'on
     // propose la personnalisation des couleurs » ; la palette « 🎨 » de la fenêtre est retirée). Toutes les couleurs d'état,
@@ -5602,16 +6014,41 @@
             else if (a.hnPose && a.hnSeg != null && !(await segmentCharge(a.hnSeg))) l.push({ a, seg: a.hnSeg });
         return l;
     }
+    // 0.30.22 (audit, rang 36) — NON MESURÉ : un déplacement de la carte pendant que des modifications attendent fait-il échouer
+    // l'enregistrement ? Rien n'est bridé avant la mesure. Chaque déplacement avec des modifications en attente est compté (dont
+    // ceux faits pendant un geste WBC) ; un enregistrement en échec le dit dans la console. Remis à zéro à chaque enregistrement réussi.
+    const deplAttente = { n: 0, geste: 0, dernier: 0 };
+    // Échec d'enregistrement affiché : effacé au premier enregistrement réussi (il ne serait plus vrai).
+    let echecEnregistrementAffiche = false;
+    async function noterDeplacementAttente() {
+        const n = await enAttente();
+        if (!(n > 0)) return;
+        deplAttente.n++;
+        if (gesteEnCours()) deplAttente.geste++;
+        deplAttente.dernier = Date.now();
+    }
     async function surEnregistrement(r) {
-        if (r && r.success) return;
+        if (r && r.success) {
+            Object.assign(deplAttente, { n: 0, geste: 0, dernier: 0 });
+            if (echecEnregistrementAffiche) { echecEnregistrementAffiche = false; statut(''); }
+            return;
+        }
         const l = [];
-        if (resultat) resultat.voies.forEach(v => v.adresses.forEach(a => { if (a.corrPose) l.push((a.corr && a.corr.brut ? a.corr.brut : a.brut) + ' → ' + a.corrApres); }));
+        if (resultat) resultat.voies.forEach(v => v.adresses.forEach(a => { if (a.corrPose) l.push(ltr((a.corr && a.corr.brut ? a.corr.brut : a.brut) + ' → ' + a.corrApres)); }));
         const dech = await correctionsDechargees();
         let brut = '';
         try { brut = JSON.stringify(r).slice(0, 400); } catch (e) { brut = String(r); }
         log('enregistrement en échec' + (l.length ? ' avec ' + l.length + ' correction(s) ↻ en attente (' + l.join(', ') + ')' : '') +
-            (dech.length ? ' — segment non chargé : ' + dech.map(x => x.seg).join(', ') : '') + ' : ' + brut);
-        if (l.length) statut(t('corrSaveFail', nb(l.length), l.slice(0, 5).join(', ')) + (dech.length ? ' ' + t('corrSegDecharge', dech.map(x => x.seg).join(', ')) : ''), true);
+            (dech.length ? ' — segment non chargé : ' + dech.map(x => x.seg).join(', ') : '') +
+            ' — carte déplacée ' + deplAttente.n + ' fois avec des modifications en attente depuis le dernier enregistrement réussi' +
+            (deplAttente.n ? ' (dont ' + deplAttente.geste + ' pendant un geste WBC ; le dernier il y a ' + Math.round((Date.now() - deplAttente.dernier) / 1000) + ' s)' : '') + ' : ' + brut);
+        // Poses « + », lot et « ⇄ » en attente : sans « ↻ », WME seul le disait (boîte générique), sans rien sur WBC.
+        let poses = 0;
+        if (resultat) resultat.voies.forEach(v => v.adresses.forEach(a => { if (a.hnPose) poses++; }));
+        const suite = dech.length ? ' ' + t('corrSegDecharge', dech.map(x => x.seg).join(', ')) : '';
+        if (l.length) statut(t('corrSaveFail', nb(l.length), l.slice(0, 5).join(', ')) + suite, true);
+        else if (poses) statut(t('ajHnSaveFail', nb(poses)) + suite, true);
+        if (l.length || poses) echecEnregistrementAffiche = true;
     }
     // Après un déplacement de la carte (geste de l'éditeur) : prévenir AVANT l'enregistrement si une correction en attente a
     // perdu son segment. Hypothèse non mesurée : revenir sur la zone le recharge.
@@ -5714,6 +6151,7 @@
     let calqueVisible = false;
     // Commune analysée par Ctrl+clic sur le bouton de carte : ses points se voient fenêtre fermée, jusqu'à la prochaine ouverture de la fenêtre.
     let carteSeule = false;
+    let fenPip = null, repPip = null;      // fenêtre détachée (0.30.16) et repère de la place du panneau
     const fenetreOuverte = () => !!(ovEl && ovEl.classList.contains('open'));
     const aDesPoses = () => !!resultat && resultat.voies.some(v => v.adresses.some(a => a.hnPose && (!a.trouve || a.rppHn || a.hnVersRpp)));
     const calqueAffiche = () => calqueVisible && (fenetreOuverte() || carteSeule);
@@ -5983,7 +6421,7 @@
         return !!b && b[0] <= ext[2] && b[2] >= ext[0] && b[1] <= ext[3] && b[3] >= ext[1];
     }
     const directVoulu = ext => calqueVisible && !analyseCouvre(ext);
-    const gmDirect = url => avecEssais(() => gmUneFois(url, null, false, true));
+    const gmDirect = url => avecEssais(() => gmUneFois(url, null, false));
     const LAYER_DIRECT = 'wbc-ban-vue';
     let calqueDirectOk = false, pointsDirect = [];
     async function poserCalqueDirect() {
@@ -6034,7 +6472,7 @@
         const ed = dateIso(editionBan);
         const txt = e.etat === 'zoom' ? t('dirZoom', DIRECT_ZOOM) : e.etat === 'lecture' ? t('dirLoading') : e.etat === 'vide' ? t('dirNone')
             : e.etat === 'plafond' ? t('dirCap', nb(e.n), nb(e.total)) : e.etat === 'erreur' ? t('dirErr', messageErreur(e.erreur)) : t('dirCount', nb(e.n));
-        badgeDirect.dir = _lang === 'he' ? 'rtl' : 'ltr';
+        poserSens(badgeDirect);
         badgeDirect.textContent = txt + (typeof e.p === 'number' && (e.etat === 'ok' || e.etat === 'plafond') ? ', ' + t('dirWme', nb(e.p)) : '')
             + (ed && e.etat !== 'erreur' && e.etat !== 'zoom' ? ' · ' + t('dirEdition', ed) : '');
         badgeDirect.title = t('dirSource');
@@ -6137,7 +6575,7 @@
             fiche.setAttribute('role', 'tooltip');
             document.body.appendChild(fiche);
         }
-        fiche.dir = _lang === 'he' ? 'rtl' : 'ltr';
+        poserSens(fiche);
         fiche.innerHTML = html;
         fiche.hidden = false;
         const w = fiche.offsetWidth, h = fiche.offsetHeight;
@@ -6148,8 +6586,9 @@
     // Position ABSOLUE (0.28.12) : point + décalage mémorisé à l'ouverture. Les déplacements de carte arrivent en rafale (clic sur un
     // numéro WME : sélection, panneau) ; cumuler des écarts « depuis la position d'avant » les appliquait deux fois ou dans le
     // désordre, et la bulle partait au bord de l'écran, au hasard (signalé par l'auteur, 21/11). Seul le dernier calcul compte.
-    let bulle = null, bulleAdr = null, bulleLL = null, bulleOff = null, bulleZ = null, bulleSeq = 0, bulleNo = 0;
-    function fermerBulle() { if (bulle) bulle.hidden = true; bulleAdr = null; bulleLL = null; bulleOff = null; bulleZ = null; bulleSeq++; bulleNo++; }
+    let bulle = null, bulleAdr = null, bulleLL = null, bulleOff = null, bulleZ = null, bulleSeq = 0, bulleNo = 0, bulleRetour = null;
+    // Fermée alors qu'elle a le focus : il revient où il était avant l'ouverture (audit du 26/11, rang 46).
+    function fermerBulle() { const r = bulleRetour; bulleRetour = null; if (bulle) { const dedans = bulle.contains(bulle.ownerDocument.activeElement); bulle.hidden = true; if (dedans && r && r.isConnected) try { r.focus({ preventScroll: true }); } catch (e) { } } bulleAdr = null; bulleLL = null; bulleOff = null; bulleZ = null; bulleSeq++; bulleNo++; }
     // 0.30.01 — l'auteur (25/11) : « dès lors qu'on clique SUR l'adresse (par exemple pour sélectionner/déplacer le HN ou RPP),
     // la bulle doit disparaître, car elle empêche le mouvement, et autres actions ». Trois règles :
     //  · un objet WME de l'adresse (numéro trouvé, numéro à corriger, numéro posé par WBC, RPP vu) à moins de BULLE_OBJET_PX du
@@ -6258,7 +6697,8 @@
         d.textContent = motif;
     }
     let avis = null, avisMinuteur = null;
-    function montrerAvis(txt, ou) {
+    // neutre : bilan d'un geste réussi (pas d'alerte, rien qui presse).
+    function montrerAvis(txt, ou, neutre) {
         if (!avis) {
             avis = document.createElement('div');
             avis.id = 'wbc-avis';
@@ -6266,8 +6706,10 @@
             avis.addEventListener('click', () => { avis.hidden = true; });
             document.body.appendChild(avis);
         }
-        avis.dir = _lang === 'he' ? 'rtl' : 'ltr';
-        avis.textContent = '⚠️ ' + txt;
+        poserSens(avis);
+        avis.classList.toggle('neutre', !!neutre);
+        avis.setAttribute('role', neutre ? 'status' : 'alert');
+        avis.textContent = (neutre ? '' : '⚠️ ') + txt;
         avis.title = t('close');
         avis.hidden = false;
         const w = avis.offsetWidth, h = avis.offsetHeight;
@@ -6275,6 +6717,13 @@
         avis.style.top = Math.max(4, Math.min(ou.y, window.innerHeight - h - 4)) + 'px';
         clearTimeout(avisMinuteur);
         avisMinuteur = setTimeout(() => { avis.hidden = true; }, 12000);
+    }
+    // 0.30.27 — audit du 26/11 (rang 42) : un geste lancé depuis la carte, fenêtre fermée, ne disait rien de sa réussite (le
+    // bilan n'allait qu'à la fenêtre). Échec : avis d'alerte, comme avant ; réussite : avis neutre, seulement fenêtre fermée.
+    function avisGeste(m, i, ou) {
+        if (!m || m.i !== i || m.enCours) return;
+        if (m.err) montrerAvis(m.txt, ou);
+        else if (!ovEl || !ovEl.classList.contains('open')) montrerAvis(m.txt, ou, true);
     }
     function placerBulle(x, y) {
         const w = bulle.offsetWidth, h = bulle.offsetHeight;
@@ -6357,14 +6806,15 @@
                     : b.dataset.hnrpp1 ? convertirHnRpp(bi, bk)
                     : b.dataset.rpphn1 ? (vue.curseurRpp = bi + ':' + bk, convertirRppVoie(bi, bk))
                     : (vue.curseur = bk, ajouterHnVoie(bi, bk));
-                Promise.resolve(action).then(() => { gesteCarte = false; const m = vue.hnMsg; if (m && m.i === bi && m.err) montrerAvis(m.txt, ou); }, () => { gesteCarte = false; });
+                Promise.resolve(action).then(() => { gesteCarte = false; avisGeste(vue.hnMsg, bi, ou); }, () => { gesteCarte = false; });
             });
         }
-        bulle.dir = _lang === 'he' ? 'rtl' : 'ltr';
+        poserSens(bulle);
         const lbl = corr ? t('corrBtn', corr.avant, corr.apres) : rpp ? t('rhnConv') : versRpp ? t('rhnVersRpp') : t('ajHn1');
         bulle.setAttribute('aria-label', lbl + ' ' + p.ad.brut);
         bulle.innerHTML = '<button type="button" class="wbc-bulle-x" data-bulle-fermer title="' + esc(t('close')) + '" aria-label="' + esc(t('close')) + '">&#x2715;</button>' + htmlFiche(p) +
-            (corr ? '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn corr" data-corr1="' + i + ':' + k + '" title="' + esc(t('corrTip', corr.avant, corr.apres)) + '"' + (hnEnCours ? ' disabled' : '') + '>&#x21BB; ' + esc(lbl) + '</button></div>' : '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn' + (rpp || versRpp ? ' rpp' : '') + '" ' + (rpp ? 'data-rpphn1' : versRpp ? 'data-hnrpp1' : 'data-hn1') + '="' + i + ':' + k + '" title="' + esc(raison || t(rpp ? 'rhnConvTip' : versRpp ? 'rhnVersRppTip' : 'ajHn1Tip')) + '"' + (raison || hnEnCours ? ' disabled' : '') + '>' + (rpp || versRpp ? '&#x21C4; ' : '+ ') + esc(lbl) + '</button>' +
+            (corr ? '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn corr" data-corr1="' + i + ':' + k + '" title="' + esc(tipCorr(corr)) + '"' + (hnEnCours ? ' disabled' : '') + '>&#x21BB; ' + esc(lbl) + '</button>' +
+                (corr.entrop ? '<div class="wbc-bulle-raison">' + esc(t('corrEntropTip', corr.avant)) + '</div>' : '') + '</div>' : '<div class="wbc-bulle-act"><button type="button" class="wbc-bulle-btn' + (rpp || versRpp ? ' rpp' : '') + '" ' + (rpp ? 'data-rpphn1' : versRpp ? 'data-hnrpp1' : 'data-hn1') + '="' + i + ':' + k + '" title="' + esc(raison || t(rpp ? 'rhnConvTip' : versRpp ? 'rhnVersRppTip' : 'ajHn1Tip')) + '"' + (raison || hnEnCours ? ' disabled' : '') + '>' + (rpp || versRpp ? '&#x21C4; ' : '+ ') + esc(lbl) + '</button>' +
             (raison ? '<div class="wbc-bulle-raison">' + esc(raison) + '</div>' : '') + '</div>');
         if (corr) { /* hors quota, droit relu au clic */ }
         else if (rpp && !raison) precontrolerRpp(p.ad, v, i, k);
@@ -6383,8 +6833,12 @@
         placerBulleCote(p, v, no);
         setTimeout(() => { if (no === bulleNo && bulle) bulle.style.visibility = ''; }, 600);
         cacherFiche();
-        const btn = bulle.querySelector('.wbc-bulle-btn:not([disabled])');
-        if (btn) btn.focus({ preventScroll: true });
+        // 0.30.27 — audit du 26/11 (rang 46) : le focus allait sur le bouton qui ÉCRIT (une Entrée de trop posait le numéro).
+        // Il va sur la bulle elle-même, lue par son nom ; Tab mène ensuite à ses boutons.
+        const ae = document.activeElement;
+        if (!bulle.contains(ae)) bulleRetour = ae && ae !== document.body ? ae : null;
+        bulle.tabIndex = -1;
+        bulle.focus({ preventScroll: true });
         // Sous le zoom 17 le geste ne déplacerait plus la carte : il est refusé d'avance, motif dans la bulle.
         const ouverte = bulleAdr;
         zoomCarte().then(z => {
@@ -6433,7 +6887,7 @@
             let ll = null;
             try { ll = await sdk.Map.getLonLatFromPixel({ x: ev.clientX, y: ev.clientY }); } catch (e) { }
             const c = ll && communeSous(ll);
-            if (!c || !(resCommunes.has(c.commune.code) || c.memo)) return;
+            if (!c || !(resCommunes.has(c.commune.code) || c.memo) || refuserSiGeste()) return;
             ouvrirCommuneDep(c.commune.code).then(() => { if (c.commune.bbox) cadrer(c.commune.bbox); });
         });
         // 0.30.12 — bouton « ⇄ » : le numéro cliqué se repère au clic (voir ==WBC-SELBTN==). En capture : WME peut arrêter le clic
@@ -6490,13 +6944,15 @@
         }
     }
     function zoneVisible() {
-        const carte = document.getElementById('WazeMap') || document.querySelector('.olMapViewport');
+        const carte = repereWme('#WazeMap', document.getElementById('WazeMap') || document.querySelector('.olMapViewport'));
         if (!carte) return null;
         const rc = carte.getBoundingClientRect();
         let g = rc.left, d = rc.right, h = rc.top, b = rc.bottom;
         const pied = document.querySelector('.wz-map-ol-footer');
         if (pied) { const p = pied.getBoundingClientRect(); if (p.height && p.top < b && p.top > h) b = p.top; }
-        if (ovEl && ovEl.classList.contains('open')) {
+        // Détaché, le panneau ne couvre pas la carte, et son rectangle est mesuré dans le repère de SA fenêtre : le retrancher
+        // décentrait la cible (jusqu'à la sortir de la carte avec une fenêtre agrandie).
+        if (ovEl && !fenPip && ovEl.classList.contains('open')) {
             const f = ovEl.getBoundingClientRect();
             if (!(f.bottom <= h || f.top >= b || f.right <= g || f.left >= d)) {
                 let mieux = null, aire = -1;
@@ -6613,7 +7069,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 #wbc-rappel .wbc-rp { width: 380px; max-width: 100%; max-height: 100%; overflow: auto; box-sizing: border-box; background: #fff; border: 1px solid var(--wbc-border);
     border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.12); font-family: 'Rubik','Open Sans',sans-serif; font-size: 12px; line-height: 1.5; color: var(--wbc-text); outline: none; }
 #wbc-rappel .wbc-rp-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px 7px 12px;
-    background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%); color: #fff; }
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: #fff; }
 #wbc-rappel .wbc-rp-titre { white-space: normal; gap: 6px; }
 /* Bulle commune aux scripts de la collection (référence : WME Magic Wand) : icône sans pastille, pilules de 1,6 d'interligne. */
 /* Pastille blanche de l'en-tête (22 px) gardée : la maison orange se lit mal sur le bleu. L'écart vient du titre. */
@@ -6642,8 +7098,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-btn { display: inline-flex; align-items: center; gap: 5px; height: auto; min-height: 24px; padding: 3px 10px; margin: 0;
     border: none; border-radius: 50px; font: 600 11px 'Rubik','Open Sans',sans-serif; cursor: pointer; white-space: nowrap; }
 .wbc-btn-primary { background: var(--wbc-blue-btn); color: #fff; }
+.wbc-go-lib { min-width: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .wbc-btn-neutral { background: #dde3ea; color: var(--wbc-text); }
-.wbc-btn:hover { filter: brightness(1.08); }
+/* 0.30.27 (rang 39) : le survol FONCE, sans filter (brightness éclaircissait : plein à 4,05:1, neutre à peine visible). */
+.wbc-btn-primary:not([disabled]):hover { background: var(--wbc-blue-dk); }
+.wbc-btn-neutral:not([disabled]):hover { background: #cfd8e2; }
 .wbc-btn[hidden] { display: none; }
 .wbc-btn[disabled] { opacity: .5; cursor: not-allowed; }
 
@@ -6651,8 +7110,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     background: #fff; border: 1px solid var(--wbc-border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.22), 0 2px 8px rgba(0,0,0,.12);
     overflow: hidden; font-family: 'Rubik','Open Sans',sans-serif; font-size: 12px; color: var(--wbc-text); }
 #wbc-ov.open { display: flex; }
+/* Dégradé parti de #1976d2 : depuis #1e88e5, le titre blanc n'avait que 3,7:1 (AA : 4,5:1). */
 #wbc-hdr { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px;
-    background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%); color: #fff; cursor: move; user-select: none; }
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: #fff; cursor: move; user-select: none; }
 .wbc-hdr-title { display: flex; align-items: center; min-width: 0; font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wbc-hdr-v { font-size: 11px; font-weight: 400; opacity: .9; margin-inline-start: 5px; }
 .wbc-hdr-ico { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-inline-end: 7px; border-radius: 50%; background: #fff; flex-shrink: 0; }
@@ -6690,7 +7150,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-sugg small { color: var(--wbc-text2); }
 .wbc-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; min-width: 0; }
 .wbc-statut { flex: 1; min-width: 0; font-size: 11px; color: var(--wbc-text2); text-align: end; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.wbc-statut.erreur { color: #c62828; white-space: normal; }
+/* Une erreur se lit en entier, sur sa propre ligne (la ligne d'état, elle, est coupée par « … »). */
+.wbc-erreur { margin: 6px 0 0; padding: 4px 8px; border-radius: 6px; background: #ffebee; color: #b71c1c; font-size: 11px; line-height: 1.45; white-space: normal; overflow-wrap: anywhere; }
+.wbc-erreur[hidden] { display: none; }
 .wbc-progres { display: grid; grid-template-columns: 3.4em minmax(0, 1fr) 11em; gap: 6px; margin-top: 6px; font-size: 11px; color: var(--wbc-text2);
     white-space: nowrap; font-variant-numeric: tabular-nums; }
 .wbc-progres.dep { grid-template-columns: 3.4em 4.6em 4.8em minmax(0, 1fr) 11em; }
@@ -6733,7 +7195,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 #wbc-ov.replie { height: auto !important; min-height: 0; }
 #wbc-ov.replie #wbc-corps, #wbc-ov.replie #wbc-resize, #wbc-ov.replie .wbc-ligne-haut, #wbc-ov.replie .wbc-switchs, #wbc-ov.replie #wbc-deja { display: none; }
 #wbc-ov.replie #wbc-haut { padding-top: 0; border-bottom: 0; }
-#wbc-ov.replie #wbc-haut:not(:has(> #wbc-progres:not([hidden]), > #wbc-barre:not([hidden]))) { display: none; }
+#wbc-ov.replie #wbc-haut:not(:has(> #wbc-progres:not([hidden]), > #wbc-barre:not([hidden]), > #wbc-erreur:not([hidden]))) { display: none; }
 #wbc-deja .wbc-memo { margin: 6px 0 0; }
 
 .wbc-titre { display: flex; align-items: baseline; gap: 6px; margin: 0 0 8px; font-size: 14px; font-weight: 700; color: var(--wbc-text); }
@@ -6773,6 +7235,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-outils { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 6px; }
 /* -10px = la marge haute de #wbc-corps. */
 #wbc-corps tr.wbc-l { scroll-margin-top: 86px; }
+/* 0.30.27 (rang 26, WCAG 2.4.11) : un bouton du détail atteint au clavier ne se cache plus sous les en-têtes collants. */
+#wbc-corps .wbc-table td button, #wbc-corps .wbc-table td summary { scroll-margin-top: 86px; }
 #wbc-corps > .wbc-outils { position: sticky; top: -10px; z-index: 2; background: #fff; padding: 6px 0; margin: 2px 0 4px; box-shadow: 0 1px 0 var(--wbc-border); }
 .wbc-filtres { display: flex; flex-wrap: wrap; gap: 4px; }
 .wbc-rech { flex: 1 1 100%; display: flex; align-items: center; gap: 6px; }
@@ -6794,9 +7258,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 #wbc-ov[dir="rtl"] .wbc-toggle input:checked + .wbc-toggle-slider:before { transform: translateX(-16px); }
 .wbc-table { width: 100%; border-collapse: collapse; font-size: 11.5px; table-layout: fixed; }
 .wbc-table th { position: sticky; top: -10px; z-index: 1; background: #fff; padding: 5px 6px; text-align: start; font-size: 10.5px; font-weight: 700;
-    color: var(--wbc-text2); text-transform: uppercase; letter-spacing: .03em; border-bottom: 2px solid var(--wbc-border); cursor: pointer; user-select: none; white-space: nowrap; }
+    color: var(--wbc-text2); text-transform: uppercase; letter-spacing: .03em; border-bottom: 2px solid var(--wbc-border); cursor: default; user-select: none; white-space: nowrap; }
 .wbc-table th.num, .wbc-table td.num { text-align: end; width: 64px; font-variant-numeric: tabular-nums; }
-.wbc-table th.num { white-space: normal; }
+.wbc-table th.num { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 0.30.18 — colonnes chiffrées étroites : la flèche de tri passe AU-DESSUS du libellé, et tous les en-têtes s'alignent en bas
+   (« ÉCART ▼ » passait à la ligne et se décalait des autres, l'auteur 26/11). */
+.wbc-table th { vertical-align: bottom; }
+.wbc-table th.num[aria-sort]::after { content: none; }
+.wbc-table th.num[aria-sort="ascending"]::before { content: '\\25B2'; display: block; font-size: 8px; line-height: 1; margin-bottom: 1px; }
+.wbc-table th.num[aria-sort="descending"]::before { content: '\\25BC'; display: block; font-size: 8px; line-height: 1; margin-bottom: 1px; }
 .wbc-table th[aria-sort="ascending"]::after { content: ' \\25B2'; }
 .wbc-table th[aria-sort="descending"]::after { content: ' \\25BC'; }
 .wbc-table td { padding: 4px 6px; border-bottom: 1px solid #eef1f4; vertical-align: top; overflow: hidden; text-overflow: ellipsis; }
@@ -6804,7 +7274,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-table tr.wbc-l:hover td { background: #f0f7fe; }
 .wbc-table tr.wbc-l.ouvert td { background: #e3f2fd; }
 .wbc-table td.ecart.ko { color: #c62828; font-weight: 700; }
-.wbc-table td.ecart.ok { color: #2e7d32; font-weight: 700; }
+.wbc-table td.ecart.ok { color: #1b5e20; font-weight: 700; }
 .wbc-nom-ok { color: #2e7d32; font-weight: 700; }
 .wbc-nom-diff { color: #b23c00; }
 .wbc-nom-vide { color: #b23c00; font-style: italic; }
@@ -6817,12 +7287,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-couleurs-def { margin: 6px 0 0; }
 .wbc-num { display: inline-flex; align-items: center; padding: 2px 8px; height: auto; min-height: 24px; margin: 0; border: 1px solid #ef9a9a; border-radius: 50px; background: #ffebee;
     color: #c62828; font: 600 11px 'Rubik','Open Sans',sans-serif; cursor: pointer; }
-.wbc-num:hover { background: #ffcdd2; }
+.wbc-num:hover { background: #ffcdd2; color: #b71c1c; }
 .wbc-num.trop { border-color: var(--wbc-c-trop, #ffcc80); background: #fff3e0; color: #b23c00; }
 .wbc-num.trop.rppdbl { border-color: var(--wbc-c-doublonRpp, #212121); background: #eceff1; color: #212121; }
 /* Violet : l'orange est réservé aux numéros EN TROP. */
 .wbc-num.suffixe { border-color: #ce93d8; background: #f3e5f5; color: #6a1b9a; }
-.wbc-num.pose { border-color: #006064; background: var(--wbc-c-pose, #00838f); color: #fff; }
+.wbc-num.pose { border-color: #006064; background: var(--wbc-c-pose, #00838f); color: var(--wbc-c-pose-txt, #fff); }
 .wbc-num.corriger { border-color: var(--wbc-c-corriger, #1565c0); background: #e8eaf6; color: #283593; }
 .wbc-num-plus.corr { background: #3949ab; }
 #wbc-bulle .wbc-bulle-btn.corr { background: #3949ab; border-color: #3949ab; color: #fff; }
@@ -6836,23 +7306,27 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-table td.wme { white-space: normal; overflow-wrap: break-word; text-overflow: clip; }
 .wbc-table.wme-court td.wme { white-space: nowrap; text-overflow: ellipsis; }
 .wbc-reperes.empile { flex-direction: column; align-items: flex-start; }
-.wbc-table th.rep { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wbc-table th.rep { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: help; }
 .wbc-reperes { display: flex; gap: 2px; }
 .wbc-slot { flex: none; display: inline-flex; justify-content: center; }
 .wbc-slot.corr { width: 40px; }
 .wbc-slot.dec { width: 40px; }
 .wbc-slot.rpp { width: 46px; }
-.wbc-table.avec-rep th.num, .wbc-table.avec-rep td.num { width: 36px; padding-inline: 4px; }
+.wbc-table.avec-rep th.num, .wbc-table.avec-rep td.num { width: 44px; padding-inline: 3px; }
 .wbc-slot > .wbc-tag { padding: 0 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .wbc-tag.wbc-tag-decale { background: #fffde7; color: #5d4a00; box-shadow: inset 0 0 0 1px var(--wbc-c-decale, #c8a800); }
 .wbc-tag.wbc-tag-rppdbl { background: #eceff1; color: #212121; box-shadow: inset 0 0 0 1px var(--wbc-c-doublonRpp, #212121); }
 .wbc-h-corr { color: #283593; }
-.wbc-num.pose:hover { background: #006064; }
+.wbc-num.pose:hover { background: var(--wbc-c-pose-survol, #006064); }
 .wbc-f-etat.pose { color: #006064; font-weight: 700; }
 .wbc-hn-msg { margin: 0 0 6px; padding: 5px 8px; border-radius: 6px; background: #e0f7fa; color: #004d57; font-size: 11px; line-height: 1.45; }
 .wbc-hn-msg.erreur { background: #ffebee; color: #b71c1c; }
 /* Sous la fenêtre d'enregistrement de WME (niveau 9) quand la fenêtre est en repli sur <body>. */
 #wbc-ov.wbc-sous { z-index: 8 !important; }
+#wbc-ov.detache { position: static; width: auto !important; height: 100vh !important; min-width: 0; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+#wbc-ov.detache.replie { height: auto !important; }
+#wbc-ov.detache #wbc-hdr { cursor: default; }
+#wbc-ov.detache #wbc-resize, #wbc-ov.detache [data-act="taille"], #wbc-ov.detache [data-act="petite"], #wbc-ov.detache [data-act="replier"] { display: none; }
 .wbc-num.enregistre { border-color: #a5d6a7; background: #e8f5e9; color: #1b5e20; }
 .wbc-num.rpp { border-color: #9fa8da; background: #e8eaf6; color: #283593; }
 .wbc-num.rpp:hover { background: #c5cae9; }
@@ -6879,8 +7353,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 .wbc-num-g:hover .wbc-num-plus, .wbc-num-g:focus-within .wbc-num-plus, .wbc-num-g.courant .wbc-num-plus { opacity: 1; pointer-events: auto; }
 .wbc-num-plus:hover { background: #006064; }
 .wbc-num-plus:focus-visible { outline: 2px solid var(--wbc-blue-dk); outline-offset: 1px; }
+/* Geste impossible pour l'instant (écriture en cours, quota, nom) : grisé, motif en infobulle. */
+.wbc-num-plus.off, .wbc-num-plus.off:hover { background: #78838f; cursor: not-allowed; }
 /* Sans droit direct sur le segment : la pose deviendra une suggestion de WME à l'enregistrement (bord pointillé, couleur ambre). */
-.wbc-num-plus.sugg, .wbc-num-plus.sugg:hover { border: 1px dashed #fff; background: #ef6c00; }
+.wbc-num-plus.sugg, .wbc-num-plus.sugg:hover { border: 1px dashed #fff; background: #bf360c; }
 .wbc-num-plus.wbc-num-ban { top: auto; bottom: -6px; background: #000091; font-size: 10px; }
 .wbc-num-plus.wbc-num-ban:hover { background: #1212ff; }
 .wbc-sig-l { display: flex; flex-wrap: wrap; gap: 4px; align-items: baseline; margin-bottom: 5px; font-size: 11px; list-style: none; }
@@ -6914,7 +7390,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     border: none; border-radius: 6px; cursor: pointer; }
 .wbc-ibtn:hover { filter: brightness(1.08); }
 .wbc-ibtn[disabled] { opacity: .5; cursor: not-allowed; }
-.wbc-ibtn.on { background: var(--wbc-blue-btn); color: #fff; }
+/* Outil actif (contour…) : teinte et liseré, comme le mode coché ; plein, il faisait un second bouton plein (rang 42). */
+.wbc-ibtn.on { background: #e3f2fd; color: var(--wbc-blue-dk); box-shadow: inset 0 0 0 1px var(--wbc-blue-dk); }
 #wbc-ov .wbc-ibtn:focus-visible { outline: 2px solid var(--wbc-blue-dk); outline-offset: 1px; }
 .wbc-ibtn-n { position: absolute; top: -7px; inset-inline-end: -7px; min-width: 16px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 8px;
     background: #d32f2f; color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; pointer-events: none; }
@@ -6970,6 +7447,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 #wbc-avis { position: fixed; z-index: 10052; max-width: 320px; padding: 8px 10px; border: 1px solid #b23c00; border-radius: 8px; background: #fff3e0;
     color: #8a2e00; font: 500 12px/1.4 'Rubik','Open Sans',sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor: pointer; }
 #wbc-avis[hidden] { display: none; }
+#wbc-avis.neutre { border-color: #006064; background: #e0f7fa; color: #004d57; }
 .wbc-f-etat { display: inline-block; margin-top: 2px; padding: 0 7px; border-radius: 50px; font-weight: 600; }
 .wbc-f-etat.manquant { background: #ffebee; color: #c62828; }
 .wbc-f-etat.present { background: #e8f5e9; color: #2e7d32; }
@@ -6991,7 +7469,27 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     let deja = null;                  // le balayage gardé proposé avant d'analyser ({e, cert, cible, ban, banDate})
     let resultat = null;
     let resDep = null;
-    const resCommunes = new Map();    // code -> résultat, le temps de la session
+    const resCommunes = new Map();    // code -> résultat (ou son résumé, voir noterResultat), le temps de la session
+    // 0.30.25 — audit du 26/11 (rang 27) : un département gardait le résultat COMPLET de chaque commune, adresses comprises, le
+    // temps de la session (des centaines de Mo sur un gros département). Seuls les RES_COMPLETS derniers restent entiers ; un
+    // plus ancien, s'il est bien écrit en mémoire IndexedDB, passe à un résumé : le survol et le clic n'ont besoin que de sa
+    // présence, l'export des écarts de nom de ses voies en écart. Il est relu en mémoire quand on l'ouvre. Jamais vidé.
+    const RES_COMPLETS = 10;
+    const resEcrits = new WeakSet();
+    // Voies RECOPIÉES (JSON) : un nom lu du CSV est une tranche du texte entier pour V8, et retiendrait tout le fichier BAN
+    // (mesuré sous Node : 323 o par adresse sans copie, 3 o avec).
+    const resumeResultat = r => ({ leger: true, commune: r.commune, memo: r.memo, totaux: r.totaux, verif: r.verif,
+        voies: JSON.parse(JSON.stringify((r.voies || []).filter(ecartDeNom).map(v => ({ nom: v.nom, deleguee: v.deleguee, nomWme: v.nomWme,
+            nomPrincipal: v.nomPrincipal, statutNom: v.statutNom, nomAbsent: v.nomAbsent, ban: v.ban, presents: v.presents, segs: v.segs, bbox: v.bbox })))) });
+    function noterResultat(code, r) {
+        resCommunes.delete(code);
+        resCommunes.set(code, r);
+        let complets = 0;
+        for (const [k, x] of [...resCommunes].reverse()) {
+            if (x.leger || ++complets <= RES_COMPLETS || x === resultat || !resEcrits.has(x)) continue;
+            resCommunes.set(k, resumeResultat(x));
+        }
+    }
     let vue = { filtre: 'todo', texte: '', tri: 'ecart', sens: -1, ouverte: null, deleguee: '', curseur: -1 };
 
     function lireOpts() {
@@ -7011,11 +7509,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         e.title = [p.pct, p.eta, p.cpt, p.nom, p.etape].filter(Boolean).join(' · ');
         e.hidden = false;
     }
+    // Erreur : sur sa ligne à part, entière, visible fenêtre repliée, et annoncée (la ligne d'état ne parle pas au lecteur
+    // d'écran). Le message suivant, quel qu'il soit, la remplace, comme il remplaçait la ligne d'état.
     function statut(txt, erreur) {
-        const e = $('#wbc-statut');
-        e.textContent = txt || '';
-        e.classList.toggle('erreur', !!erreur);
-        e.title = txt || '';
+        const e = $('#wbc-statut'), x = $('#wbc-erreur');
+        if (x) { x.textContent = erreur ? txt || '' : ''; x.hidden = !(erreur && txt); }
+        const ligne = erreur && x ? '' : txt || '';
+        e.textContent = ligne;
+        e.title = ligne;
+        if (erreur && txt) annoncer(txt);
     }
     function barre(frac, enCours) {
         const b = $('#wbc-barre');
@@ -7030,6 +7532,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     let titreOrigine = null, arrierePlanVu = false, masqueArriere = null;
     // hnEnCours est déclaré plus bas : un visibilitychange reçu avant sa déclaration ne doit pas lever d'erreur.
     const travailEnCours = () => { try { return !!jeton || hnEnCours; } catch (e) { return !!jeton; } };
+    // 0.30.22 (audit, rang 18) : pendant une écriture (« + », lot, « ↻ », « ⇄ »), ouvrir une autre commune changeait le résultat
+    // sous le geste (erreur, quota et journal attribués à la mauvaise commune). Analyser, ouvrir ou passer au département attend.
+    const gesteEnCours = () => { try { return hnEnCours; } catch (e) { return false; } };
+    function refuserSiGeste() { if (!gesteEnCours()) return false; statut(t('occupeGeste'), true); return true; }
     function majArrierePlan(debut) {
         if (debut) arrierePlanVu = false;
         if (travailEnCours() && document.hidden) arrierePlanVu = true;
@@ -7057,10 +7563,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 
     // Rend { ok, fin } : fin est le bilan ou le motif de l'échec affiché dans la fenêtre.
     async function lancer(reprise, tache, certImpose) {
-        if (jeton) return null;
+        if (jeton || refuserSiGeste()) return null;
         // Une reprise garde le filtre des certifiées du passage qu'elle complète.
         const cert = certImpose != null ? !!certImpose : reprise && resDep ? !!resDep.certSeules : !!opts.certSeules;
-        const j = jeton = { stop: false, certSeules: cert, departement: !!reprise || (!tache && opts.mode === 'dep') };
+        // coupe : « Arrêter » interrompt aussi les requêtes en cours (rang 32) ; coupé en fin de passage, ce qui reste
+        // (fichier BAN de la commune suivante lu d'avance, ouvriers) ne court plus pour rien.
+        const j = jeton = { stop: false, certSeules: cert, departement: !!reprise || (!tache && opts.mode === 'dep'), coupe: new AbortController() };
         const t0 = Date.now();
         majBoutons();
         majArrierePlan(true);
@@ -7083,6 +7591,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             else { log(e.stack || e.message); fin = messageErreur(e); }
             statut(fin, !e.arret);
         } finally {
+            try { j.coupe.abort(); } catch (e) { }
             jeton = null;
             barre(null);
             progres(null);
@@ -7094,10 +7603,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         }
         return { ok, fin };
     }
-    const arreter = () => { if (jeton) jeton.stop = true; };
+    const arreter = () => { if (!jeton) return; jeton.stop = true; try { jeton.coupe.abort(); } catch (e) { } };
 
     // Rang WME 0-indexé (5 = L6) ; statut de Champ lu dans les groupes Discuss avec la session de l'éditeur.
-    // Habilitation en empreintes : ne pas modifier sans accord du mainteneur du script.
+    // Habilitation en empreintes : modifier ce bloc change qui a droit au bouton « Copier » ; à justifier dans l'historique.
     let droitChamp = false;
     const _cx = t => { let x = 0x811c9dc5; for (let i = 0; i < t.length; i++) { x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } return x >>> 0; };
     const _cz = [0x853f760, 0xb53fc19, 0x851b8c9, 0x4631c6b8, 0x3e2070ff];
@@ -7175,15 +7684,17 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (!el) return;
         if (!deja) { el.hidden = true; el.innerHTML = ''; majBoutons(); return; }
         const e = deja.e, d = deja;
-        const a = document.activeElement;
+        const a = docPanneau().activeElement;
         const vieux = e.type === 'commune' && !memoAJour(e);
-        const ajouts = ajoutsDepuis(e) || (vieux ? 1 : 0);
-        const garde = a && el.contains(a) ? a.dataset.act : (!a || a === document.body || ovEl.contains(a)) ? (ajouts ? 'dejarelancer' : 'dejaouvrir') : null;
+        // 0.30.22 (audit, rang 3) : BAN changée depuis le balayage ⇒ traité comme des ajouts : « Relancer » est le bouton plein
+        // et prend le focus. Les écritures ne sont PAS grisées en attendant la vérification (travail hors réseau).
+        const nHn = ajoutsDepuis(e), ajouts = nHn > 0 || vieux || d.ban === 'maj';
+        const garde = a && el.contains(a) ? a.dataset.act : (!a || a === docPanneau().body || ovEl.contains(a)) ? (ajouts ? 'dejarelancer' : 'dejaouvrir') : null;
         const quand = e.type === 'dep' ? t('dejaDep', dateHeure(e.date), nb(e.n), nb(e.total)) : t('dejaCommune', dateHeure(e.date));
         const ban = e.type !== 'commune' || d.ban === 'aucune' ? '' : d.ban == null ? banAttente()
             : d.ban === 'ok' ? bout('ok', t('memoBanOk')) : d.ban === 'maj' ? bout('maj', t('memoBanMaj', d.banDate ? dateCourte(d.banDate) : '')) : bout('maj', t('memoBanErr'));
         el.innerHTML = '<div class="wbc-memo wbc-deja">' + bout('date', quand) + bout('', (e.nom ? e.nom + ' · ' : '') + pct(e.presents, e.ban)) +
-            (e.viaDep ? bout('', t('dejaViaDep', e.viaDep)) : '') + ban + (vieux ? bout('maj', t('dejaOld')) : ajouts ? bout('maj', t('dejaHnDepuis', nb(ajouts))) : '') +
+            (e.viaDep ? bout('', t('dejaViaDep', e.viaDep)) : '') + ban + (vieux ? bout('maj', t('dejaOld')) : nHn ? bout('maj', t('dejaHnDepuis', nb(nHn))) : '') +
             '<span class="wbc-memo-btns">' + (vieux ? '' : '<button type="button" class="wbc-btn ' + (ajouts ? 'wbc-btn-neutral' : 'wbc-btn-primary') + '" data-act="dejaouvrir" title="' + esc(t('dejaOpenTip')) + '">' + esc(t('memoOpen')) + '</button>') +
             '<button type="button" class="wbc-btn ' + (ajouts ? 'wbc-btn-primary' : 'wbc-btn-neutral') + '" data-act="dejarelancer" title="' + esc(t('dejaRelaunchTip')) + '">' + esc(t('dejaRelaunch')) + '</button></span></div>';
         el.hidden = false;
@@ -7198,7 +7709,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     }
     function repondreDeja(ouvrir) {
         const d = deja;
-        if (!d || jeton) return;
+        if (!d || jeton || refuserSiGeste()) return;
         oublierDeja();
         if (!ouvrir) { lancerSans(d.cible); return; }
         if (d.e.type === 'dep') ouvrirMemoDep(d.e.code, d.cert);
@@ -7232,10 +7743,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const ligneDep = resDep && resDep.certSeules === !!j.certSeules ? resDep.communes.find(x => x.commune.code === com.code) : null;
         await garderCommune(r, ligneDep ? resDep.dep.code : '');
         if (ligneDep) { ligneDep.totaux = r.totaux; ligneDep.memo = r.memo; ligneDep.etat = 'ok'; ligneDep.erreur = ''; ligneDep.verif = r.verif; await garderDep(); }
-        resCommunes.set(com.code, r);
+        noterResultat(com.code, r);
         montrerCommune(r);
     }
 
+    const ECHECS_WME_MAX = 3;
     async function lancerDepartement(j, reprise) {
         let lignes;
         if (reprise && resDep) {
@@ -7246,15 +7758,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             statut(t('stLocate'));
             const deps = await pays.groupes();
             const dep = deps.find(d => d.code === choixDep) || { code: choixDep, nom: choixDep };
-            const liste = await pays.communesDe(dep.code);
-            // Ordre spatial en serpentin : des communes successives réutilisent les carreaux WME.
-            const centre = c => c.bbox ? [(c.bbox[0] + c.bbox[2]) / 2, (c.bbox[1] + c.bbox[3]) / 2] : [0, 0];
-            liste.sort((a, b) => {
-                const [xa, ya] = centre(a), [xb, yb] = centre(b);
-                const ba = Math.floor(ya / CARREAU), bb = Math.floor(yb / CARREAU);
-                if (ba !== bb) return bb - ba;
-                return ba % 2 ? xb - xa : xa - xb;
-            });
+            const liste = ordreSerpentin(await pays.communesDe(dep.code));
             resCommunes.clear();
             resDep = { dep, certSeules: !!j.certSeules, communes: liste.map(c => ({ commune: c, totaux: null, etat: 'attente' })) };
             lignes = resDep.communes;
@@ -7269,10 +7773,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         cacherBoutonSel();
         rendre();
         const cache = nouveauCache();
-        const lireBan = k => { const p = pays.adresses(communes[k].code, () => { }); p.catch(() => { }); return p; };
+        const lireBan = k => { const p = pays.adresses(communes[k].code, () => { }, j); p.catch(() => { }); return p; };
         let suivante = null;
         const debut = Date.now();
-        let reste = '';
+        let reste = '', echecsWme = 0;
         for (let i = 0; i < communes.length; i++) {
             if (j.stop) throw Arret();
             const c = communes[i], ligne = lignes[i];
@@ -7289,10 +7793,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     barre(tout);
                     progres({ pct: pct(tout, 1), eta: reste, cpt: nb(i + 1) + '/' + nb(communes.length), nom: c.nom, etape: txt });
                 }, banPret);
+                echecsWme = 0;
                 if (r.vide) ligne.etat = 'vide';
                 else {
                     ligne.totaux = r.totaux; ligne.etat = 'ok'; ligne.memo = r.memo; ligne.verif = {}; r.verif = ligne.verif;
-                    resCommunes.set(c.code, r);
+                    noterResultat(c.code, r);
                     const code = resDep.dep.code;
                     sauvegardes = sauvegardes.then(() => garderCommune(r, code));
                 }
@@ -7301,6 +7806,16 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                 ligne.etat = 'erreur';
                 ligne.erreur = messageErreur(e);
                 log(c.nom + ' : ' + e.message);
+                // 0.30.25 — audit du 26/11 (rang 29) : session WME expirée (401, 403) ou WME en échec ECHECS_WME_MAX fois de suite :
+                // le département s'arrête au lieu de télécharger la BAN de toutes les communes restantes pour les mettre en
+                // erreur. Elles passent « en échec » avec le motif : « Reprendre » les relance après rechargement.
+                if (e.source === 'wme') echecsWme++;
+                const session = e.source === 'wme' && (e.status === 401 || e.status === 403);
+                if (session || echecsWme >= ECHECS_WME_MAX) {
+                    for (let k = i + 1; k < lignes.length; k++) if (lignes[k].etat === 'attente') { lignes[k].etat = 'erreur'; lignes[k].erreur = ligne.erreur; }
+                    j.echecs = resDep.communes.filter(x => x.etat === 'erreur').length;
+                    throw session ? e : new Error(t('errWmeSerie', nb(ECHECS_WME_MAX), ligne.erreur));
+                }
             }
             if (!resultat) rendreDep(false);
         }
@@ -7311,17 +7826,35 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
 
 
     // Corps reconstruit en entier : focus et défilement sont rendus après coup.
-    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-hn1', 'data-rpphn', 'data-rppgo', 'data-arretgo', 'data-act', 'data-trop', 'data-doublon'];
+    const ATTRS_FOCUS = ['data-filtre', 'data-tri', 'data-tridep', 'data-voie', 'data-commune', 'data-adr', 'data-hn1', 'data-rpphn', 'data-rppgo', 'data-arretgo', 'data-act', 'data-trop', 'data-doublon',
+        'data-corr', 'data-hnrpp', 'data-hngo', 'data-banadr', 'data-bantrop'];
+    // Où rendre le focus, dans l'ordre : le même élément ; puis, le bouton d'une adresse (↻, ⇄, ⚑, « + ») disparaissant
+    // souvent avec le geste, l'adresse elle-même ; puis la ligne de sa voie.
+    function ciblesFocus(el) {
+        if (el.id) return ['#' + el.id];
+        const a = ATTRS_FOCUS.find(x => el.hasAttribute(x));
+        if (!a) return [];
+        const v = String(el.getAttribute(a)).replace(/"/g, ''), l = ['[' + a + '="' + v + '"]'];
+        const m = /^(\d+):\d+$/.exec(v);
+        if (m) l.push('[data-adr="' + v + '"]', 'tr[data-voie="' + m[1] + '"]');
+        if (a === 'data-bantrop') l.push('[data-trop="' + v + '"]');
+        return l;
+    }
+    // Dernier élément du corps qui a eu le focus. Un geste asynchrone grise ou retire son bouton avant le rendu : le focus
+    // est alors déjà sur <body>. Oublié dès qu'un clic ou le focus va ailleurs, pour ne jamais le reprendre à la carte.
+    let focusCorps = null;
+    const oublierFocus = () => { focusCorps = null; };
     function rendre() {
         if (!ovEl) return;
         const corps = $('#wbc-corps');
-        const actif = document.activeElement && corps.contains(document.activeElement) ? document.activeElement : null;
-        let cible = null, curseur = null;
+        const D = docPanneau(), ae = D.activeElement;
+        const actif = ae && corps.contains(ae) ? ae : null;
+        let cibles = [], curseur = null;
         if (actif) {
-            if (actif.id) cible = '#' + actif.id;
-            else { const a = ATTRS_FOCUS.find(x => actif.hasAttribute(x)); if (a) cible = '[' + a + '="' + String(actif.getAttribute(a)).replace(/"/g, '') + '"]'; }
-            if (actif.id === 'wbc-filtre-txt') curseur = actif.selectionStart;
+            cibles = ciblesFocus(actif);
+            if (actif.id === 'wbc-filtre-txt') curseur = [actif.selectionStart, actif.selectionEnd, actif.selectionDirection];
         }
+        else if ((!ae || ae === D.body) && focusCorps) cibles = focusCorps;
         const haut = corps.scrollTop;
         if (resultat) corps.innerHTML = htmlCommune(resultat);
         else if (resDep) corps.innerHTML = htmlDepartement(resDep);
@@ -7334,9 +7867,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         corps.scrollTop = haut;
         majQuotaHdr();
         majContour();
-        if (cible) {
-            const e = corps.querySelector(cible);
-            if (e) { e.focus({ preventScroll: true }); if (curseur != null) try { e.setSelectionRange(curseur, curseur); } catch (x) { } }
+        for (const c of cibles) {
+            const e = corps.querySelector(c);
+            if (!e) continue;
+            e.focus({ preventScroll: true });
+            if (curseur) try { e.setSelectionRange(curseur[0], curseur[1], curseur[2] || 'none'); } catch (x) { }
+            break;
         }
     }
     let rendreDepTimer = null;
@@ -7349,8 +7885,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     }
 
     let cmp = null;                   // {date, data} : l'export chargé (Core.lireExport)
-    const signe = d => (d > 0 ? '+' : d < 0 ? '\u2212' : '\u00b1') + nb(Math.abs(d));
-    const dateCourte = ms => new Intl.DateTimeFormat(LOCALES[_lang] || 'en', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(ms);
+    const signe = d => ltr((d > 0 ? '+' : d < 0 ? '\u2212' : '\u00b1') + nb(Math.abs(d)));
+    const dateCourte = ms => new Intl.DateTimeFormat(LOCALES[_lang] || 'en', FORMAT_DATE()).format(ms);
     // Comparaison à un export chargé à la main (« Comparer ») ; le balayage gardé n'est plus comparé (0.27.00).
     const cmpCommune = r => cmp && cmp.data.type === 'commune' && r && cmp.data.code === r.commune.code ? cmp : null;
     const cmpDep = () => cmp && cmp.data.type === 'dep' && resDep && !resultat ? cmp : null;
@@ -7480,21 +8016,32 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         else if (v.statutNom === 'sansNom') h = '<span class="wbc-nom-vide">' + esc(t('nameNone')) + '</span>';
         else if (v.statutNom === 'aucun') h = '<span class="wbc-nom-aucun">' + esc(t('nameNoSeg')) + '</span>';
         else h = '<span class="wbc-nom-diff" title="' + esc(t('tipOther')) + '"><bdi>' + esc(v.nomWme) + '</bdi></span>';
-        if (v.nomAbsent && !(v.statutNom === 'different')) h += ' <span class="wbc-absent" title="' + esc(t('tipAbsent')) + '" aria-label="' + esc(t('tipAbsent')) + '">&#x26A0;</span>';
+        if (v.nomAbsent && !(v.statutNom === 'different')) h += ' <span class="wbc-absent" role="img" title="' + esc(t('tipAbsent')) + '" aria-label="' + esc(t('tipAbsent')) + '">&#x26A0;</span>';
         return h;
     }
 
-    const th = (cle, lbl, num, attrs) => '<th scope="col"' + (attrs || '') + (num ? ' class="num"' : '') + (vue.tri === cle ? ' aria-sort="' + (vue.sens > 0 ? 'ascending' : 'descending') + '"' : '') + '><button type="button" class="wbc-th" data-tri="' + cle + '" title="' + esc(t('tipSort')) + '">' + esc(lbl) + '</button></th>';
+    // Colonnes chiffrées (nowrap, rognées au-delà de leur largeur) : le libellé complet au survol et pour le lecteur d'écran.
+    const th = (cle, lbl, num, attrs, plein) => '<th scope="col"' + (attrs || '') + (num ? ' class="num"' : '') + (vue.tri === cle ? ' aria-sort="' + (vue.sens > 0 ? 'ascending' : 'descending') + '"' : '') + '><button type="button" class="wbc-th" data-tri="' + cle + '" title="' + (num ? esc(plein || lbl) + ' — ' : '') + esc(t('tipSort')) + '"' + (plein && plein !== lbl ? ' aria-label="' + esc(plein) + '"' : '') + '>' + esc(lbl) + '</button></th>';
 
     // « ⇄ » : verdict d'écart franc décidé au clic, sur ce que WME montre (convertirRppVoie) ; voie au nom BAN exact seulement.
+    // 0.30.27 — audit du 26/11 (rang 42) : « + » et « ⇄ » disparaissaient sans dire pourquoi (écriture en cours, quota, nom de
+    // la voie). Ils restent, grisés, le motif en infobulle et dans le nom accessible ; focalisables pour qu'il se lise, mais sans
+    // l'attribut du geste : le clic ne lance rien.
+    function motifGesteOff(nomOk, motifNom) {
+        if (hnEnCours) return t('occupeGeste');
+        const q = Core.quotaHn(lireHorodatages(), Date.now());
+        if (q.reste <= 0) return t('ajHnQuota', heureCourte(q.libre));
+        return nomOk ? '' : motifNom;
+    }
+    const boutonOff = (cls, glyphe, lib, motif) => '<button type="button" class="wbc-num-plus off' + cls + '" aria-disabled="true" title="' + esc(motif) + '" aria-label="' + esc(lib + ' — ' + motif) + '">' + glyphe + '</button>';
     function htmlRpps(v, i) {
         const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => x.a.trouve === 'RPP' && x.a.wlon != null);
         if (!liste.length) return '';
-        const conv = v.statutNom === 'identique' && !hnEnCours && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
+        const off = motifGesteOff(v.statutNom === 'identique', t('ajHnNoName')), conv = !off;
         return '<h4>' + esc(t('rhnT', nb(liste.length))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) => {
             const courant = vue.curseurRpp === i + ':' + k ? ' courant' : '';
             const num = '<button type="button" class="wbc-num rpp' + (a.rppHn ? ' pose' : '') + courant + '" data-rppgo="' + i + ':' + k + '" title="' + esc((a.rppHn ? t('rhnPoseTip') : t('rhnTip')) + (a.loin ? ' — ' + t('tipFar', nb(a.dm)) : '')) + '"' + (a.rppHn ? ' aria-label="' + esc(a.brut + ' — ' + t('rhnPoseTip')) + '"' : '') + '>' + esc(a.brut) + (a.loin ? ' · ' + esc(nb(a.dm)) + '\u00a0m' : '') + (a.rppHn ? '<span class="wbc-num-etat" aria-hidden="true">&#x271A;</span>' : '') + '</button>';
-            return '<span class="wbc-num-g' + courant + '">' + num + (conv && !a.rppHn ? '<button type="button" class="wbc-num-plus rpp" data-rpphn="' + i + ':' + k + '" title="' + esc(t('rhnConv') + ' — ' + t('rhnConvTip')) + '" aria-label="' + esc(t('rhnConv') + ' ' + a.brut) + '">&#x21C4;</button>' : '') + '</span>';
+            return '<span class="wbc-num-g' + courant + '">' + num + (a.rppHn ? '' : conv ? '<button type="button" class="wbc-num-plus rpp" data-rpphn="' + i + ':' + k + '" title="' + esc(t('rhnConv') + ' — ' + t('rhnConvTip')) + '" aria-label="' + esc(t('rhnConv') + ' ' + a.brut) + '">&#x21C4;</button>' : off ? boutonOff(' rpp', '&#x21C4;', t('rhnConv') + ' ' + a.brut, off) : '') + '</span>';
         }).join('') + '</div>';
     }
     // 0.30.08 — « ⇄ numéro → RPP » sans passer par la carte : depuis 0.30.01, un clic sur le marqueur d'un numéro est laissé à
@@ -7503,10 +8050,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     function htmlHnTrouves(v, i) {
         const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => hnConvertible(x.a));
         if (!liste.length) return '';
-        const conv = !hnEnCours && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
+        const off = motifGesteOff(true, ''), conv = !off;
         return '<details class="wbc-hn-trouves" data-hntrouves="' + i + '"' + (vue.hnTrouvesOuvert === i ? ' open' : '') + '><summary>' + esc(t('tagHnTrouves', nb(liste.length))) + '</summary><div class="wbc-nums">' +
             liste.map(({ a, k }) => '<span class="wbc-num-g"><button type="button" class="wbc-num enregistre" data-hngo="' + i + ':' + k + '" title="' + esc(t('tagHnGoTip')) + '">' + esc(a.wbrut || a.brut) + '</button>' +
-                (conv ? '<button type="button" class="wbc-num-plus rpp" data-hnrpp="' + i + ':' + k + '" title="' + esc(t('rhnVersRpp') + ' — ' + t('rhnVersRppTip')) + '" aria-label="' + esc(t('rhnVersRpp') + ' ' + a.brut) + '">&#x21C4;</button>' : '') + '</span>').join('') +
+                (conv ? '<button type="button" class="wbc-num-plus rpp" data-hnrpp="' + i + ':' + k + '" title="' + esc(t('rhnVersRpp') + ' — ' + t('rhnVersRppTip')) + '" aria-label="' + esc(t('rhnVersRpp') + ' ' + a.brut) + '">&#x21C4;</button>' : off ? boutonOff(' rpp', '&#x21C4;', t('rhnVersRpp') + ' ' + a.brut, off) : '') + '</span>').join('') +
             '</div></details>';
     }
     function htmlArrets(v, i) {
@@ -7517,19 +8064,21 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             esc(a.brut) + ' · +' + esc(nb(a.ea)) + '\u00a0m</button>').join('') + '</div>';
     }
     function htmlNums(v, i) {
-        const plus = droitGeste('hn1') && !hnEnCours && nomOkHn(v) && Core.quotaHn(lireHorodatages(), Date.now()).reste > 0;
+        const off = droitGeste('hn1') ? motifGesteOff(nomOkHn(v), motifNomHn(v)) : '';
+        const plus = droitGeste('hn1') && !off;
         return '<div class="wbc-nums">' + v.adresses.map((a, k) => {
             if (a.trouve || enCorrection(a)) return '';
             const p = plus && hnPosable(a);
             const c = aCorriger(a) ? corrDe(a) : null, cp = !!a.corrPose;
-            const tip = cp ? t('corrPoseTip') : c ? t('corrTip', c.avant, c.apres) + (c.loin ? ' ' + t('corrLoin', c.loin) : '') : a.hnVersRpp ? t('rhnVersRppTipPose') : a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) + (p ? ' — ' + t('tipGoAdd') : '') : p ? t('tipGoAdd') : t('tipGo');
+            const tip = cp ? t('corrPoseTip') : c ? tipCorr(c) + (c.loin ? ' ' + t('corrLoin', c.loin) : '') : a.hnVersRpp ? t('rhnVersRppTipPose') : a.hnPose ? t('ajHnPoseTip') : a.hnEnregistre ? t('ajHnSavedTip') : a.suffixe ? t('tipSuf', a.suffixe) + (p ? ' — ' + t('tipGoAdd') : '') : p ? t('tipGoAdd') : t('tipGo');
             const num = '<button type="button" class="wbc-num' + (a.hnPose || cp ? ' pose' : a.hnEnregistre ? ' enregistre' : c ? ' corriger' : a.suffixe ? ' suffixe' : '') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '"' + (a.hnPose || a.hnEnregistre || cp || c ? ' aria-label="' + esc(a.brut + ' — ' + tip) + '"' : '') + '>' + esc(a.brut) + (c ? ' ≠ ' + esc(c.avant) : a.suffixe ? ' ≠ ' + esc(a.suffixe) : '') +
                 (a.hnPose ? '<span class="wbc-num-etat" aria-hidden="true">&#x271A;</span>' : cp ? '<span class="wbc-num-etat" aria-hidden="true">&#x21BB;</span>' : a.hnEnregistre ? '<span class="wbc-num-etat" aria-hidden="true">&#x2713;</span>' : '') + '</button>';
-            // Autre numéro à cet emplacement : « ↻ » à la place du « + » (en poser un second ferait deux numéros au même endroit).
-            if (c || cp) return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + boutonCorr(a, i, k) + boutonBanNum(a, i, k) + '</span>';
             // Segment probable non modifiable : « + » grisé, motif en infobulle ; il reste focalisable pour que l'infobulle se lise.
             const bl = p && a.hn1Bloque;
-            const plusB = !p ? '' : '<button type="button" class="wbc-num-plus' + (bl ? ' sugg' : '') + '" data-hn1="' + i + ':' + k + '" title="' + esc(bl ? motifHn1(bl) : t('ajHn1') + ' — ' + t('ajHn1Tip')) + '" aria-label="' + esc(t('ajHn1') + ' ' + a.brut + (bl ? ' — ' + motifHn1(bl) : '')) + '">+</button>';
+            const plusB = off && hnPosable(a) ? boutonOff('', '+', t('ajHn1') + ' ' + a.brut, off) : !p ? '' : '<button type="button" class="wbc-num-plus' + (bl ? ' sugg' : '') + '" data-hn1="' + i + ':' + k + '" title="' + esc(bl ? motifHn1(bl) : t('ajHn1') + ' — ' + t('ajHn1Tip')) + '" aria-label="' + esc(t('ajHn1') + ' ' + a.brut + (bl ? ' — ' + motifHn1(bl) : '')) + '">+</button>';
+            // Autre numéro à cet emplacement : « ↻ » à la place du « + » (en poser un second ferait deux numéros au même endroit),
+            // sauf s'il est « en trop » (peut-être une adresse récente) : les deux sont offerts.
+            if (c || cp) return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + boutonCorr(a, i, k) + (c && c.entrop ? plusB : '') + boutonBanNum(a, i, k) + '</span>';
             const banB = boutonBanNum(a, i, k);
             // Même conteneur avec ou sans « + » : une pose ne déplace pas les pastilles voisines.
             return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + plusB + banB + '</span>';
@@ -7605,6 +8154,22 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         if (!m.length) return '';
         return '<h4>' + esc(t('sigVoieT', nb(m.length))) + '</h4><ul class="wbc-sig-voie">' + m.map(x => ligneSig(x, l.indexOf(x))).join('') + '</ul>';
     }
+    // 0.30.24 (audit du 26/11, normes-03) : source et date de révision de la BAN sous le nom de la commune, à chaque
+    // affichage. Lue une fois par commune et par session (une requête légère) ; la ligne se complète à l'arrivée, sans
+    // nouveau rendu. Pas de BAL publiée, ou lecture en échec : la source seule, sans date.
+    const revBan = new Map();
+    function ligneSourceBan(code) {
+        if (!revBan.has(code)) {
+            revBan.set(code, undefined);
+            pays.dateRevision(code).then(ms => {
+                revBan.set(code, ms);
+                const el = ovEl && ovEl.querySelector('#wbc-src-ban');
+                if (el && el.dataset.code === code) el.textContent = t('srcBan', ms ? dateCourte(ms) : '');
+            });
+        }
+        const ms = revBan.get(code);
+        return '<p class="wbc-note" id="wbc-src-ban" data-code="' + esc(code) + '" title="' + esc(t('srcBanTip')) + '">' + esc(t('srcBan', ms ? dateCourte(ms) : '')) + '</p>';
+    }
     function htmlCommune(r) {
         const T = totauxVus(r), c = r.commune;
         const vs = r.voies.filter(v => !vue.deleguee || v.deleguee === vue.deleguee);
@@ -7612,19 +8177,19 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             done: vs.filter(v => v.presents >= v.ban).length, all: vs.length, corr: vs.filter(v => v.adresses.some(enCorrection)).length };
         const detailNoms = [T.voiesAlt ? t('vAlt', nb(T.voiesAlt)) : '', T.voiesSansNom ? t('vNoName', nb(T.voiesSansNom)) : '', T.voiesAutreNom ? t('vOtherName', nb(T.voiesAutreNom)) : '',
             T.voiesRoute ? t('vRoute', nb(T.voiesRoute)) : '', T.voiesProche ? t('vType', nb(T.voiesProche)) : '', T.voiesSansSegment ? t('vNoSeg', nb(T.voiesSansSegment)) : ''].filter(x => x).join(' · ');
-        const filtre = (k, lbl, tip) => '<button type="button" class="wbc-mode" role="radio" data-filtre="' + k + '" aria-checked="' + (vue.filtre === k) + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
+        const filtre = (k, lbl, tip) => '<button type="button" class="wbc-mode" role="radio" data-filtre="' + k + '" aria-checked="' + (vue.filtre === k) + '" tabindex="' + (vue.filtre === k ? 0 : -1) + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
             esc(lbl) + ' <span class="wbc-n">' + nb(nF[k]) + '</span></button>';
         const voies = voiesFiltrees(r);
         let h = (resDep ? '<button type="button" class="wbc-retour" data-act="dep" title="' + esc(t('tipDepBack')) + '"><span class="wbc-fl">&#x2190;</span> ' + esc(t('depBack')) + '</button>' : '') +
             '<div class="wbc-titre-l"><h3 class="wbc-titre"><bdi>' + esc(c.nom) + '</bdi> <small>' + esc(c.code) + '</small></h3><span class="wbc-actions">' +
             '<button type="button" class="wbc-btn wbc-btn-neutral" data-act="csv" title="' + esc(t('tipCsv')) + '">' + esc(t('exportCsv')) + '</button>' +
             '<button type="button" class="wbc-btn wbc-btn-neutral" data-act="noms" title="' + esc(t('namesCsvTip')) + '">' + esc(t('namesCsv')) + '</button>' + boutonCmp() +
-            boutonOutil('contour', 'contour', t('contourBtn'), t('contourTip'), 0, !c.contour, !!opts.contour) + '</span></div>' + htmlMemoCommune(r) +
+            boutonOutil('contour', 'contour', t('contourBtn'), t('contourTip'), 0, !c.contour, !!opts.contour) + '</span></div>' + ligneSourceBan(c.code) + htmlMemoCommune(r) +
             (T.certSeules ? '<p class="wbc-ligne">' + esc(t('certNote', nb(T.ecartees))) + '</p>' : '') +
             (T.certSeules && !T.ban ? '<p class="wbc-vide wbc-err">' + esc(t('noCert', nb(T.adressesBan))) + '</p>' : '') +
             htmlKpis(T, !decaleActif() ? 0 : sansDmMarq(r) ? -1 : r.voies.filter(v => !vue.deleguee || v.deleguee === vue.deleguee).reduce((x, v) => x + nDecale(v), 0)) + (cmpCommune(r) ? ligneCmp(cmpCommune(r), r.totaux) : '') +
             '<p class="wbc-note" id="wbc-calque-note" hidden></p>' +
-            '<div class="wbc-outils"><div class="wbc-filtres" role="radiogroup">' + filtre('todo', t('fTodo'), t('voiesLine', nb(T.voiesCompletes), nb(T.voies))) +
+            '<div class="wbc-outils"><div class="wbc-filtres" role="radiogroup" aria-label="' + esc(t('filtreLbl')) + '">' + filtre('todo', t('fTodo'), t('voiesLine', nb(T.voiesCompletes), nb(T.voies))) +
             filtre('name', t('fName'), detailNoms) + (nF.corr || vue.filtre === 'corr' ? filtre('corr', t('fCorr'), t('tipFCorr')) : '') + filtre('done', t('fDone'), t('tipFDone')) + filtre('all', t('fAll'), t('tipFAll')) + '</div>' +
             selectDeleguee(r) +
             '<div class="wbc-rech' + (vue.texte ? ' actif' : '') + '"><span class="wbc-loupe" aria-hidden="true">&#x1F50D;</span>' +
@@ -7635,7 +8200,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const { lWme, court: wmeCourt } = dispositionColonnes(voies, rep, !!cc);
         if (!voies.length) h += '<p class="wbc-vide">' + esc(t('noStreet')) + '</p>';
         else {
-            h += '<table class="wbc-table' + (rep.largeur ? ' avec-rep' : '') + (wmeCourt ? ' wme-court' : '') + '"><thead><tr>' + th('nom', t('thStreetBan')) + th('wme', lWme < LARGEUR_WME_COURT ? t('thStreetWmeShort') : t('thStreetWme'), 0, ' style="width:' + lWme + 'px" title="' + esc(t('thStreetWme')) + '"') + (rep.largeur ? '<th scope="col" class="rep" style="width:' + rep.largeur + 'px" title="' + esc(t('thRepTip')) + '">' + esc(t('thRep')) + '</th>' : '') + th('ban', t('thBan'), 1) + th('wmeN', t('thWme'), 1) + th('ecart', t('thGap'), 1) +
+            h += '<table class="wbc-table' + (rep.largeur ? ' avec-rep' : '') + (wmeCourt ? ' wme-court' : '') + '"><thead><tr>' + th('nom', t('thStreetBan')) + th('wme', lWme < LARGEUR_WME_COURT ? t('thStreetWmeShort') : t('thStreetWme'), 0, ' style="width:' + lWme + 'px" title="' + esc(t('thStreetWme')) + '"') + (rep.largeur ? '<th scope="col" class="rep" style="width:' + rep.largeur + 'px" title="' + esc(t('thRepTip')) + '">' + esc(t('thRep')) + '</th>' : '') + th('ban', t('thBan'), 1) + th('wmeN', t('thWme'), 1) + th('ecart', t('thGapCourt'), 1, '', t('thGap')) +
                 (cc ? '<th scope="col" class="num" title="' + esc(t('thDeltaTip', dC)) + '">' + esc(t('thDelta')) + '</th>' : '') + '</tr></thead><tbody>';
             for (const v of voies) {
                 const i = r.voies.indexOf(v), gap = v.ban - v.presents, ouvert = vue.ouverte === i;
@@ -7643,13 +8208,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
                     '<td><bdi>' + esc(v.nom) + '</bdi>' + (v.deleguee ? '<span class="wbc-del">' + esc(v.deleguee) + '</span>' : '') + '</td>' +
                     '<td class="wme" title="' + esc(texteCelluleNom(v)) + '">' + celluleNom(v) + '</td>' + (rep.largeur ? '<td class="rep">' + reperesVoie(v, rep) + '</td>' : '') + '<td class="num">' + nb(v.ban) + '</td>' +
                     '<td class="num" title="' + esc(t('kHnRpp', v.hn, v.rpp)) + '">' + nb(v.presents) + '</td>' +
-                    '<td class="num ecart ' + (gap ? 'ko' : 'ok') + '">' + (gap ? '−' + nb(gap) : '0') + '</td>' +
+                    '<td class="num ecart ' + (gap ? 'ko' : 'ok') + '">' + (gap ? ltr('−' + nb(gap)) : '0') + '</td>' +
                     (cc ? celluleDelta((() => { const a = cc.data.voies.get(Core.normNom(v.nom) + '|' + (v.deleguee || '')); return a ? v.presents - a.presents : null; })(), dC) : '') + '</tr>';
                 if (ouvert) h += '<tr class="wbc-detail"><td colspan="' + nCol + '"><p class="wbc-voie-outils">' + boutonOutil('selvoie', 'select', t('selSegs', nb((v.segs || []).length)), t('selSegsTip'), (v.segs || []).length, !(v.segs || []).length) +
                     (droitGeste('voie') ? boutonHn(v) + boutonCorrVoie(v) : '') + boutonBanVoie(v) + '</p>' +
                     (droitGeste('hn1') && vue.hnMsg && vue.hnMsg.i === i ? '<p class="wbc-hn-msg' + (vue.hnMsg.err ? ' erreur' : '') + '" role="status">' + (vue.hnMsg.enCours && hnEnCours ? roue(vue.hnMsg.txt) + ' ' : '') + esc(vue.hnMsg.txt) + '</p>' : '') + htmlFormes(v, i) +
                     (nSeulsManquants(v) || !v.manquants.length ? '<h4>' + esc(t('missingT')) +
-                    (v.manquants.length ? ' <button type="button" class="wbc-btn wbc-btn-neutral wbc-suivant" data-act="suivant" title="' + esc(t('tipNext')) + '">' + esc(t('nextMissing')) + ' <span class="wbc-fl">&#x25B6;</span></button>' : '') + '</h4>' +
+                    (v.manquants.length ? ' <button type="button" class="wbc-btn wbc-btn-neutral wbc-suivant" data-act="suivant" title="' + esc(t('tipNext')) + '">' + esc(t('nextMissing')) + ' <span class="wbc-fl" aria-hidden="true">&#x25B6;</span></button>' : '') + '</h4>' +
                     (v.manquants.length ? htmlNums(v, i)
                         : '<p class="wbc-note">' + esc(t('noneMissing')) + '</p>') : '') + (droitGeste('conv') ? htmlRpps(v, i) + htmlHnTrouves(v, i) : '') + htmlArrets(v, i) + htmlSigVoie(v, r) + '</td></tr>';
             }
@@ -7720,23 +8285,26 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const voulu = largeurColonneWme(voies), court = voulu === LARGEUR_WME_MIN;
         const num = rep.largeur ? 44 : 76, chiffres = num * (avecDelta ? 4 : 3);
         const dispo = l - chiffres - (LARGEUR_BAN_MIN + 12);
-        if (rep.largeur && voulu + 12 + rep.largeur + 8 > dispo) { rep.empile = true; rep.largeur = Math.max(...Object.keys(LARGEUR_REPERE).filter(k => rep[k]).map(k => LARGEUR_REPERE[k])) + 8; }
+        if (rep.largeur && voulu + 12 + rep.largeur + 8 > dispo) { rep.empile = true; rep.largeur = Math.max(largeurLibelleRep(), Math.max(...Object.keys(LARGEUR_REPERE).filter(k => rep[k]).map(k => LARGEUR_REPERE[k])) + 8); }
         const lWme = court ? LARGEUR_WME_MIN : Math.max(LARGEUR_WME_PB, Math.min(voulu, dispo - (rep.largeur ? rep.largeur + 8 : 0) - 12));
         return { lWme, court };
     }
+    // En-tête « Repères » en capitales grasses : jamais plus étroit que son libellé (8 langues), empilé ou non.
+    const largeurLibelleRep = () => Math.ceil(String(t('thRep')).length * 7.6) + 8;
     function colonnesReperes(voies) {
         const c = { corr: voies.some(v => nCorr(v) > 0), dec: voies.some(v => nDecale(v) > 0), rpp: voies.some(v => (v.rppDoubles || []).length > 0) };
         const l = Object.keys(LARGEUR_REPERE).filter(k => c[k]).map(k => LARGEUR_REPERE[k]);
-        c.largeur = l.length ? Math.max(56, l.reduce((x, y) => x + y, 0) + 2 * (l.length - 1) + 8) : 0;
+        // 0.30.18 — au moins la largeur du libellé « Repères » en capitales grasses (« RÉPÈR… » tronqué, l'auteur 26/11).
+        c.largeur = l.length ? Math.max(56, largeurLibelleRep(), l.reduce((x, y) => x + y, 0) + 2 * (l.length - 1) + 8) : 0;
         return c;
     }
     function reperesVoie(v, rep) {
         const slot = (cle, on, cls, txt, tip) => !rep[cle] ? '' : '<span class="wbc-slot ' + cle + '">' +
-            (on ? '<span class="wbc-tag ' + cls + '" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">' + txt + '</span>' : '') + '</span>';
+            (on ? '<span class="wbc-tag ' + cls + '" role="img" title="' + esc(tip) + '" aria-label="' + esc(tip) + '">' + txt + '</span>' : '') + '</span>';
         const c = nCorr(v), d = nDecale(v), r = v.rppDoubles || [];
-        const h = slot('corr', c, 'wbc-tag-corr', '&#x21BB; ' + esc(nb(c)), t('corrTag', nb(c))) +
-            slot('dec', d, 'wbc-tag-decale', '&#x2194; ' + esc(nb(d)), t('tagDecale', nb(d)) + ' — ' + t('tagDecaleTip', nb(d), nb(seuilDecale()))) +
-            slot('rpp', r.length, 'wbc-tag-rppdbl', 'RPP ' + esc(nb(r.length)), t('tagRppDbl', nb(r.length)) + ' — ' + t('tagRppDblTip', r.join(', ')));
+        const h = slot('corr', c, 'wbc-tag-corr', '&#x21BB;\u00a0' + esc(nb(c)), t('corrTag', nb(c))) +
+            slot('dec', d, 'wbc-tag-decale', '&#x2194;\u00a0' + esc(nb(d)), t('tagDecale', nb(d)) + ' — ' + t('tagDecaleTip', nb(d), nb(seuilDecale()))) +
+            slot('rpp', r.length, 'wbc-tag-rppdbl', 'RPP\u00a0' + esc(nb(r.length)), t('tagRppDbl', nb(r.length)) + ' — ' + t('tagRppDblTip', r.join(', ')));
         return h ? '<span class="wbc-reperes' + (rep.empile ? ' empile' : '') + '">' + h + '</span>' : '';
     }
     function htmlExtras(liste, cle, titre) {
@@ -7746,7 +8314,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const rues = [...parRue.keys()].sort((a, b) => a.localeCompare(b, LOCALES[_lang]));
         return '<details class="wbc-extra"><summary>' + esc(titre) + '</summary><ul>' + rues.map(r =>
             '<li><span><bdi>' + (r === '∅' ? '<i>' + esc(t('nameNone')) + '</i>' : esc(r)) + '</bdi></span>' +
-            parRue.get(r).map(k => { const b = '<button type="button" class="wbc-num trop' + (cle === 'doublon' && liste[k].type === 'RPP' ? ' rppdbl' : '') + '" data-' + cle + '="' + k + '" title="' + esc(t(liste[k].type === 'HN' ? 'tipHN' : 'tipRPP')) + '">' + esc(liste[k].brut) + '</button>';
+            parRue.get(r).map(k => { const x = liste[k], cb = cle === 'trop' && x.corrBan ? t('tropCorr', x.brut, x.corrBan) : '';
+                const b = '<button type="button" class="wbc-num trop' + (cle === 'doublon' && x.type === 'RPP' ? ' rppdbl' : '') + '" data-' + cle + '="' + k + '" title="' + esc(t(x.type === 'HN' ? 'tipHN' : 'tipRPP') + (cb ? ' — ' + cb : '')) + '"' + (cb ? ' aria-label="' + esc(x.brut + ' — ' + cb) + '"' : '') + '>' + esc(x.brut) + (cb ? '<span class="wbc-num-etat" aria-hidden="true">&#x21BB;?</span>' : '') + '</button>';
                 const f = cle === 'trop' ? boutonBanTrop(liste[k], k) : '';
                 return f ? '<span class="wbc-num-g">' + b + f + '</span>' : b; }).join('') + '</li>').join('') +
             '</ul></details>';
@@ -7766,9 +8335,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         try { await navigator.clipboard.writeText(txt); ok = true; } catch (e) {
             // Repli : sélection d'un champ caché (presse-papiers refusé hors geste, ou navigateur ancien).
             try {
-                const z = document.createElement('textarea');
+                const D = docPanneau(), z = D.createElement('textarea');
                 z.value = txt; z.style.position = 'fixed'; z.style.opacity = '0';
-                document.body.appendChild(z); z.select(); ok = document.execCommand('copy'); z.remove();
+                D.body.appendChild(z); z.select(); ok = D.execCommand('copy'); z.remove();
             } catch (e2) { ok = false; }
         }
         bouton.textContent = ok ? '✓ ' + t('copyDone') : t('copyFail');
@@ -7797,7 +8366,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             const x = tri(a), y = tri(b);
             return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), LOCALES[_lang])) * sens;
         });
-        const thD = (cle, lbl, num) => '<th scope="col"' + (num === 2 ? ' class="cov"' : num ? ' class="num"' : '') + ((vue.triDep || 'ecart') === cle ? ' aria-sort="' + (sens > 0 ? 'ascending' : 'descending') + '"' : '') + '><button type="button" class="wbc-th" data-tridep="' + cle + '" title="' + esc(t('tipSort')) + '">' + esc(lbl) + '</button></th>';
+        const thD = (cle, lbl, num) => '<th scope="col"' + (num === 2 ? ' class="cov"' : num ? ' class="num"' : '') + ((vue.triDep || 'ecart') === cle ? ' aria-sort="' + (sens > 0 ? 'ascending' : 'descending') + '"' : '') + '><button type="button" class="wbc-th" data-tridep="' + cle + '" title="' + (num ? esc(lbl) + ' — ' + esc(t('tipSort')) : esc(t('tipSort'))) + '">' + esc(lbl) + '</button></th>';
         const cd = cmpDep(), dD = cd ? dateCourte(cd.date) : '';
         let h = '<div class="wbc-titre-l"><h3 class="wbc-titre"><bdi>' + esc(d.dep.nom) + '</bdi> <small>' + esc(d.dep.code) + ' · ' + nb(ok.length) + '/' + nb(d.communes.length) + '</small></h3><span class="wbc-actions">' +
             (!jeton && d.communes.some(c => c.etat === 'erreur') ? '<button type="button" class="wbc-btn wbc-btn-neutral" data-act="reprise" title="' + esc(t('tipRetry')) + '">' + esc(t('retryFailed', nb(d.communes.filter(c => c.etat === 'erreur').length))) + '</button>' : '') +
@@ -7826,7 +8395,22 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         return h + '</tbody></table>';
     }
 
+    // Une analyse lancée avant une écriture et finie pendant celle-ci est montrée à la fin du geste, pas sous lui (rang 18).
+    let communeDifferee = null, finGesteMinuteur = null;
     function montrerCommune(r) {
+        if (gesteEnCours()) {
+            communeDifferee = r;
+            if (!finGesteMinuteur) finGesteMinuteur = setInterval(() => {
+                if (gesteEnCours()) return;
+                clearInterval(finGesteMinuteur);
+                finGesteMinuteur = null;
+                const x = communeDifferee;
+                communeDifferee = null;
+                if (x) montrerCommune(x);
+            }, 300);
+            return;
+        }
+        communeDifferee = null;
         if (r && r.voies) for (const v of r.voies) if (v.adresses) v.adresses.sort(Core.ordreNum);
         const autre = !resultat || !r || resultat.commune.code !== r.commune.code;
         resultat = r;
@@ -7965,6 +8549,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             for (const id of segs) g.cache.hn.delete(id);
         }
         log('renommage : ' + changes.size + ' segment(s) changé(s), ' + n + ' voie(s) — ' + r.commune.nom + (g ? ' recalculée en local' : ' réanalysée'));
+        // Enregistré pendant un geste d'écriture : la relance attend sa fin (lancer la refuse pendant un geste, rang 18).
+        while (gesteEnCours()) await new Promise(x => setTimeout(x, 300));
+        if (resultat !== r || jeton) return;
         const t0 = Date.now();
         await lancer(null, j => lancerCommune(j, r.commune, g ? { adresses: g.adresses, cache: g.cache } : null), !!(r.memo && r.memo.cert));
         log('renommage : ' + (Date.now() - t0) + ' ms');
@@ -8068,27 +8655,34 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     }
 
 
-    // Cellule commençant par = + - @ : FORMULE pour un tableur (CWE-1236), neutralisée par une apostrophe.
-    const csvNeutre = s => /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
+    // Cellule commençant par = + - @ : FORMULE pour un tableur (CWE-1236), neutralisée par une apostrophe. Un nombre pur
+    // (« -1.677500 », longitude à l'ouest de Greenwich) n'est pas une formule : préfixé, il ne serait plus un nombre.
+    // Après une virgule aussi : un tableur réglé pour couper à la virgule y ouvrirait une nouvelle cellule.
+    const csvNeutre = s => /^-?\d+(\.\d+)?$/.test(s) ? s : (/^[=+\-@\t\r]/.test(s) ? "'" + s : s).replace(/,(\s*)(?=[=+\-@\t\r])/g, ",$1'");
     const csvChamp = v => { const s = csvNeutre(String(v == null ? '' : v)); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     function telecharger(nom, lignes) {
         const blob = new Blob(['\uFEFF' + lignes.map(l => l.map(csvChamp).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
-        const a = document.createElement('a');
+        const D = docPanneau(), a = D.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = nom;
-        document.body.appendChild(a);
+        D.body.appendChild(a);
         a.click();
         setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     }
+    // Licence Ouverte 2.0 : la réutilisation mentionne la source et la date de mise à jour de l'information. Deux colonnes
+    // en FIN de ligne (une ligne de commentaire casserait la relecture, qui lit l'en-tête en première ligne et ignore les
+    // colonnes en plus). La date est celle du balayage : la BAN a été lue ce jour-là (sa date de révision n'est pas lue au balayage).
+    const SOURCE_BAN = 'Base Adresse Nationale (adresse.data.gouv.fr), Licence Ouverte 2.0';
+    const dateBan = ms => { if (!ms) return ''; const d = new Date(ms), z = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()); };
     function exporterCommune(r) {
         const c = r.commune;
-        const l = [['commune_insee', 'commune', 'voie_ban', 'commune_deleguee', 'voie_wme', 'nom_principal_wme', 'statut_nom', 'numero', 'etat', 'numero_wme_suffixe', 'certifiee', 'lon', 'lat', 'filtre_certifiees', 'segment_probable_wme']];
-        const filtre = r.totaux.certSeules ? '1' : '0';
+        const l = [['commune_insee', 'commune', 'voie_ban', 'commune_deleguee', 'voie_wme', 'nom_principal_wme', 'statut_nom', 'numero', 'etat', 'numero_wme_suffixe', 'certifiee', 'lon', 'lat', 'filtre_certifiees', 'segment_probable_wme', 'source', 'ban_maj']];
+        const filtre = r.totaux.certSeules ? '1' : '0', maj = dateBan((r.memo && r.memo.date) || Date.now());
         for (const v of r.voies) for (const a of v.adresses)
             l.push([c.code, c.nom, v.nom, v.deleguee, v.nomWme || '', v.nomPrincipal || '', v.statutNom + (v.nomAbsent ? '+absent' : ''), a.brut,
-                a.trouve || (a.suffixe ? 'suffixe' : 'manquant'), a.suffixe || '', a.cert ? '1' : '0', a.lon.toFixed(6), a.lat.toFixed(6), filtre, a.seg != null ? a.seg : '']);
+                a.trouve || (a.suffixe ? 'suffixe' : 'manquant'), a.suffixe || '', a.cert ? '1' : '0', a.lon.toFixed(6), a.lat.toFixed(6), filtre, a.seg != null ? a.seg : '', SOURCE_BAN, maj]);
         for (const [liste, etat] of [[r.enTrop, 'en_trop'], [r.doublons, 'doublon']])
-            for (const x of liste) l.push([c.code, c.nom, '', '', x.rue, '', '', x.brut, etat + '_' + x.type, '', '', x.lon.toFixed(6), x.lat.toFixed(6), filtre, '']);
+            for (const x of liste) l.push([c.code, c.nom, '', '', x.rue, '', '', x.brut, etat + '_' + x.type, '', '', x.lon.toFixed(6), x.lat.toFixed(6), filtre, '', SOURCE_BAN, maj]);
         telecharger('ban-wme_' + c.code + '_' + new Date().toISOString().slice(0, 10) + '.csv', l);
     }
     const PERMALIEN_SEGS = 50;
@@ -8104,22 +8698,24 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     }
     const ecartDeNom = v => !(v.statutNom === 'identique' || v.statutNom === 'alternatif' || v.statutNom === 'parking') || v.nomAbsent;
     function exporterEcarts(resultats, nomFichier) {
-        const l = [['commune_insee', 'commune', 'voie_ban', 'commune_deleguee', 'voie_wme', 'nom_principal_wme', 'statut_nom', 'adresses_ban', 'manquantes', 'segments_wme', 'lien_wme']];
+        const l = [['commune_insee', 'commune', 'voie_ban', 'commune_deleguee', 'voie_wme', 'nom_principal_wme', 'statut_nom', 'adresses_ban', 'manquantes', 'segments_wme', 'lien_wme', 'source', 'ban_maj']];
         for (const r of resultats) for (const v of r.voies) {
             if (!ecartDeNom(v)) continue;
             l.push([r.commune.code, r.commune.nom, v.nom, v.deleguee, v.nomWme || '', v.nomPrincipal || '', v.statutNom + (v.nomAbsent ? '+absent' : ''),
-                v.ban, v.ban - v.presents, (v.segs || []).join(','), permalien(v)]);
+                v.ban, v.ban - v.presents, (v.segs || []).join(','), permalien(v), SOURCE_BAN, dateBan((r.memo && r.memo.date) || Date.now())]);
         }
         if (l.length < 2) { statut(t('namesNone')); return; }
         telecharger(nomFichier + '_' + new Date().toISOString().slice(0, 10) + '.csv', l);
     }
 
     function exporterDepartement(d) {
-        const l = [['commune_insee', 'commune', 'adresses_ban', 'certifiees', 'dans_wme', 'hn', 'rpp', 'manquantes', 'dont_suffixe', 'en_trop', 'doublons', 'couverture', 'filtre_certifiees', 'non_certifiees_ecartees']];
+        const l = [['commune_insee', 'commune', 'adresses_ban', 'certifiees', 'dans_wme', 'hn', 'rpp', 'manquantes', 'dont_suffixe', 'en_trop', 'doublons', 'couverture', 'filtre_certifiees', 'non_certifiees_ecartees', 'source', 'ban_maj']];
         for (const c of d.communes) {
             const T = c.totaux;
-            if (!T) { l.push([c.commune.code, c.commune.nom, '', '', '', '', '', '', '', '', '', c.etat, '', '']); continue; }
-            l.push([c.commune.code, c.commune.nom, T.ban, T.cert, T.presents, T.hn, T.rpp, T.manquants, T.suffixes, T.enTrop, T.doublons, T.ban ? (T.presents / T.ban).toFixed(4) : '', T.certSeules ? '1' : '0', T.ecartees]);
+            // Commune en échec : aucune adresse BAN lue, donc ni source ni date.
+            if (!T) { l.push([c.commune.code, c.commune.nom, '', '', '', '', '', '', '', '', '', c.etat, '', '', '', '']); continue; }
+            l.push([c.commune.code, c.commune.nom, T.ban, T.cert, T.presents, T.hn, T.rpp, T.manquants, T.suffixes, T.enTrop, T.doublons, T.ban ? (T.presents / T.ban).toFixed(4) : '', T.certSeules ? '1' : '0', T.ecartees,
+                SOURCE_BAN, dateBan((c.memo && c.memo.date) || d.date || Date.now())]);
         }
         telecharger('ban-wme_dep' + d.dep.code + '_' + new Date().toISOString().slice(0, 10) + '.csv', l);
     }
@@ -8128,16 +8724,35 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     const Memo = (() => {
         let base = null;
         const TABLES = ['communes', 'deps', 'index'];
-        const ouvrir = () => base || (base = new Promise((ok, ko) => {
-            const r = indexedDB.open('wme-ban-coverage', 1);
-            r.onupgradeneeded = () => { const d = r.result; for (const x of TABLES) if (!d.objectStoreNames.contains(x)) d.createObjectStore(x); };
-            r.onsuccess = () => ok(r.result);
-            r.onerror = () => { base = null; ko(r.error || new Error('IndexedDB')); };
-        }));
-        const op = async (table, mode, f) => {
-            const d = await ouvrir();
+        // 0.30.25 — audit du 26/11 (rang 29) : une connexion fermée par le navigateur (stockage purgé, autre onglet qui monte la
+        // version) restait en cache et chaque lecture ou écriture échouait jusqu'au rechargement. Oubliée à sa fermeture, et
+        // rouverte une fois si la transaction la trouve fermée.
+        const ouvrir = () => {
+            if (base) return base;
+            const p = base = new Promise((ok, ko) => {
+                const r = indexedDB.open('wme-ban-coverage', 1);
+                r.onupgradeneeded = () => { const d = r.result; for (const x of TABLES) if (!d.objectStoreNames.contains(x)) d.createObjectStore(x); };
+                r.onsuccess = () => {
+                    const d = r.result;
+                    d.onclose = () => { if (base === p) base = null; };
+                    d.onversionchange = () => { try { d.close(); } catch (e) { } if (base === p) base = null; };
+                    ok(d);
+                };
+                r.onerror = () => { if (base === p) base = null; ko(r.error || new Error('IndexedDB')); };
+            });
+            return p;
+        };
+        const op = async (table, mode, f, encore) => {
+            const p = ouvrir(), d = await p;
+            let tx;
+            try { tx = d.transaction(table, mode); }
+            catch (e) {
+                if (encore || !e || e.name !== 'InvalidStateError') throw e;
+                if (base === p) base = null;
+                return op(table, mode, f, true);
+            }
             return new Promise((ok, ko) => {
-                const tx = d.transaction(table, mode), req = f(tx.objectStore(table));
+                const req = f(tx.objectStore(table));
                 tx.oncomplete = () => ok(req ? req.result : undefined);
                 tx.onerror = () => ko(tx.error || new Error('IndexedDB'));
                 tx.onabort = () => ko(tx.error || new Error('IndexedDB'));
@@ -8153,15 +8768,17 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     })();
     const cleMemo = (code, cert) => code + '|' + (cert ? 'c' : 't');
     // FORMAT du résultat gardé : à relever à chaque changement du CALCUL (un format antérieur n'est pas rouvert tel quel).
-    const MEMO_FMT = 2;
+    // 3 (0.30.21) : position BAN retenue, candidats « ↻ », règle 3 ; un balayage gardé en 2 est relancé, pas rouvert à l'écriture.
+    const MEMO_FMT = 3;
     const memoAJour = o => !!o && o.fmt === MEMO_FMT;
-    const dateHeure = ms => new Intl.DateTimeFormat(LOCALES[_lang] || 'en', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(ms);
+    const dateHeure = ms => new Intl.DateTimeFormat(LOCALES[_lang] || 'en', Object.assign(FORMAT_DATE(), { hour: '2-digit', minute: '2-digit' })).format(ms);
 
     async function garderCommune(r, viaDep) {
         if (!r || !r.memo) return;
         const cle = cleMemo(r.commune.code, r.memo.cert);
         try {
             await Memo.ecrire('communes', cle, Object.assign({}, r, { verif: undefined, fmt: MEMO_FMT }));
+            resEcrits.add(r);
             await Memo.ecrire('index', cle, { cle, type: 'commune', code: r.commune.code, nom: r.commune.nom, cert: r.memo.cert, date: r.memo.date,
                 ban: r.totaux.ban, presents: r.totaux.presents, viaDep: viaDep || '', fmt: MEMO_FMT });
             if (!viaDep) majMemoOnglet();
@@ -8180,20 +8797,21 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         } catch (e) { log('mémoire : ' + e.message); statut(t('memoErr', e.message), true); }
     }
 
-    const ouvrirMemoCommune = (code, cert) => attendre(ouvrirMemoCommuneBrut(code, cert));
+    const ouvrirMemoCommune = (code, cert) => refuserSiGeste() ? Promise.resolve(true) : attendre(ouvrirMemoCommuneBrut(code, cert));
     async function ouvrirMemoCommuneBrut(code, cert) {
         let r = null;
         try { r = await Memo.lire('communes', cleMemo(code, cert)); } catch (e) { log('mémoire : ' + e.message); }
         if (!r || !r.memo) return false;
         if (!memoAJour(r)) { lancer(null, j => lancerCommune(j, r.commune), !!r.memo.cert); return true; }
         r.verif = {};
-        resCommunes.set(code, r);
+        resEcrits.add(r);
+        noterResultat(code, r);
         cmp = null;
         montrerCommune(r);
         verifierBan([r]);
         return true;
     }
-    const ouvrirMemoDep = (code, cert) => attendre(ouvrirMemoDepBrut(code, cert));
+    const ouvrirMemoDep = (code, cert) => refuserSiGeste() ? Promise.resolve(true) : attendre(ouvrirMemoDepBrut(code, cert));
     async function ouvrirMemoDepBrut(code, cert) {
         let d = null;
         try { d = await Memo.lire('deps', cleMemo(code, cert)); } catch (e) { log('mémoire : ' + e.message); }
@@ -8211,16 +8829,22 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
     }
     const ouvrirCommuneDep = code => attendre(ouvrirCommuneDepBrut(code));
     async function ouvrirCommuneDepBrut(code) {
-        if (resCommunes.has(code)) { montrerCommune(resCommunes.get(code)); return; }
+        const garde = resCommunes.get(code);
+        if (garde && !garde.leger) { montrerCommune(garde); return; }
         const l = resDep && resDep.communes.find(x => x.commune.code === code);
         if (!l || !l.memo) return;
         let r = null;
         try { r = await Memo.lire('communes', cleMemo(code, resDep.certSeules)); } catch (e) { log('mémoire : ' + e.message); }
+        // Résumé dont la mémoire ne rend plus le résultat (effacée entre-temps) : la commune est réanalysée.
+        if (!r && garde) { lancer(null, j => lancerCommune(j, l.commune), !!resDep.certSeules); return; }
         if (!r) return;
         if (!memoAJour(r)) { lancer(null, j => lancerCommune(j, l.commune), !!resDep.certSeules); return; }
         r.verif = l.verif || (l.verif = {});
-        resCommunes.set(code, r);
+        resEcrits.add(r);
+        noterResultat(code, r);
         montrerCommune(r);
+        // Rang 3 : comme une commune rouverte seule, la BAN est revérifiée (la ligne du département ne l'a pas toujours été).
+        if (!r.verif.ban) verifierBan([r]);
     }
 
     let verifBan = null;
@@ -8396,7 +9020,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
             majMemoOnglet();
             return true;
         }
-        if (jeton) return true;
+        if (jeton || refuserSiGeste()) return true;
         ouvrirFenetre(true);
         if (e.type === 'dep') {
             opts.mode = 'dep'; choixDep = e.code; ecrireOpts(); majModes();
@@ -8442,7 +9066,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #wbc-sid
         const langue = () => { const l = String(document.documentElement.lang || navigator.language || 'en').toLowerCase(); return l.startsWith('pt') ? (l.includes('br') ? 'pt-BR' : 'pt') : (l.startsWith('iw') ? 'he' : l.slice(0, 2)); };
         const TXT = {
             en: { plus: n => n + ' more script button' + (n > 1 ? 's' : ''), titre: 'Other script buttons', epingler: 'Keep in the column', desepingler: 'Stop keeping in the column', aide: 'Right-click a button in the column to pin or unpin it.' },
-            fr: { plus: n => n + ' autre' + (n > 1 ? 's' : '') + ' bouton' + (n > 1 ? 's' : '') + ' de script', titre: 'Autres boutons de scripts', epingler: 'Garder dans la colonne', desepingler: 'Ne plus garder dans la colonne', aide: 'Clic droit sur un bouton de la colonne pour l\'épingler ou le désépingler.' },
+            fr: { plus: n => n + ' autre' + (n > 1 ? 's' : '') + ' bouton' + (n > 1 ? 's' : '') + ' de script', titre: 'Autres boutons de scripts', epingler: 'Garder dans la colonne', desepingler: 'Ne plus garder dans la colonne', aide: 'Clic droit sur un bouton de la colonne pour l’épingler ou le désépingler.' },
             de: { plus: n => n + ' weitere Skript-Schaltfläche' + (n > 1 ? 'n' : ''), titre: 'Weitere Skript-Schaltflächen', epingler: 'In der Leiste behalten', desepingler: 'Nicht mehr in der Leiste behalten', aide: 'Rechtsklick auf eine Schaltfläche der Leiste, um sie anzuheften oder zu lösen.' },
             es: { plus: n => n + ' botón' + (n > 1 ? 'es' : '') + ' de script más', titre: 'Otros botones de scripts', epingler: 'Mantener en la columna', desepingler: 'Dejar de mantener en la columna', aide: 'Clic derecho en un botón de la columna para anclarlo o desanclarlo.' },
             it: { plus: n => n > 1 ? 'Altri ' + n + ' pulsanti di script' : 'Un altro pulsante di script', titre: 'Altri pulsanti di script', epingler: 'Tieni nella colonna', desepingler: 'Non tenere più nella colonna', aide: 'Clic destro su un pulsante della colonna per agganciarlo o sganciarlo.' },
@@ -8819,6 +9443,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     async function analyserAuCentre() {
         if (fabEtat && fabEtat.occupe) return;
         if (jeton || demande) { montrerAvis(t('fabDeja'), posFab()); return; }
+        if (gesteEnCours()) { montrerAvis(t('occupeGeste'), posFab()); return; }
         fabEtat = { occupe: true };
         majFab();
         let motif = '';
@@ -8849,12 +9474,16 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     }
     // ==/WBC-CENTRE==
 
+    // Dessinée, comme « petite » et le bouton Discord : « ⧉ » manque à bien des polices.
+    const ICO_DETACHER = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><rect x="1" y="4" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/>' +
+        '<path d="M4 4V2a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
     function htmlFenetre() {
-        const mode = (k, lbl, tip) => '<button type="button" class="wbc-mode" role="radio" data-mode="' + k + '" aria-checked="' + (opts.mode === k) + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' + esc(lbl) + '</button>';
+        const mode = (k, lbl, tip) => '<button type="button" class="wbc-mode" role="radio" data-mode="' + k + '" aria-checked="' + (opts.mode === k) + '" tabindex="' + (opts.mode === k ? 0 : -1) + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' + esc(lbl) + '</button>';
         return '<div id="wbc-hdr" title="' + esc(t('dragTip')) + '"><span class="wbc-hdr-title"><span class="wbc-hdr-ico">' + icone(16) + '</span>' +
             SCRIPT_NAME + ' <span class="wbc-hdr-v">v' + esc(VERSION) + '</span></span>' +
             '<span class="wbc-hdr-btns"><span id="wbc-hdr-quota" class="wbc-hdr-quota" hidden></span><button type="button" class="wbc-hdr-btn" data-act="replier"></button>' +
             '<button type="button" class="wbc-hdr-btn" data-act="petite" title="' + esc(t('smallTip')) + '" aria-label="' + esc(t('smallTip')) + '"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M4.5 1v3.5H1M7.5 1v3.5H11M4.5 11V7.5H1M7.5 11V7.5H11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+            (pipDispo() ? '<button type="button" class="wbc-hdr-btn" data-act="detacher" title="' + esc(t('detachTip')) + '" aria-label="' + esc(t('detachTip')) + '" aria-pressed="false">' + ICO_DETACHER + '</button>' : '') +
             '<button type="button" class="wbc-hdr-btn" data-act="taille" title="' + esc(t('sizeTip')) + '" aria-label="' + esc(t('sizeTip')) + '">&#x2922;</button>' +
             '<button type="button" class="wbc-hdr-btn" data-act="close" title="' + esc(t('close')) + '" aria-label="' + esc(t('close')) + '">&#x2715;</button></span></div>' +
             '<div id="wbc-haut"><div class="wbc-ligne-haut"><div class="wbc-modes" role="radiogroup" aria-label="' + esc(t('modeLbl')) + '">' +
@@ -8869,6 +9498,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             '<span class="wbc-statut" id="wbc-statut" aria-live="off"></span>' +
             '<button type="button" class="wbc-btn wbc-btn-primary" data-act="go" title="' + esc(t('tipAnalyse')) + '">' + esc(t('analyse')) + '</button>' +
             '<button type="button" class="wbc-btn wbc-btn-neutral" data-act="stop" title="' + esc(t('tipStop')) + '" hidden>' + esc(t('stop')) + '</button></div>' +
+            '<p class="wbc-erreur" id="wbc-erreur" hidden></p>' +
             '<div id="wbc-deja" hidden></div>' +
             '<div class="wbc-progres" id="wbc-progres" aria-hidden="true" hidden></div>' +
             '<p class="wbc-arriere" id="wbc-arriere" role="status" title="' + esc(t('bgTabTip')) + '" hidden>&#x26A0;&#xFE0F; ' + esc(t('bgTab')) + '</p>' +
@@ -8890,7 +9520,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     }
 
     function majModes() {
-        ovEl.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === opts.mode)));
+        ovEl.querySelectorAll('[data-mode]').forEach(b => { b.setAttribute('aria-checked', String(b.dataset.mode === opts.mode)); b.tabIndex = b.dataset.mode === opts.mode ? 0 : -1; });
         ovEl.querySelectorAll('.wbc-choix').forEach(c => { c.hidden = c.dataset.pour !== opts.mode; });
         if (opts.mode === 'dep') remplirDeps();
         majBoutons();
@@ -8901,6 +9531,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         go.hidden = !!jeton || !!deja;
         const cd = communeDuDep();
         go.title = cd ? t('tipAnalyseCom', cd.nom) : t('tipAnalyse');
+        // 0.30.27 — audit du 26/11 (rang 42) : depuis une commune du département, « Analyser » ne relance qu'elle ; il le dit.
+        const lib = cd ? '<span class="wbc-go-lib">' + esc(t('analyseCom', cd.nom)) + '</span>' : esc(t('analyse'));
+        if (go.innerHTML !== lib) go.innerHTML = lib;
         $('[data-act="stop"]').hidden = !jeton;
         $('#wbc-cert').disabled = !!jeton;
         ovEl.querySelectorAll('[data-mode]').forEach(b => { b.disabled = !!jeton; });
@@ -8921,6 +9554,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const champ = $('#wbc-cherche'), liste = $('#wbc-sugg');
         const fermer = () => { liste.hidden = true; champ.setAttribute('aria-expanded', 'false'); };
         const choisir = c => {
+            // Pendant une écriture, ni la commune ni la carte ne changent (rang 18).
+            if (refuserSiGeste()) { fermer(); return; }
             oublierDeja();
             choixCommune = { code: c.code, nom: c.nom };
             champ.value = c.nom + ' (' + c.code + ')';
@@ -8976,7 +9611,31 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         champ.addEventListener('blur', () => setTimeout(fermer, 150));
     }
 
-    // Les touches tapées dans la fenêtre ne partent pas vers les raccourcis de WME ; Ctrl, Méta et Alt passent.
+    // Les touches tapées dans un champ de la fenêtre ne partent pas vers les raccourcis de WME ; avec Ctrl, Méta ou Alt,
+    // elles y passent. Fenêtre détachée : ses touches restent dans son propre document, AUCUN raccourci de WME n'y répond
+    // (Ctrl+Z compris). Rien n'est relayé vers WME : aucune API d'annulation n'a été vérifiée.
+    // 0.30.27 — audit du 26/11 (rang 46, normes-09) : modes et filtres sont des groupes radio. Motif ARIA : un seul arrêt de
+    // tabulation (l'option cochée), les flèches passent à l'option voisine et la cochent ; Début et Fin vont aux bouts. En
+    // hébreu, gauche et droite suivent le sens de lecture. Les options grisées (analyse en cours) sont sautées.
+    function flecheRadio(ev) {
+        if (ev.ctrlKey || ev.metaKey || ev.altKey) return false;
+        const r = ev.target && ev.target.closest && ev.target.closest('[role="radio"]');
+        const g = r && r.closest('[role="radiogroup"]');
+        if (!g) return false;
+        const rtl = _lang === 'he';
+        const pas = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[ev.key];
+        if (pas == null && ev.key !== 'Home' && ev.key !== 'End') return false;
+        const l = [...g.querySelectorAll('[role="radio"]')].filter(b => !b.disabled);
+        if (!l.length) return false;
+        const i = l.indexOf(r);
+        const c = ev.key === 'Home' ? l[0] : ev.key === 'End' ? l[l.length - 1] : l[((i < 0 ? 0 : i) + pas + l.length) % l.length];
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (c === r) return true;
+        c.focus();
+        c.click();
+        return true;
+    }
     function gardeTouche(ev) {
         if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
         if (ev.target.closest && ev.target.closest('input, select, textarea')) ev.stopPropagation();
@@ -8997,11 +9656,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             else if (a === 'replier') basculerRepli(!opts.replie);
             else if (a === 'copier') copierCouverture(act);
             else if (a === 'taille') basculerTaille();
+            else if (a === 'detacher') basculerDetache();
             else if (a === 'petite') petiteFenetre();
             else if (a === 'stop') arreter();
             else if (a === 'csv' && resultat) exporterCommune(resultat);
             else if (a === 'csvdep' && resDep) exporterDepartement(resDep);
-            else if (a === 'dep') { resultat = null; dessiner([]); rendre(); }
+            else if (a === 'dep') { if (!refuserSiGeste()) { resultat = null; dessiner([]); rendre(); } }
             else if (a === 'suivant' && resultat) manquantSuivant();
             else if (a === 'voiesuiv' && resultat && droitGeste('voie') && !hnEnCours) allerVoieSuivante();
             else if (a === 'selvoie' && resultat && vue.ouverte != null) selectionnerVoie(vue.ouverte);
@@ -9135,6 +9795,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const lc = ev.target.closest('tr[data-commune]');
         if (lc) {
             const l = resDep && resDep.communes.find(x => x.commune.code === lc.dataset.commune);
+            if (refuserSiGeste()) return;
             ouvrirCommuneDep(lc.dataset.commune).then(() => { if (l && l.commune.bbox) cadrer(l.commune.bbox); });
             return;
         }
@@ -9155,9 +9816,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         if (b) b.focus({ preventScroll: false });
     }
 
-    const hnPosable = a => !!a && !a.trouve && !a.corr && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && !!Core.numeroHn(a.brut);
+    // 0.30.21 — candidat « ↻ » issu d'un numéro en trop (corr.entrop) : il peut être juste, le « + » reste offert.
+    const corrBloquant = a => !!a.corr && !a.corr.entrop;
+    const hnPosable = a => !!a && !a.trouve && !corrBloquant(a) && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && !!Core.numeroHn(a.brut);
     const rppConvertible = a => !!a && a.trouve === 'RPP' && !a.rppHn && a.wlon != null;
-    const posablesHn = v => v.adresses.filter(hnPosable).length;
+    // Lot « Ajouter les numéros » : sans les candidats « ↻ » en trop (laissés au « + », un par un).
+    const posablesHn = v => v.adresses.filter(a => hnPosable(a) && !a.corr).length;
     const nomOkHn = v => v.statutNom === 'identique' || v.statutNom === 'alternatif' || !!(v.apercuHn && v.apercuHn.rpp);
     // 0.30.14 — voie présente sous un nom à vérifier : dire de la renommer (aucun RPP ne sera créé à sa place).
     const motifNomHn = v => Core.voieSousAutreNom(v) && v.nomWme ? t('ajHnRenommer', v.nomWme, v.nom) : t('ajHnNoName');
@@ -9224,7 +9888,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // Ajout de numéros : 500 par heure glissante pour tous ; sdk.Editing.save n'est JAMAIS appelé.
     // Voie entière : habilitation en empreintes recoupées ; un seul numéro (« + ») et conversions ⇄ : tout éditeur connecté
     // (décision du mainteneur, 18/11/2026 : sans droit sur le segment ou le RPP, WME fait de la modification une suggestion à l'enregistrement).
-    // Ne pas modifier sans l'accord du mainteneur du script.
+    // Modifier ce bloc change qui peut écrire et le quota : à justifier dans l'historique.
     const _hx = t => { let x = 0x811c9dc5;
         for (let i = 0; i < t.length; i++) { x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; }
         return x >>> 0; };
@@ -9272,7 +9936,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         droitHn1 = await lireDroitHn1();
         droitHn = droitHn1 && await lireDroitHn();
     }
-    // ==WBC-QUOTA== — entrées de quota par éditeur (voir tools/banc-quota.js). Ne pas modifier sans l'accord du mainteneur du script.
+    // ==WBC-QUOTA== — entrées de quota par éditeur (voir tools/banc-quota.js). Modifier ce bloc change le quota : à justifier dans l'historique.
     const HN_KEY = 'wbc.hn.';
     let quotaMem = null;
     const _qn = () => 'wbc.q.' + _hx('q|' + hnUser).toString(36);
@@ -9567,14 +10231,19 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             for (const x of lireHorodatages()) if (x && typeof x === 'object' && x.e !== 1 && (x.p == null || x.p === SESSION_HN) && dans.has(x.s) && x.n != null) existants.push(String(x.n));
         } catch (e) { log('numéros en attente : ' + e.message); }
         // RPP en attente compris : un RPP posé depuis le balayage n'est pas dans l'analyse, le reposer ferait un doublon.
-        try {
-            const nomBan = Core.nomSouple(v.nom);
-            for (const p of (await sdk.DataModel.Venues.getAll()) || []) {
-                if (!p || !p.isResidential) continue;
-                const ad = (await sdk.DataModel.Venues.getAddress({ venueId: String(p.id) })) || {};
-                if (ad.houseNumber && ad.street && Core.nomSouple(ad.street.name) === nomBan) existants.push(ad.houseNumber);
-            }
-        } catch (e) { log('RPP chargés : ' + e.message); }
+        // 0.30.22 (audit, rang 18) : cette lecture en échec laissait poser comme si aucun RPP n'existait (doublon HN + RPP).
+        // Elle arrête désormais le geste : rien n'est posé.
+        const nomBan = Core.nomSouple(v.nom);
+        let lieux;
+        try { lieux = (await sdk.DataModel.Venues.getAll()) || []; }
+        catch (e) { log('RPP chargés : ' + e.message); throw new Error(t('illisibleRpp')); }
+        for (const p of lieux) {
+            if (!p || !p.isResidential) continue;
+            let ad;
+            try { ad = (await sdk.DataModel.Venues.getAddress({ venueId: String(p.id) })) || {}; }
+            catch (e) { log('adresse du RPP ' + p.id + ' : ' + e.message); throw new Error(t('illisibleRpp')); }
+            if (ad.houseNumber && ad.street && Core.nomSouple(ad.street.name) === nomBan) existants.push(ad.houseNumber);
+        }
         return { segs, existants, attendus: ids.length, charges: l.length };
     }
 
@@ -9592,6 +10261,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     }
     const enAttente = async () => { try { return await sdk.Editing.getUnsavedChangesCount(); } catch (e) { return null; } };
 
+    // 0.30.26 — audit du 26/11 (rang 33) : levier « ecriture » de version-min.json. Coupées, les écritures sont refusées avant le
+    // rappel, chaque geste s'arrête comme sur un refus, et un avis dit pourquoi ; l'analyse et la lecture restent.
+    function ecrituresCoupees() {
+        if (!ecrituresCoupeesVm()) return false;
+        montrerAvis(t('ecrCoupee'), { x: Math.round(window.innerWidth / 2) - 160, y: 72 });
+        return true;
+    }
     // ==WBC-RAPPEL== — rappel de responsabilité (voir tools/banc-rappel.js).
     // Montré avant la PREMIÈRE écriture du script dans ce navigateur : le script propose, l'éditeur relit puis
     // enregistre ou annule dans WME, et répond de ce qu'il enregistre. Accepté, il est retenu dans localStorage ;
@@ -9611,6 +10287,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // true : l'écriture peut avoir lieu. Une demande arrivée pendant que la bulle est ouverte est refusée :
     // seul le geste qui l'a ouverte reprend après acceptation.
     function rappelAccepte() {
+        if (ecrituresCoupees()) return Promise.resolve(false);
         if (rappelRetenu()) return Promise.resolve(true);
         if (rappelOuvert) return Promise.resolve(false);
         rappelOuvert = true;
@@ -9631,13 +10308,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // La bulle du rappel : modale, sur le body, au-dessus de la carte et de la fenêtre.
     // fin(true) : « J'ai compris » ; fin(false) : ✕, « Annuler », Échap ou clic hors de la bulle.
     // Les touches ne vont pas plus loin que la bulle : ni raccourcis de WME, ni Entrée d'un champ de la fenêtre.
+    // rappelBulle : la bulle ouverte (son document, sa fermeture), pour que rattacher() la ferme si elle part avec la fenêtre détachée.
+    let rappelBulle = null;
     function afficherRappel(fin) {
-        const ancien = document.getElementById('wbc-rappel');
-        if (ancien) ancien.remove();
-        const avant = document.activeElement;
-        const fond = document.createElement('div');
+        for (const D0 of [document, docPanneau()]) { const ancien = D0.getElementById('wbc-rappel'); if (ancien) ancien.remove(); }
+        const D = docActif();
+        const avant = D.activeElement;
+        const fond = D.createElement('div');
         fond.id = 'wbc-rappel';
-        fond.dir = _lang === 'he' ? 'rtl' : 'ltr';
+        poserSens(fond);
         fond.innerHTML =
             '<div class="wbc-rp" role="dialog" aria-modal="true" aria-labelledby="wbc-rp-t" aria-describedby="wbc-rp-c" tabindex="-1">' +
             '<div class="wbc-rp-tete"><span class="wbc-hdr-title wbc-rp-titre" id="wbc-rp-t"><span class="wbc-hdr-ico">' + icone(16) + '</span>' + esc(t('remTitle')) + '</span>' +
@@ -9649,8 +10328,9 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const fermer = ok => {
             if (fini) return;
             fini = true;
+            if (rappelBulle && rappelBulle.fermer === fermer) rappelBulle = null;
             fond.remove();
-            try { if (avant && avant.focus && document.contains(avant)) avant.focus(); } catch (e) { }
+            try { if (avant && avant.focus && D.contains(avant)) avant.focus(); } catch (e) { }
             fin(ok);
         };
         fond.addEventListener('click', ev => {
@@ -9666,12 +10346,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if (ev.key === 'Escape') { ev.preventDefault(); fermer(false); return; }
             if (ev.key !== 'Tab') return;
             const btns = [...fond.querySelectorAll('button')];
-            const i = btns.indexOf(document.activeElement);
+            const i = btns.indexOf(D.activeElement);
             const j = ev.shiftKey ? (i <= 0 ? btns.length - 1 : i - 1) : (i < 0 || i === btns.length - 1 ? 0 : i + 1);
             ev.preventDefault();
             btns[j].focus();
         });
-        document.body.appendChild(fond);
+        D.body.appendChild(fond);
+        rappelBulle = { D, fermer };
         // La bulle elle-même prend le focus : le lecteur d'écran lit titre et texte, et une Entrée tapée
         // dans la foulée n'accepte rien.
         fond.querySelector('.wbc-rp').focus();
@@ -9705,9 +10386,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // Droit de WME sur les numéros du segment (verrou au-dessus du rang, hors des zones d'édition) : sans lui, WME retire
     // la pose aussitôt, ou la range en suggestion, sans erreur pour le script. Indéterminé (segment non chargé) : WME tranche.
     // Le clic relit toujours hnPermis, sans cache.
+    // 0.30.22 (audit, rang 16, sdk-04) : seul « segment absent du modèle » laisse trancher WME ; toute autre exception (API
+    // changée, permission renommée) vaut refus, sinon le lot ne sauterait plus les segments verrouillés.
     async function hnPermis(segmentId) {
         try { return (await sdk.DataModel.Segments.hasPermissions({ segmentId, permission: 'EDIT_HOUSE_NUMBERS' })) !== false; }
-        catch (e) { return true; }
+        catch (e) {
+            if (e && e.name === 'DataModelNotFoundError') return true;
+            log('droit du segment ' + segmentId + ' illisible : ' + (e && e.name) + ' — ' + (e && e.message));
+            return false;
+        }
     }
     // État par segment : null = modifiable ou indéterminé ; { niveau } = refusé, niveau du verrou s'il dépasse le rang,
     // sinon null (zones d'édition). Lu dans le modèle de WME, sans requête ; vidé quand WME charge, modifie ou enregistre des segments.
@@ -9749,15 +10436,18 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     function corrDe(a) {
         if (!a) return null;
         // Depuis 0.29.03 la forme fautive (« 21bis ») arrive aussi par a.corr (forme: true) : un seul chemin.
-        if (a.corr && !a.trouve) { const n = Core.numeroHn(a.brut); return n ? { id: a.corr.id, seg: a.corr.seg, lon: a.corr.lon, lat: a.corr.lat, avant: a.corr.brut, apres: n, loin: a.corr.loin, forme: !!a.corr.forme, rpp: a.corr.type === 'RPP' } : null; }
+        if (a.corr && !a.trouve) { const n = Core.numeroHn(a.brut); return n ? { id: a.corr.id, seg: a.corr.seg, lon: a.corr.lon, lat: a.corr.lat, avant: a.corr.brut, apres: n, loin: a.corr.loin, forme: !!a.corr.forme, rpp: a.corr.type === 'RPP', entrop: !!a.corr.entrop } : null; }
         return null;
     }
     const aCorriger = a => !a.corrPose && !a.hnPose && !!corrDe(a);
-    const nCorr = v => v.adresses.filter(aCorriger).length;
+    // Le lot « Corriger » de la voie laisse les candidats issus d'un numéro en trop : un à un, après vérification.
+    const corrDuLot = a => aCorriger(a) && !a.corr.entrop;
+    const nCorr = v => v.adresses.filter(corrDuLot).length;
+    const tipCorr = c => t('corrTip', c.avant, c.apres) + (c.rpp ? ' ' + t('corrRppTip') : '') + (c.entrop ? ' ' + t('corrEntropTip', c.avant) : '');
     const nSeulsManquants = v => v.adresses.filter(a => !a.trouve && !enCorrection(a)).length;
     function boutonCorr(a, i, k) {
         if (!aCorriger(a) || !droitGeste('hn1') || hnEnCours) return '';
-        const c = corrDe(a), lib = t('corrTip', c.avant, c.apres) + (c.rpp ? ' ' + t('corrRppTip') : '');
+        const c = corrDe(a), lib = tipCorr(c);
         return '<button type="button" class="wbc-num-plus corr" data-corr="' + i + ':' + k + '" title="' + esc(lib + (c.loin ? ' ' + t('corrLoin', c.loin) : '')) + '" aria-label="' + esc(lib) + '">&#x21BB;</button>';
     }
     function boutonCorrVoie(v) {
@@ -9766,14 +10456,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     }
     // 0.29.03 — « Posés mais incorrects » : en tête du détail de la voie, les numéros WME à corriger (autre numéro à l'emplacement,
     // ou même numéro mal écrit), qui ne figurent plus parmi les manquants (demande de l'auteur, 24/11 : les mettre en avant).
-    const enCorrection = a => !a.trouve && (!!a.corrPose || aCorriger(a));
+    const enCorrection = a => !a.trouve && (!!a.corrPose || corrDuLot(a));
     function htmlFormes(v, i) {
         const liste = v.adresses.map((a, k) => ({ a, k })).filter(x => enCorrection(x.a));
         if (!liste.length) return '';
         return '<h4 class="wbc-h-corr">' + esc(t('formeT', nb(liste.length))) + '</h4><div class="wbc-nums">' + liste.map(({ a, k }) => {
-            const cp = !!a.corrPose, c = cp ? null : corrDe(a), tip = cp ? t('corrPoseTip') : t('corrTip', c.avant, c.apres) + (c.rpp ? ' ' + t('corrRppTip') : '');
+            const cp = !!a.corrPose, c = cp ? null : corrDe(a), tip = cp ? t('corrPoseTip') : tipCorr(c);
             const num = '<button type="button" class="wbc-num ' + (cp ? 'pose' : 'corriger') + (vue.curseur === k ? ' courant' : '') + '" data-adr="' + i + ':' + k + '" title="' + esc(tip) + '" aria-label="' + esc(a.brut + ' — ' + tip) + '">' +
-                esc(cp ? a.corrApres : c.avant + ' → ' + c.apres) + (cp ? '<span class="wbc-num-etat" aria-hidden="true">&#x21BB;</span>' : '') + '</button>';
+                esc(cp ? a.corrApres : ltr(c.avant + ' → ' + c.apres)) + (cp ? '<span class="wbc-num-etat" aria-hidden="true">&#x21BB;</span>' : '') + '</button>';
             return '<span class="wbc-num-g' + (vue.curseur === k ? ' courant' : '') + '">' + num + boutonCorr(a, i, k) + '</span>';
         }).join('') + '</div>';
     }
@@ -9800,23 +10490,50 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             return p && ad ? { p, ad } : null;
         } catch (e) { return null; }
     }
-    async function refusRppCorr(lu, c, v) {
+    // commune : celle du geste, lue à son début (l'éditeur peut ouvrir une autre commune pendant un lot).
+    async function refusRppCorr(lu, c, v, commune) {
         const { p, ad } = lu;
         if (!p.isResidential) return t('corrRppAbsent');
         if (String(ad.houseNumber == null ? '' : ad.houseNumber).trim() !== c.avant) return t('corrRppChange');
         if ((p.name || '').trim()) return t('corrRppNom');
         if ((p.images || []).length) return t('corrRppPhoto');
         const ville = (ad.city && ad.city.name) || '', rue = (ad.street && ad.street.name) || '';
-        if (!Core.villeHnOk(ville, resultat.commune.nom)) return t('corrRppVille', ville || '—');
+        if (!Core.villeHnOk(ville, commune || resultat.commune.nom)) return t('corrRppVille', ville || '—');
         if (Core.nomSouple(rue) !== Core.nomSouple(v.nom)) return t('corrRppRue', rue || '—');
         const rang = (await _hp()).n;
         if (typeof p.lockRank === 'number' && (rang == null || rang < 0 || p.lockRank > rang)) return t('corrRppVerrou', p.lockRank + 1);
         return null;
     }
+    // 0.30.22 — audit du 26/11 (rang 6) : le numéro de segment est relu sur le serveur juste avant « ↻ », comme le RPP. Depuis une
+    // analyse rouverte, un tiers a pu le renuméroter ou le déplacer : réécrire l'identifiant noté poserait le numéro BAN devant une
+    // autre porte. Une correction enregistrée dans WME est une suppression suivie d'un ajout (nouvel identifiant, constaté le 26/11) :
+    // un identifiant disparu est donc un cas normal, refusé sans rien écrire (relancer l'analyse). lus : relectures par segment, pour
+    // tout le geste (null = relecture en échec ⇒ refus).
+    const CORR_HN_BOUGE_M = 2;
+    async function refusHnCorr(c, lus) {
+        if (c.seg == null) return t('corrHnAbsent');
+        const s = String(c.seg);
+        if (!lus.has(s)) {
+            let l = null;
+            try { l = (await sdk.DataModel.HouseNumbers.fetchHouseNumbers({ segmentIds: [c.seg] })) || []; }
+            catch (e) { log('relecture du segment ' + s + ' : ' + e.message); }
+            lus.set(s, l);
+        }
+        const l = lus.get(s);
+        if (!l) return t('corrHnNonRelu');
+        const h = l.find(x => x && String(x.id) === String(c.id));
+        if (!h) return t('corrHnAbsent');
+        const num = String(h.number == null ? '' : h.number).trim();
+        if (num !== String(c.avant).trim()) return t('corrHnChange', num);
+        const p = h.geometry && h.geometry.coordinates;
+        if (!p || !Number.isFinite(c.lon) || !Number.isFinite(c.lat)) return t('corrHnNonRelu');
+        const d = Math.hypot((p[0] - c.lon) * Math.cos(c.lat * Math.PI / 180) * 111320, (p[1] - c.lat) * 110540);
+        return d <= CORR_HN_BOUGE_M ? null : t('corrHnDeplace', Math.ceil(d));
+    }
     async function corrigerHnVoie(i, k) {
         if (hnEnCours || !resultat) return;
-        const v = resultat.voies[i], seule = k != null;
-        const liste = (seule ? [v.adresses[k]] : v.adresses).filter(a => a && aCorriger(a));
+        const res = resultat, v = res.voies[i], seule = k != null;
+        const liste = (seule ? [v.adresses[k]] : v.adresses).filter(a => a && (seule ? aCorriger(a) : corrDuLot(a)));
         if (!liste.length) return;
         if (!(await lireDroitGeste(seule ? 'hn1' : 'voie'))) { rendre(); statut(t(seule ? 'ajHn1Rights' : 'ajHnRights'), true); return; }
         // Un numéro qui prend la valeur d'un autre en cours de correction attend que celui-ci ait changé ; un échange
@@ -9843,7 +10560,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             rendre();
         };
         let msg = null, faits = 0, nVerrou = 0, sugg = null, suggRetiree = false, arrete = false, n = 0, horsVue = 0;
-        const refusRpp = [];
+        const refusRpp = [], refusHn = [], lusHn = new Map();
         try {
             for (const { a, c } of ordre) {
                 if (hnStop) { arrete = true; break; }
@@ -9864,8 +10581,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                         lu = await lireRppCorr(c);
                     }
                     if (!lu && !libre) { horsVue++; continue; }
-                    const raison = lu ? await refusRppCorr(lu, c, v) : t('corrRppAbsent');
+                    const raison = lu ? await refusRppCorr(lu, c, v, res.commune.nom) : t('corrRppAbsent');
                     if (raison) { log('correction RPP ' + c.avant + ' → ' + c.apres + ' : ' + raison); refusRpp.push(c.avant + ' (' + raison + ')'); continue; }
+                } else {
+                    const raison = await refusHnCorr(c, lusHn);
+                    if (raison) { log('correction ' + c.avant + ' → ' + c.apres + ' (id ' + c.id + ', segment ' + c.seg + ') : ' + raison); refusHn.push(c.avant + ' (' + raison + ')'); continue; }
                 }
                 // 0.30.00 — Ju2P0mme (chat WME, 24/11) : « les corrections de bis ne passent pas en MS ». Le segment sans droit
                 // direct était refusé, alors que le « + » d'un numéro en fait une suggestion (décision du 18/11). Même règle ici :
@@ -9911,7 +10631,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                     majCalque();
                 } catch (e) { log('correction ' + c.avant + ' → ' + c.apres + ' : ' + e.message); refus.push(a.brut); }
             }
-            const verrous = (nVerrou ? ' ' + t('corrLockSkip', nb(nVerrou)) : '') + (refusRpp.length ? ' ' + t('corrRppSkip', refusRpp.join(', ')) : '') + (horsVue ? ' ' + t('corrHorsVue', nb(horsVue)) : '');
+            const verrous = (nVerrou ? ' ' + t('corrLockSkip', nb(nVerrou)) : '') + (refusRpp.length ? ' ' + t('corrRppSkip', refusRpp.join(', ')) : '') + (refusHn.length ? ' ' + t('corrHnSkip', refusHn.join(', ')) : '') + (horsVue ? ' ' + t('corrHorsVue', nb(horsVue)) : '');
             if (!msg && suggRetiree && !faits) msg = [t('suggAttente'), true];
             const stop = arrete ? ' ' + t('ajHnStopped') : '';
             if (!msg) msg = faits ? [t('corrDone', nb(faits)) + (sugg ? ' ' + t('ajHn1Lock', sugg.num, sugg.niveau) : '') + (refus.length ? ' ' + t('corrRefus', refus.join(', ')) : '') + verrous + stop, false]
@@ -9921,7 +10641,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             hnEnCours = false;
             hnStop = false;
             majArrierePlan();
-            if (msg) { vue.hnMsg = { i, txt: msg[0], err: msg[1] }; statut(msg[0], msg[1]); }
+            // Le bilan va à la voie du geste : pas à la voie de même rang d'une autre commune ouverte entre-temps.
+            if (msg) { if (resultat === res) vue.hnMsg = { i, txt: msg[0], err: msg[1] }; statut(msg[0], msg[1]); }
             rendre();
             appliquerVisibilite();
         }
@@ -10015,7 +10736,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
 
     async function ajouterHnVoie(i, k) {
         if (hnEnCours) return;
-        const v = resultat.voies[i], commune = resultat.commune.nom;
+        // La commune du geste, lue une fois : l'éditeur peut en ouvrir une autre pendant un lot (quota, journal, bilan).
+        const res = resultat, v = res.voies[i], commune = res.commune.nom, code = res.commune.code;
         const seule = k != null ? v.adresses[k] : null;
         if (k != null && !hnPosable(seule)) return;
         const vPlan = seule ? Object.assign({}, v, { adresses: [seule] }) : v;
@@ -10032,28 +10754,38 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         try {
             let n = 0, nRpp = 0, nEchec = 0, err = null, admisTotal = 0, nVerrou = 0, niveauVerrou = null, sugg = null, suggRetiree = false;
             const critiques = [];
-            const horo = q.garder.slice();
+            // 0.30.22 (audit, rang 35) : un autre onglet peut écrire au quota pendant le lot. Le quota est relu (copies fusionnées)
+            // avant chaque pose et à chaque inscription : une copie prise au début du geste effacerait les entrées de l'autre onglet.
+            const quotaFrais = () => Core.quotaHn(lireHorodatages(), Date.now());
+            let quotaVide = false;
             // Une pose restée sur la carte est inscrite au quota, même quand l'étape suivante a échoué.
             const inscrire = (p, rpp) => {
-                horo.push(Object.assign({ t: Date.now(), s: p.segmentId, n: p.number, e: 0, c: resultat.commune.code },
+                const horo = quotaFrais().garder.slice();
+                horo.push(Object.assign({ t: Date.now(), s: p.segmentId, n: p.number, e: 0, c: code },
                     rpp ? { r: 1, lon: p.lon, lat: p.lat, p: SESSION_HN } : { p: SESSION_HN }));
                 ecrireHorodatages(horo);
             };
-            let sansAlt = 0, sansAltR = 0;
+            let sansAlt = 0, sansAltR = 0, nVille = 0, nHorsCom = 0;
+            const villesVues = new Set(), villesTxt = () => [...villesVues].join(', ') || '—';
             // Rappel de responsabilité fermé sans l'accepter, à la première écriture : rien n'a été écrit, le geste s'arrête sans bilan.
             let refusRappel = false;
             const msgAlt =() => (sansAlt ? ' ' + t('ajHnSansAlt', v.nom, commune) : '') + (sansAltR ? ' ' + t('ajHnSansAltRoute', v.nom, commune) : '');
             const passe = async (cadrerSiBesoin, zone) => {
                 const { segs, existants } = await lireVoieHn(v, cadrerSiBesoin, zone);
-                const plan = Core.planHn(vPlan, commune, segs, existants, Core.quotaHn(horo, Date.now()).reste, { lot: !seule, rppLot: opts.rppLot !== false });
+                const plan = Core.planHn(vPlan, commune, segs, existants, quotaFrais().reste, { lot: !seule, rppLot: opts.rppLot !== false });
                 log('numéros ' + v.nom + ' : ' + plan.poses.length + ' à poser, segments admis ' + plan.admis + '/' + segs.length +
                     ' (hors agglo ' + plan.hors + ', autre nom ' + plan.refus.nom + ', autre ville ' + plan.refus.ville + '), écartés ' + JSON.stringify(plan.ecartes));
                 admisTotal += plan.admis;
                 sansAlt = Math.max(sansAlt, plan.refus.sansAlt || 0);
                 sansAltR = Math.max(sansAltR, plan.refus.sansAltRoute || 0);
+                // Ville du segment, hors commune : passes par zones comprises (le bilan final ne garde que les écarts).
+                (plan.villesWme || []).forEach(x => villesVues.add(x));
+                nVille = Math.max(nVille, plan.ecartes.ville || 0);
+                nHorsCom = Math.max(nHorsCom, plan.ecartes.horsCom || 0);
                 const parSeg = new Map(segs.map(x => [x.id, x]));
                 for (const p of plan.poses) {
                     if (hnStop) break;
+                    if (!quotaFrais().reste) { quotaVide = true; break; }
                     if (p.rpp) {
                         if (!await rappelAccepte()) { refusRappel = true; break; }
                         const r = await creerRppDirect(p, parSeg.get(p.segmentId));
@@ -10086,6 +10818,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                             if (e && e.name === 'InvalidStateError') break;
                             continue;
                         }
+                        // 0.30.22 (audit, rang 16, sdk-02) : l'identifiant vient de l'événement « objects-added ». Retenu seulement si
+                        // CET ajout en a émis exactement un, et s'il est celui d'un numéro en attente (négatif) : « ⇄ » supprime
+                        // ensuite cet objet, il ne doit jamais désigner un numéro enregistré.
+                        const idPose = hnAjout.n === nA + 1 && idHnEnAttente(hnAjout.id) ? hnAjout.id : null;
+                        if (idPose == null) log('numéro ' + p.number + ' : identifiant non retenu (' + (hnAjout.n - nA) + ' ajout(s) vu(s), id ' + hnAjout.id + ') — « ⇄ » indisponible pour lui');
                         if (sugg) {
                             // Suggestion : WME la retire s'il y a une édition directe en attente (elles ne s'enregistrent pas ensemble).
                             await new Promise(r => setTimeout(r, 400));
@@ -10094,7 +10831,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                         }
                         n++;
                         inscrire(p, false);
-                        p.adresse.hnId = hnAjout.n > nA ? hnAjout.id : null;
+                        p.adresse.hnId = idPose;
                     }
                     p.adresse.hnPose = true;
                     p.adresse.hnSeg = p.segmentId;
@@ -10111,7 +10848,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 if (!n && !nRpp && !err) {
                     const e = plan.ecartes, num = Core.numeroHn(seule.brut);
                     if (suggRetiree) msg = [t('suggAttente'), true];
+                    else if (quotaVide) msg = [t('ajHnQuota', heureCourte(quotaFrais().libre)), true];
                     else if (e.renommer) msg = [t('ajHnRenommer', v.nomWme || '—', v.nom), true];
+                    else if (e.ville) msg = [t('ajHnVille', villesTxt(), v.nom, commune), true];
+                    else if (e.horsCom) msg = [t('ajHnHorsCom', nb(e.horsCom)), true];
                     else if (!admisTotal) msg = [t('ajHnNoSeg') + msgAlt(), true];
                     else if (e.existe) msg = [t('ajHn1Exists', num), true];
                     else if (e.loin) msg = [t('ajHn1Far', num) + msgAlt(), true];
@@ -10121,11 +10861,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             } else plan = await passe(true);
             if (refusRappel) { statut(''); return; }
             // Une voie plus longue que la vue se parcourt par zones ; une zone sans progrès n'est pas retentée.
-            if (!seule && plan.ecartes.loin && Core.quotaHn(horo, Date.now()).reste && !hnStop) {
+            if (!seule && plan.ecartes.loin && quotaFrais().reste && !hnStop) {
                 const restantes = () => v.adresses.filter(a => !a.trouve && !a.corr && !a.hnPose && !a.hnEnregistre && !Core.suffixeBloque(a) && Core.numeroHn(a.brut));
                 const zones = Core.zonesHn(restantes(), 400, 220);
                 for (const z of zones) {
-                    if (hnStop || !Core.quotaHn(horo, Date.now()).reste || err && err.name === 'InvalidStateError') break;
+                    if (hnStop || !quotaFrais().reste || err && err.name === 'InvalidStateError') break;
                     await sdk.Map.setMapCenter({ lonLat: { lon: z.lon, lat: z.lat }, zoomLevel: Math.max(16, await sdk.Map.getZoomLevel()) });
                     await new Promise(r => setTimeout(r, 2500));
                     if (hnStop) break;
@@ -10137,13 +10877,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 plan.ecartes.existe = 0; plan.ecartes.quota = 0;
             }
             // Sans segment admis, une pose a pu partir en RPP « nom BAN / commune » : le bilan de la pose l'emporte alors.
-            if (!admisTotal && !(n + nRpp)) { msg = [plan.ecartes.renommer ? t('ajHnRenommer', v.nomWme || '—', v.nom) : t('ajHnNoSeg') + msgAlt(), true]; return; }
+            if (!admisTotal && !(n + nRpp)) { msg = [plan.ecartes.renommer ? t('ajHnRenommer', v.nomWme || '—', v.nom) : nVille ? t('ajHnVille', villesTxt(), v.nom, commune) : t('ajHnNoSeg') + msgAlt(), true]; return; }
             const e = plan.ecartes, ecartes = seule ? 0 : e.existe + e.suffixe + e.format + e.loin;
-            const coupe = !seule && e.quota ? ' ' + t('ajHnCut', nb(e.quota), heureCourte(Core.quotaHn(horo, Date.now()).libre)) : '';
+            const coupe = !seule && e.quota ? ' ' + t('ajHnCut', nb(e.quota), heureCourte(quotaFrais().libre)) : '';
             msg = [(critiques.length ? t('ajRppCrit', critiques.join(' · ')) + ' ' : '') +
-                (nRpp && !n ? t('ajHnDoneRpp', nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : nRpp ? t('ajHnDoneMix', nb(n), nb(nRpp), nb(Core.quotaHn(horo, Date.now()).reste)) : t('ajHnDone', nb(n), nb(Core.quotaHn(horo, Date.now()).reste))) +
+                (nRpp && !n ? t('ajHnDoneRpp', nb(nRpp), nb(quotaFrais().reste)) : nRpp ? t('ajHnDoneMix', nb(n), nb(nRpp), nb(quotaFrais().reste)) : t('ajHnDone', nb(n), nb(quotaFrais().reste))) +
                 (n + nRpp ? ' ' + t('ajHnSee', n + nRpp) : '') + (sugg && n ? ' ' + t('ajHn1Lock', Core.numeroHn(seule.brut), sugg.niveau) : '') + (hnStop ? ' ' + t('ajHnStopped') : '') + coupe +
-                (ecartes ? ' ' + t('ajHnSkip', nb(ecartes)) : '') + (!seule && e.rppLot ? ' ' + t('ajHnRppLot', nb(e.rppLot)) : '') +
+                (quotaVide ? ' ' + t('ajHnQuota', heureCourte(quotaFrais().libre)) : '') + (ecartes ? ' ' + t('ajHnSkip', nb(ecartes)) : '') + (!seule && e.rppLot ? ' ' + t('ajHnRppLot', nb(e.rppLot)) : '') +
+                (!seule && nVille ? ' ' + t('ajHnVille', villesTxt(), v.nom, commune) : '') + (!seule && nHorsCom ? ' ' + t('ajHnHorsCom', nb(nHorsCom)) : '') +
                 (nEchec ? ' ' + t('ajHnFail', nb(nEchec)) : '') + (nVerrou ? ' ' + t('ajHnLockSkip', nb(nVerrou)) : '') +
                 (e.loin ? msgAlt() : '') +
                 (err ? ' ' + t('ajHnErr', (err && (err.message || err.name)) || '') : ''), (!(n + nRpp) && (!!err || nVerrou > 0)) || critiques.length > 0];
@@ -10154,8 +10895,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             hnStop = false;
             majArrierePlan();
             v.apercuHn = null;
-            apercuHn(i);
-            if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
+            // Aperçu et bilan vont à la voie du geste, pas à la voie de même rang d'une autre commune ouverte entre-temps.
+            if (resultat === res) { apercuHn(i); if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] }; }
             rendre();
             appliquerVisibilite();
             if (msg) statut(msg[0], msg[1]);
@@ -10166,6 +10907,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     const rppRetires = new Set();
     // addHouseNumber ne rend rien : l'identifiant vient de « wme-data-model-objects-added », AVANT la résolution de la promesse.
     const hnAjout = { n: 0, id: null };
+    // Numéro en attente : identifiant négatif (« -12345 », relevé dans WME le 23/11) ; enregistré : « <segment>/<numéro> ».
+    const idHnEnAttente = id => id != null && /^-\d+$/.test(String(id));
     async function trouverRpp(a) {
         let liste = [];
         try { liste = (await sdk.DataModel.Venues.getAll()) || []; } catch (e) { return null; }
@@ -10208,7 +10951,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // un remplacement compte 2 au quota, un doublon retiré 1 ; une étape qui échoue défait tout le geste.
     async function convertirRppVoie(i, k) {
         if (hnEnCours) return;
-        const v = resultat.voies[i], a = v && v.adresses[k], commune = resultat.commune.nom;
+        const res = resultat, v = res.voies[i], a = v && v.adresses[k], commune = res.commune.nom, code = res.commune.code;
         if (!a || a.trouve !== 'RPP' || a.rppHn || a.wlon == null) return;
         if (!(await lireDroitGeste('conv'))) { rendre(); statut(t('ajHnRights'), true); return; }
         const q = Core.quotaHn(lireHorodatages(), Date.now());
@@ -10265,7 +11008,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             const suggSeg = !doublon && !(await hnPermis(cible.id)) ? { n: await niveauVerrouSeg(cible.id) } : null;
             // WME n'enregistre pas ensemble une suggestion et une modification directe : un geste « mixte » est refusé d'avance.
             if (!doublon && !!suggRpp !== !!suggSeg) { msg = [t('suggMixte'), true]; return; }
-            if (!doublon && q.reste < 2) { msg = [t('ajHnQuota', heureCourte(Core.quotaHn(q.garder.concat([Date.now()]), Date.now()).libre)), true]; return; }
+            const qf = Core.quotaHn(lireHorodatages(), Date.now());
+            if (!doublon && qf.reste < 2) { msg = [t('ajHnQuota', heureCourte(Core.quotaHn(qf.garder.concat([Date.now()]), Date.now()).libre)), true]; return; }
             if (!await rappelAccepte()) { statut(''); return; }
             const DM = sdk.DataModel;
             let seg = cible.id;
@@ -10286,14 +11030,15 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 }
                 catch (e) {
                     const defait = await defaireJusqua(n0);
-                    if (!defait) { const hz = q.garder.slice(); hz.push({ t: Date.now(), s: cible.id, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN }); ecrireHorodatages(hz); }
+                    if (!defait) { const hz = Core.quotaHn(lireHorodatages(), Date.now()).garder.slice(); hz.push({ t: Date.now(), s: cible.id, n: number, e: 0, c: code, p: SESSION_HN }); ecrireHorodatages(hz); }
                     throw new Error('numéro non posé (' + e.message + ')' + (defait ? ', RPP remis' : ' — ' + t('rhnCritRpp', number)));
                 }
             }
             rppRetires.add(rpp.id);
-            const horo = q.garder.slice();
-            horo.push({ t: Date.now(), s: seg, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN });
-            if (!doublon) horo.push({ t: Date.now() + 1, s: seg, n: number, e: 0, c: resultat.commune.code, p: SESSION_HN });
+            // Quota relu au moment d'inscrire (rang 35) : un autre onglet a pu y écrire depuis le début du geste.
+            const horo = Core.quotaHn(lireHorodatages(), Date.now()).garder.slice();
+            horo.push({ t: Date.now(), s: seg, n: number, e: 0, c: code, p: SESSION_HN });
+            if (!doublon) horo.push({ t: Date.now() + 1, s: seg, n: number, e: 0, c: code, p: SESSION_HN });
             ecrireHorodatages(horo);
             Object.assign(a, { rppHn: true, hnPose: true, hnSeg: seg, hnNum: number, hnRang: await rangPile() });
             attenteWbc = (await enAttente()) || 0;
@@ -10303,7 +11048,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         finally {
             hnEnCours = false;
             majArrierePlan();
-            if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
+            if (msg && resultat === res) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
             rendre();
             appliquerVisibilite();
             if (msg) statut(msg[0], msg[1]);
@@ -10328,19 +11073,46 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         await new Promise(r => setTimeout(r, 2500));
         return 'ok';
     }
+    // 0.30.22 (audit, rang 17) : RPP du même numéro et de la même rue, en attente compris, à RPP_DOUBLON_M au plus de (lon, lat)
+    // ⇒ { dist } du plus proche ; aucun ⇒ null. Lieux illisibles, ou aucun lieu chargé (calque masqué) ⇒ { erreur } : sans
+    // cette lecture, « ⇄ » pourrait créer un doublon ; il est refusé.
+    async function rppMemeNumero(numero, rue, lon, lat) {
+        let liste;
+        try { liste = (await sdk.DataModel.Venues.getAll()) || []; } catch (e) { log('lieux chargés : ' + e.message); return { erreur: t('illisibleRpp') }; }
+        if (!liste.length) return { erreur: t('rhnNoPlaces') };
+        const m = Core.normNum(numero), nr = Core.nomSouple(rue), kx = Math.cos(lat * Math.PI / 180) * 111320;
+        let proche = null;
+        for (const p of liste) {
+            if (!p || !p.isResidential || !p.geometry || rppRetires.has(String(p.id))) continue;
+            let pos = p.geometry.coordinates;
+            if (p.geometry.type === 'Polygon') { const r = pos[0]; pos = [r.reduce((x, q) => x + q[0], 0) / r.length, r.reduce((x, q) => x + q[1], 0) / r.length]; }
+            const d = Math.hypot((pos[0] - lon) * kx, (pos[1] - lat) * 110540);
+            if (!(d <= Core.RPP_DOUBLON_M) || (proche && d >= proche.dist)) continue;
+            let ad = null;
+            try { ad = await sdk.DataModel.Venues.getAddress({ venueId: String(p.id) }); }
+            catch (e) { log('adresse du lieu ' + p.id + ' : ' + e.message); return { erreur: t('illisibleRpp') }; }
+            if (!ad || !ad.houseNumber || Core.normNum(ad.houseNumber) !== m || !ad.street || Core.nomSouple(ad.street.name) !== nr) continue;
+            proche = { dist: d, id: String(p.id) };
+        }
+        return proche;
+    }
     async function convertirHnRpp(i, k) {
         if (hnEnCours) return;
-        const v = resultat.voies[i], a = v && v.adresses[k], commune = resultat.commune.nom, code = resultat.commune.code;
+        const res = resultat, v = res.voies[i], a = v && v.adresses[k], commune = res.commune.nom, code = res.commune.code;
         if (!hnConvertible(a)) return;
         if (!(await lireDroitGeste('conv'))) { rendre(); statut(t('ajHnRights'), true); return; }
         const enAtt = !a.trouve;
         const q = Core.quotaHn(lireHorodatages(), Date.now());
         if (!enAtt && q.reste < 2) { statut(t('ajHnQuota', heureCourte(Core.quotaHn(q.garder.concat([Date.now()]), Date.now()).libre)), true); return; }
+        const n0 = await enAttente();
+        // Rang 17 : même garde que le sens inverse. Un numéro enregistré est relu sur le serveur, qui ignore ce qui attend : une
+        // retouche en attente sur lui serait perdue. Rien en attente, ou seulement ce que le « ⇄ » précédent de WBC a laissé.
+        // Un numéro posé par WBC et pas encore enregistré est lui-même une modification en attente : il passe.
+        if (!enAtt && n0 !== 0 && (n0 == null || n0 !== attenteWbc)) { vue.hnMsg = { i, txt: t('rhnUnsaved'), err: true }; statut(t('rhnUnsaved'), true); return; }
         hnEnCours = true;
         majArrierePlan(true);
         statut(t('rhnToRppRunning'));
         let msg = null;
-        const n0 = await enAttente();
         try {
             const lon0 = enAtt ? a.lon : a.wlon, lat0 = enAtt ? a.lat : a.wlat;
             const am = await amenerSurNumero(lon0, lat0);
@@ -10348,8 +11120,11 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if (am === 'attente') { msg = [t('ajHnAmenerAttente'), true]; return; }
             const autour = await segmentsAutour(lon0, lat0);
             let hn = null;
-            if (enAtt) hn = { id: String(a.hnId), seg: a.hnSeg, number: a.hnNum, pos: [a.lon, a.lat] };
-            else {
+            if (enAtt) {
+                // sdk-02 : on va SUPPRIMER cet objet ; un identifiant qui n'est pas celui d'un numéro en attente est refusé.
+                if (!idHnEnAttente(a.hnId)) { log('numéro → RPP ' + a.brut + ' : identifiant ' + a.hnId + ' non en attente, refusé'); msg = [t('rhnVersRppAbsent', a.brut), true]; return; }
+                hn = { id: String(a.hnId), seg: a.hnSeg, number: a.hnNum, pos: [a.lon, a.lat] };
+            } else {
                 const kx = Math.cos(lat0 * Math.PI / 180) * 111320, m = Core.normNum(a.brut);
                 let bd = 10;
                 const ids = autour.map(s => s.id);
@@ -10376,6 +11151,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             const choix = Core.entreeRpp(hn.pos[0], hn.pos[1], autour, hn.seg);
             const entree = choix ? choix.entree : segNum ? Core.pointLePlusProche(hn.pos[0], hn.pos[1], segNum.coords) : null;
             log('numéro ' + hn.number + ' ' + v.nom + ' → RPP : entrée ' + (choix ? 'sur le segment ' + choix.seg.id + ' (' + (choix.seg.noms.join(' | ') || 'sans nom') + ', type ' + choix.seg.rt + ') à ' + Math.round(choix.d) + ' m' : 'sur le segment du numéro'));
+            // Rang 17 : un RPP de ce numéro et de cette rue existe déjà tout près ⇒ le créer ferait un doublon.
+            const dbl = await rppMemeNumero(hn.number, rue.st.name, hn.pos[0], hn.pos[1]);
+            if (dbl && dbl.erreur) { msg = [dbl.erreur, true]; return; }
+            if (dbl) { log('numéro → RPP ' + hn.number + ' : RPP ' + dbl.id + ' du même numéro à ' + Math.round(dbl.dist) + ' m'); msg = [t('rhnVersRppDbl', hn.number, nb(Math.round(dbl.dist))), true]; return; }
+            // Le message dit où l'entrée est posée (voie et distance) : elle peut être sur une autre voie que celle du numéro.
+            const kxe = Math.cos(hn.pos[1] * Math.PI / 180) * 111320;
+            const dEntree = entree ? Math.round(choix ? choix.d : Math.hypot((entree[0] - hn.pos[0]) * kxe, (entree[1] - hn.pos[1]) * 110540)) : null;
+            const voieEntree = choix ? choix.seg.noms.join(' / ') : segNum ? (segNum.noms || []).join(' / ') : '';
             if (!await rappelAccepte()) { statut(''); return; }
             const DM = sdk.DataModel;
             await DM.HouseNumbers.deleteHouseNumber({ houseNumberId: hn.id });
@@ -10385,7 +11168,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 const defait = await defaireJusqua(n0);
                 throw new Error(r.erreur + (defait ? ', numéro remis' : ''));
             }
-            const horo = lireHorodatages().slice();
+            // Quota relu au moment d'inscrire (rang 35).
+            const horo = Core.quotaHn(lireHorodatages(), Date.now()).garder.slice();
             const entreeRppQ = { t: Date.now(), s: hn.seg, n: hn.number, e: 0, c: code, r: 1, lon: hn.pos[0], lat: hn.pos[1], p: SESSION_HN };
             if (enAtt) {
                 const j = horo.findIndex(x => x && typeof x === 'object' && x.e === 0 && x.r !== 1 && x.s === hn.seg && Core.normNum(x.n) === Core.normNum(hn.number));
@@ -10397,12 +11181,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             ecrireHorodatages(horo);
             Object.assign(a, { hnVersRpp: true, hnRpp: true, hnPose: true, hnSeg: hn.seg, hnNum: hn.number, hnId: null, hnLon: hn.pos[0], hnLat: hn.pos[1], hnRang: await rangPile() });
             try { await sdk.Editing.setSelection({ selection: { ids: [String(r.id)], objectType: 'venue' } }); } catch (e) { log('sélection du RPP : ' + e.message); }
-            msg = [t('rhnVersRppDone', hn.number, nb(Core.quotaHn(horo, Date.now()).reste)), false];
+            // Enchaîner un autre « ⇄ » sans enregistrer, comme le sens inverse — seulement si rien d'autre n'attendait.
+            if (!enAtt) attenteWbc = (await enAttente()) || 0;
+            msg = [t('rhnVersRppDone', hn.number, nb(Core.quotaHn(horo, Date.now()).reste)) + (dEntree != null ? ' ' + t('rhnVersRppEntree', voieEntree, nb(dEntree)) : ''), false];
         } catch (e) { log('numéro → RPP : ' + e.message); msg = [t('rhnErr', e.message), true]; }
         finally {
             hnEnCours = false;
             majArrierePlan();
-            if (msg) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
+            if (msg && resultat === res) vue.hnMsg = { i, txt: msg[0], err: msg[1] };
             rendre();
             appliquerVisibilite();
             if (msg) statut(msg[0], msg[1]);
@@ -10577,6 +11363,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if ((await zoomCarte()) < 18) return { motif: t('ajHnZoom18') };
             const seg = a.trouve ? a.wseg : a.hnSeg;
             if (seg != null && !(await hnPermis(seg))) return { motif: t('suggMixte') };
+            // Rang 17 : les deux refus de la conversion, dits d'avance (modification en attente, RPP du même numéro tout près).
+            if (a.trouve) { const n0 = await enAttente(); if (n0 !== 0 && (n0 == null || n0 !== attenteWbc)) return { motif: t('rhnUnsaved') }; }
+            const dbl = await rppMemeNumero(a.brut, c.voie.nom, a.trouve ? a.wlon : a.lon, a.trouve ? a.wlat : a.lat);
+            if (dbl) return { motif: dbl.erreur || t('rhnVersRppDbl', a.brut, nb(Math.round(dbl.dist))) };
             return {};
         }
         if (!q.reste) return { motif: t('ajHnQuota', heureCourte(q.libre)) };
@@ -10612,7 +11402,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             boutonSel.addEventListener('click', ev => { const b = ev.target.closest('button'); if (b && !b.disabled) lancerBoutonSel(); });
         }
         const versRpp = c.sens === 'versRpp', lbl = t(versRpp ? 'rhnSelVersRpp' : 'rhnSelVersHn'), dit = r.motif || r.note || '';
-        boutonSel.dir = _lang === 'he' ? 'rtl' : 'ltr';
+        poserSens(boutonSel);
         boutonSel.innerHTML = '<button type="button" class="wbc-bulle-btn rpp" title="' + esc(dit || t(versRpp ? 'rhnVersRppTip' : 'rhnConvTip')) + '" aria-label="' +
             esc(t(versRpp ? 'rhnVersRpp' : 'rhnConv') + ' ' + c.ad.brut) + '"' + (r.motif ? ' disabled' : '') + '>&#x21C4; ' + esc(lbl) + '</button>' +
             (dit ? '<div class="wbc-bulle-raison">' + esc(dit) + '</div>' : '');
@@ -10652,7 +11442,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         // Comme depuis la bulle : la carte ne bouge pas sous le geste.
         gesteCarte = true;
         const action = c.sens === 'versRpp' ? convertirHnRpp(i, k) : (vue.curseurRpp = i + ':' + k, convertirRppVoie(i, k));
-        Promise.resolve(action).then(() => { gesteCarte = false; const m = vue.hnMsg; if (m && m.i === i && m.err) montrerAvis(m.txt, ou); }, () => { gesteCarte = false; });
+        Promise.resolve(action).then(() => { gesteCarte = false; avisGeste(vue.hnMsg, i, ou); }, () => { gesteCarte = false; });
     }
     // ==/WBC-SELBTN==
 
@@ -10685,9 +11475,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     }
 
     // Dans .edit-area-main (niveau 1) : sur <body>, aucun z-index ne passe sous le panneau « Calques » sans passer sous la carte.
-    const zoneCarte = () => document.querySelector('div.edit-area-main');
+    const zoneCarte = () => repereWme('div.edit-area-main', document.querySelector('div.edit-area-main'));
     const zFenetre = () => (ovEl && ovEl.parentElement === document.body ? '9991' : '1');
     function poserFenetre() {
+        if (fenPip) return;
         const z = zoneCarte();
         if (z && ovEl.parentElement !== z) z.appendChild(ovEl);
         else if (!z && !ovEl.isConnected) document.body.appendChild(ovEl);
@@ -10696,7 +11487,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     function construireFenetre() {
         ovEl = document.createElement('div');
         ovEl.id = 'wbc-ov';
-        ovEl.dir = _lang === 'he' ? 'rtl' : 'ltr';
+        poserSens(ovEl);
         ovEl.tabIndex = -1;
         ovEl.setAttribute('role', 'dialog');
         ovEl.setAttribute('aria-label', SCRIPT_NAME);
@@ -10708,12 +11499,30 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             if (ev.key !== 'Escape' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
             ev.preventDefault();
             ev.stopPropagation();
+            // Filtre des voies rempli : Échap le vide (comme tout champ de recherche) ; vide, il ferme la fenêtre.
+            const champ = ev.target && ev.target.id === 'wbc-filtre-txt' ? ev.target : null;
+            if (champ && champ.value) {
+                champ.value = '';
+                vue.texte = '';
+                rendre();
+                const f = $('#wbc-filtre-txt');
+                if (f) f.focus();
+                return;
+            }
+            // Détachée, la carte (où Échap ferme la bulle) n'est plus au clavier : le premier Échap ferme la bulle, le second la fenêtre.
+            if (fenPip && bulleAdr) { fermerBulle(); return; }
             fermerFenetre();
         });
         const auPremierPlan = () => { ovEl.style.zIndex = zFenetre(); };
         ovEl.addEventListener('mousedown', auPremierPlan, true);
 
         ovEl.addEventListener('focusin', auPremierPlan);
+        ovEl.addEventListener('focusin', ev => { const c = $('#wbc-corps'); focusCorps = c && c.contains(ev.target) ? ciblesFocus(ev.target) : null; });
+        // Clic (dans WBC, sur la carte, ou dans la fenêtre détachée) : le focus qui suit, s'il y en a un, sera noté à nouveau.
+        ovEl.addEventListener('pointerdown', oublierFocus, true);
+        document.addEventListener('pointerdown', oublierFocus, true);
+        document.addEventListener('focusin', ev => { if (!ovEl.contains(ev.target)) oublierFocus(); }, true);
+        ovEl.addEventListener('keydown', flecheRadio);
         ovEl.addEventListener('keydown', ev => {
             if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches && ev.target.matches('tr[data-voie], tr[data-commune]')) {
                 ev.preventDefault();
@@ -10721,15 +11530,21 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 surClic({ target: ev.target });
             }
         });
-        ovEl.addEventListener('input', ev => {
+        // 0.30.25 — audit du 26/11 (rang 28) : le corps entier était reconstruit à CHAQUE frappe (lent sur une grande commune).
+        // Rendu une fois la frappe posée ; rendre() rend au champ, s'il l'a encore, le focus et la sélection. Pas pendant une
+        // composition (IME, touches mortes) : reconstruire le champ la couperait.
+        let filtreTimer = null;
+        const FILTRE_ATTENTE_MS = 150;
+        const filtrer = ev => {
             if (ev.target.id !== 'wbc-filtre-txt') return;
             vue.texte = ev.target.value;
-            const pos = ev.target.selectionStart;
-            rendre();
-            const f = $('#wbc-filtre-txt');
-            f.focus();
-            try { f.setSelectionRange(pos, pos); } catch (e) { }
-        });
+            if (ev.isComposing) return;
+            clearTimeout(filtreTimer);
+            filtreTimer = setTimeout(() => { filtreTimer = null; rendre(); }, FILTRE_ATTENTE_MS);
+        };
+        ovEl.addEventListener('input', filtrer);
+        // Chrome ne refait pas d'« input » après la composition : sa fin rend le filtre.
+        ovEl.addEventListener('compositionend', filtrer);
         ovEl.addEventListener('change', ev => {
             if (ev.target.id === 'wbc-dep' || ev.target.id === 'wbc-cert') oublierDeja();
             if (ev.target.id === 'wbc-dep') { choixDep = ev.target.value; if (choixDep) cadrerChoix('dep', choixDep); if (choixDep && !jeton) ouvrirMemoDep(choixDep, !!opts.certSeules); }
@@ -10767,7 +11582,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         if (calquesCoches) return;
         calquesCoches = [];
         for (const id of CALQUES_WME) {
-            const el = document.getElementById(id);
+            const el = repereWme('calque ' + id, document.getElementById(id));
             if (!el || el.checked) continue;
             try { el.click(); if (el.checked) calquesCoches.push(id); } catch (e) { log('calque ' + id + ' : ' + e.message); }
         }
@@ -10791,11 +11606,12 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         if (!deja) { placerFenetre(lireGeom()); suiviSig = ''; }
         majFab();
         appliquerVisibilite();
-        if (prendreFocus && !deja) { retourFocus = document.activeElement; ovEl.focus(); }
+        if (prendreFocus && !deja) { retourFocus = docPanneau().activeElement; ovEl.focus(); }
     }
     function fermerFenetre() {
         if (!ovEl) return;
-        const dedans = ovEl.contains(document.activeElement);
+        const dedans = ovEl.contains(docPanneau().activeElement);
+        rattacher();
         ovEl.classList.remove('open');
         cacherBoutonSel();
         rendreCalquesWme();
@@ -10836,10 +11652,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         return droite;
     }
     function bornesCarte() {
-        const carte = document.getElementById('WazeMap') || document.querySelector('.olMapViewport');
+        const carte = repereWme('#WazeMap', document.getElementById('WazeMap') || document.querySelector('.olMapViewport'));
         const vue = document.querySelector('.olMapViewport') || carte;
-        const pied = document.querySelector('.wz-map-ol-footer');
-        const btns = document.querySelector('.overlay-buttons-container.top') || document.querySelector('.overlay-buttons-container');
+        const pied = repereWme('.wz-map-ol-footer', document.querySelector('.wz-map-ol-footer'));
+        const btns = repereWme('.overlay-buttons-container', document.querySelector('.overlay-buttons-container.top') || document.querySelector('.overlay-buttons-container'));
         const r = carte ? carte.getBoundingClientRect() : { left: 0, top: 40, right: window.innerWidth, bottom: window.innerHeight };
         const rb = btns ? btns.getBoundingClientRect() : null;
         return sousEnteteStudio({
@@ -10869,7 +11685,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     function majClasseAncre() { if (ovEl) ovEl.classList.toggle('ancre', fenetreAncree); }
     // Ancrée : recollée au bord droit utilisable ; libre : seulement ramenée dans la carte visible.
     function suivreFenetre() {
-        if (!ovEl || !ovEl.classList.contains('open') || glisseFenetre) return;
+        if (!ovEl || !ovEl.classList.contains('open') || glisseFenetre || fenPip) return;
         const g = geomCourante(), z = bornesCarte();
         const b = bornerFenetre(fenetreAncree ? ancrer(g, z) : g, z);
         if (b.x !== g.x || b.y !== g.y || b.w !== g.w || b.h !== g.h) poser(b);
@@ -10884,7 +11700,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         return [rb ? Math.round(rb.left) : '', rc ? Math.round(rc.right) : '', window.innerWidth, window.innerHeight].join('|');
     }
     function tickSuivi() {
-        if (!ovEl || !ovEl.classList.contains('open') || glisseFenetre) return;
+        if (!ovEl || !ovEl.classList.contains('open') || glisseFenetre || fenPip) return;
         const sig = signatureBords();
         if (sig === suiviSig) return;
         suiviSig = sig;
@@ -10905,6 +11721,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     // memo null : position par défaut, ancrée. Un memo qui porte « ancre » fixe le mode ; sans ce champ (repli, plein
     // écran), le mode courant est gardé.
     function placerFenetre(memo) {
+        if (fenPip) return;
         const z = bornesCarte();
         if (!memo) fenetreAncree = true;
         else if ('ancre' in memo) fenetreAncree = memo.ancre !== false;
@@ -10913,6 +11730,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         majClasseAncre();
     }
     const memoriserGeometrie = () => {
+        if (fenPip) return;
         const r = ovEl.getBoundingClientRect(), h = replie() ? Number(ovEl.dataset.h) || r.height : r.height;
         try { localStorage.setItem(GEOM_KEY, JSON.stringify({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(h), ancre: fenetreAncree })); } catch (e) { }
     };
@@ -10921,11 +11739,13 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const b = $('[data-act="replier"]'), tip = t(opts.replie ? 'unfoldTip' : 'foldTip');
         b.innerHTML = opts.replie ? '+' : '&#x2212;';
         b.title = tip;
-        b.setAttribute('aria-label', tip);
+        // Nom accessible fixe, comme ⧉ : l'état se lit par aria-expanded (« Déplier…, réduit » se contredirait).
+        b.setAttribute('aria-label', t('foldTip'));
         b.setAttribute('aria-expanded', String(!opts.replie));
     }
     function basculerRepli(v) {
-        if (v === !!opts.replie) return;
+        // Détachée, la fenêtre garde sa hauteur : repliée, elle n'afficherait qu'une page blanche.
+        if (v === !!opts.replie || (v && fenPip)) return;
         const r = ovEl.getBoundingClientRect();
         if (v) ovEl.dataset.h = String(Math.round(r.height));
         opts.replie = v;
@@ -10938,6 +11758,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         memoriserGeometrie();
     }
     function basculerTaille() {
+        if (fenPip) return;
         basculerRepli(false);
         const z = bornesCarte(), r = ovEl.getBoundingClientRect();
         const pleine = r.width >= (z.droite - z.gauche) - 4;
@@ -10945,13 +11766,93 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         memoriserGeometrie();
     }
     function petiteFenetre() {
+        if (fenPip) return;
         basculerRepli(false);
         placerFenetre(null);
         memoriserGeometrie();
     }
+    // 0.30.16 — sylvain19300 (fil WBC, 26/11) : la fenêtre sur un second écran. Document Picture-in-Picture (Chrome, Edge) :
+    // le panneau est DÉPLACÉ dans une fenêtre à part, dans le même contexte (écouteurs, état et carte gardés) ; à la fermeture
+    // de cette fenêtre, il revient à sa place. Pendant ce temps, placement, glisser et redimensionnement de WBC ne jouent plus.
+    const pipDispo = () => !!(pw.documentPictureInPicture && typeof pw.documentPictureInPicture.requestWindow === 'function');
+    const docPanneau = () => (ovEl && ovEl.ownerDocument) || document;
+    // Document où l'éditeur a la main : la fenêtre détachée si elle a le focus, sinon WME.
+    const docActif = () => { try { return fenPip && fenPip.document.hasFocus() ? fenPip.document : document; } catch (e) { return document; } };
+    function majBoutonDetacher() {
+        const b = ovEl && ovEl.querySelector('[data-act="detacher"]');
+        if (!b) return;
+        // Nom accessible fixe : l'état se lit par aria-pressed (un nom qui change en même temps se lirait « Remettre…, enfoncé »).
+        b.title = t(fenPip ? 'attachTip' : 'detachTip');
+        b.setAttribute('aria-label', t('detachTip'));
+        b.setAttribute('aria-pressed', String(!!fenPip));
+    }
+    // Le panneau change de document : le focus clavier resterait sur <body> de l'ancien.
+    function rendreFocusDetacher() {
+        if (!ovEl || !ovEl.classList.contains('open')) return;
+        const b = ovEl.querySelector('[data-act="detacher"]');
+        if (b) try { b.focus(); } catch (e) { }
+    }
+    // Demande de fenêtre en cours : un double clic sur ⧉ en ouvrirait une seconde, qui fermerait la première.
+    let pipEnCours = false;
+    async function detacher() {
+        if (fenPip || pipEnCours || !ovEl || !pipDispo()) return;
+        const r = ovEl.getBoundingClientRect();
+        const h = replie() ? Number(ovEl.dataset.h) || r.height : r.height;
+        let w;
+        pipEnCours = true;
+        try { w = await pw.documentPictureInPicture.requestWindow({ width: Math.round(r.width) || 520, height: Math.round(h) || 760 }); }
+        catch (e) { log('fenêtre détachée : ' + e.message); return; }
+        finally { pipEnCours = false; }
+        // Fermée pendant l'attente, ou panneau fermé entre-temps : rien à y déplacer.
+        if (w.closed || !ovEl.classList.contains('open')) { try { w.close(); } catch (e) { } return; }
+        // Replié, le panneau laisserait la fenêtre détachée blanche, sans bouton pour le déplier (« − » y est masqué) : déplié avant.
+        basculerRepli(false);
+        const d = w.document;
+        for (const at of [...document.documentElement.attributes]) { try { d.documentElement.setAttribute(at.name, at.value); } catch (e) { } }
+        d.body.className = document.body.className;
+        d.body.style.margin = '0';
+        for (const st of document.querySelectorAll('style, link[rel="stylesheet"]')) d.head.appendChild(st.cloneNode(true));
+        d.title = SCRIPT_NAME;
+        fenPip = w;
+        repPip = document.createComment('wbc-ov');
+        ovEl.before(repPip);
+        ovEl.classList.add('detache');
+        // L'en-tête ne se glisse plus : son infobulle « Glisser… » mentirait.
+        const hdr = ovEl.querySelector('#wbc-hdr');
+        if (hdr) hdr.removeAttribute('title');
+        d.body.appendChild(ovEl);
+        // Rattache seulement si c'est encore CETTE fenêtre qui porte le panneau.
+        w.addEventListener('pagehide', () => { if (fenPip === w) rattacher(); }, { once: true });
+        majBoutonDetacher();
+        try { w.focus(); } catch (e) { }
+        rendreFocusDetacher();
+    }
+    function rattacher() {
+        if (!fenPip) return;
+        const w = fenPip;
+        fenPip = null;
+        // Rappel de responsabilité ouvert dans la fenêtre détachée : il partirait avec elle, et l'écriture qui l'attend
+        // resterait suspendue (hnEnCours vrai, toute écriture refusée jusqu'au rechargement). Fermé comme un refus : rien
+        // n'est écrit, le rappel revient au geste suivant. Fait AVANT de déplacer le panneau et de fermer la fenêtre.
+        let dw = null;
+        try { dw = w.document; } catch (e) { }
+        if (rappelBulle && rappelBulle.D === dw) rappelBulle.fermer(false);
+        const hdr = ovEl.querySelector('#wbc-hdr');
+        if (hdr) hdr.title = t('dragTip');
+        ovEl.classList.remove('detache');
+        if (repPip && repPip.parentNode) repPip.replaceWith(ovEl);
+        repPip = null;
+        poserFenetre();
+        if (ovEl.classList.contains('open')) placerFenetre(lireGeom());
+        majVarsCouleurs();
+        majBoutonDetacher();
+        try { if (!w.closed) w.close(); } catch (e) { }
+        rendreFocusDetacher();
+    }
+    function basculerDetache() { if (fenPip) rattacher(); else detacher(); }
     function deplacable(el, poignee) {
         poignee.addEventListener('mousedown', e => {
-            if (e.button !== 0 || e.target.closest('button')) return;
+            if (e.button !== 0 || e.target.closest('button') || fenPip) return;
             e.preventDefault();
             const r = el.getBoundingClientRect(), ox = e.clientX - r.left, oy = e.clientY - r.top;
             glisseFenetre = true;
@@ -10969,13 +11870,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
         });
         poignee.addEventListener('dblclick', e => {
-            if (e.target.closest('button')) return;
+            if (e.target.closest('button') || fenPip) return;
             try { localStorage.removeItem(GEOM_KEY); } catch (er) { }
             placerFenetre(null);
         });
     }
     function redimensionnable(el, poignee) {
         poignee.addEventListener('mousedown', e => {
+            if (fenPip) return;
             e.preventDefault(); e.stopPropagation();
             const r = el.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY;
             glisseFenetre = true;
@@ -10992,7 +11894,8 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         });
     }
 
-    // Nouvelle version : .meta.js de GreasyFork, au plus une fois par 24 h ; pastille éteinte au moindre doute.
+    // Nouvelle version : .meta.js de GreasyFork, au plus une fois par 24 h (règle de GreasyFork), échec compris ; pastille éteinte au
+    // moindre doute.
 
     const gmScript = () => (typeof GM_info !== 'undefined' && GM_info.script) || {};
     const URL_MAJ = gmScript().updateURL || 'https://update.greasyfork.org/scripts/600088/WME%20BAN%20Coverage.meta.js';
@@ -11017,13 +11920,14 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         if (!VER_RE.test(VERSION) || typeof GM_xmlhttpRequest !== 'function') return;
         let memo = null;
         try { memo = JSON.parse(localStorage.getItem(MAJ_KEY) || 'null'); } catch (e) { }
-        if (memo && Date.now() - memo.t < MAJ_DELAI) {
+        const age = memo ? Date.now() - memo.t : -1;
+        if (memo && age >= 0 && age < MAJ_DELAI) {
             if (memo.v && VER_RE.test(memo.v) && majCmp(VERSION, memo.v) < 0) { majEnLigne = memo.v; majRendre(); }
             return;
         }
         const retenir = v => { try { localStorage.setItem(MAJ_KEY, JSON.stringify({ t: Date.now(), v })); } catch (e) { } };
         GM_xmlhttpRequest({
-            method: 'GET', url: URL_MAJ, timeout: 10000, nocache: true,
+            method: 'GET', url: URL_MAJ, timeout: 10000, nocache: true, anonymous: true,
             onload: r => {
                 // onload vient AUSSI sur un 404 : la page d'erreur ne doit pas être lue comme un script.
                 if (r.status < 200 || r.status >= 300) { retenir(null); return; }
@@ -11034,7 +11938,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 majRendre();
                 log('nouvelle version publiée : ' + m[1] + ' (installée : ' + VERSION + ')');
             },
-            onerror: () => { }, ontimeout: () => { },
+            onerror: () => retenir(null), ontimeout: () => retenir(null),
         });
     }
 
@@ -11057,8 +11961,10 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         return l.join(' &nbsp;&#xB7;&nbsp; ');
     }
 
+    // Repère de section : décoratif (aria-expanded dit l'état), fermé, il pointe dans le sens de la lecture (à gauche en hébreu).
+    const flecheAide = ouvert => ouvert ? '&#x25BC;' : _lang === 'he' ? '&#x25C0;' : '&#x25B6;';
     const construireOnglet = () => `
-<div id="wbc-sidebar" dir="${_lang === 'he' ? 'rtl' : 'ltr'}">
+<div id="wbc-sidebar" dir="${_lang === 'he' ? 'rtl' : 'ltr'}" lang="${LOCALES[_lang] || 'en'}">
     <h2><span class="wbc-sb-ico">${icone(18)}</span>${SCRIPT_NAME} <span class="wbc-sb-ver">v${esc(VERSION)}</span></h2>
     <p class="wbc-sb-maj" id="wbc-sb-maj" hidden><span></span> <a href="#" id="wbc-maj">${t('majInstall')}</a></p>
     <p class="wbc-sb-hint">${esc(t('sbHint'))}</p>
@@ -11089,7 +11995,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
     <div class="wbc-sb-sec">&#x2753; ${esc(t('sbHelp'))}</div>
     ${AIDE.map((s, i) => `
     <div class="wbc-help-section"${s.hn ? ' data-hn' + (droitGeste('hn1') ? '' : ' hidden') : ''}>
-        <button type="button" class="wbc-help-hdr${i === 0 ? ' on' : ''}" data-aide="${s.id}" aria-expanded="${i === 0}" title="${esc(t('tipHelpHdr'))}">${esc(t(s.t))} <span>${i === 0 ? '&#x25BC;' : '&#x25B6;'}</span></button>
+        <button type="button" class="wbc-help-hdr${i === 0 ? ' on' : ''}" data-aide="${s.id}" aria-expanded="${i === 0}" title="${esc(t('tipHelpHdr'))}">${esc(t(s.t))} <span aria-hidden="true">${flecheAide(i === 0)}</span></button>
         <div class="wbc-help-body" data-corps="${s.id}"${i === 0 ? '' : ' hidden'}>${t(s.b)}</div>
     </div>`).join('')}
     <div class="wbc-sb-links"${liensPied() ? '' : ' hidden'}>${liensPied()}</div>
@@ -11131,14 +12037,16 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 corps.hidden = !ouvrir;
                 h.classList.toggle('on', ouvrir);
                 h.setAttribute('aria-expanded', String(ouvrir));
-                h.querySelector('span').innerHTML = ouvrir ? '&#x25BC;' : '&#x25B6;';
+                h.querySelector('span').innerHTML = flecheAide(ouvrir);
             });
         } catch (e) { log('onglet : ' + e.message); }
     }
 
 
     // ─── VERSION MINIMALE ET INTÉGRITÉ ───
-    // version-min.json : version retirée ou code non publié ⇒ pas de démarrage ; fichier injoignable ⇒ démarrage.
+    // version-min.json : une version retirée, ou un code qui n'est pas celui publié, ne démarre pas. Pour qu'une version publiée
+    // ne reste pas sans recours quand un défaut d'écriture est trouvé, le champ facultatif « ecriture » coupe les seules écritures
+    // (false, ou { "min": "x.y.z" } pour les versions antérieures) ; la lecture continue. Il ne peut que restreindre.
     const _VM_URL = 'https://raw.githubusercontent.com/DrSlump34/WME-BAN-Coverage/master/version-min.json';
     const _VM_MAJ = 'https://greasyfork.org/scripts/600088';
     const _vmCmp = (a, b) => {
@@ -11146,14 +12054,52 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d < 0 ? -1 : 1; }
         return 0;
     };
+    // Lecture notée dans la console, sans texte à l'écran : l'auteur doit voir qu'une URL a cassé (branche renommée…).
     const _vmJson = () => new Promise(res => {
-        setTimeout(() => res(null), 7000);   // gestionnaire de scripts qui ne rappelle jamais : on démarre
+        let fini = false;
+        const rendre = (j, motif) => {
+            if (fini) return;
+            fini = true;
+            if (motif) console.info('[' + String(SCRIPT_NAME) + ' v' + String(VERSION) + '] version-min.json : ' + motif);
+            res(j);
+        };
+        setTimeout(() => rendre(null, 'pas de réponse en 7 s'), 7000);   // gestionnaire de scripts qui ne rappelle jamais
         try {
-            GM_xmlhttpRequest({ method: 'GET', url: _VM_URL + '?t=' + Date.now(), timeout: 6000,
-                onload: r => { try { res(r.status === 200 ? JSON.parse(r.responseText) : null); } catch (e) { res(null); } },
-                onerror: () => res(null), ontimeout: () => res(null) });
-        } catch (e) { res(null); }
+            GM_xmlhttpRequest({ method: 'GET', url: _VM_URL + '?t=' + Date.now(), timeout: 6000, anonymous: true,
+                onload: r => {
+                    if (r.status !== 200) { rendre(null, 'HTTP ' + r.status); return; }
+                    let j = null;
+                    try { j = JSON.parse(r.responseText); } catch (e) { }
+                    if (j && typeof j === 'object') rendre(j); else rendre(null, 'réponse illisible');
+                },
+                onerror: () => rendre(null, 'erreur réseau'), ontimeout: () => rendre(null, 'délai dépassé') });
+        } catch (e) { rendre(null, e.message); }
     });
+    // 0.30.26 — audit du 26/11 (normes-06) : GreasyFork interdit de vérifier les versions plus d'une fois par jour ; le fichier était
+    // relu à chaque chargement de WME. La réponse utile à CE code (version + empreinte) est gardée 24 h, relue plus tôt si le code
+    // installé change. Rang 47 : un refus déjà lu pour ce code tient tant qu'une relecture ne l'a pas levé ; pour un autre code,
+    // le dernier min lu vaut encore.
+    const _VM_CLE = 'wbc.vm.v1', _VM_DELAI = 864e5;
+    const _vmLire = () => {
+        try {
+            const x = typeof GM_getValue === 'function' ? GM_getValue(_VM_CLE, null) : localStorage.getItem(_VM_CLE);
+            const m = x ? JSON.parse(x) : null;
+            return m && typeof m === 'object' && m.j && typeof m.j === 'object' ? m : null;
+        } catch (e) { return null; }
+    };
+    const _vmGarder = m => {
+        try { const x = JSON.stringify(m); if (typeof GM_setValue === 'function') GM_setValue(_VM_CLE, x); else localStorage.setItem(_VM_CLE, x); } catch (e) { }
+    };
+    // Ce qui sert à juger CE code, sans la liste entière des empreintes.
+    const _vmUtile = j => {
+        const v = String(VERSION), u = { min: j.min, ecriture: j.ecriture };
+        if (j.empreintes && typeof j.empreintes === 'object') u.empreintes = typeof j.empreintes[v] === 'string' ? { [v]: j.empreintes[v] } : {};
+        return u;
+    };
+    // Une réponse sans l'empreinte de cette version (publication en cours) n'est pas gardée comme fraîche : relue au chargement suivant.
+    const _vmComplet = j => !j.empreintes || typeof j.empreintes[String(VERSION)] === 'string';
+    let _vmEcrCoupee = false;
+    const ecrituresCoupeesVm = () => _vmEcrCoupee;
     const _vmHx = t => { let x = 0x811c9dc5; for (let i = 0; i < t.length; i++) { x ^= t.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } return x >>> 0; };
     // ⚠️ Au démarrage, getUserInfo() rend souvent un pseudo vide (profil pas chargé) : attente jusqu'à 10 s, puis session Discuss.
     const _vmAuteur = async () => {
@@ -11189,9 +12135,39 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         }
         // Lisible depuis la page : les journaux d'un script Tampermonkey n'y arrivent pas.
         try { document.documentElement.setAttribute('data-vm-' + _vmHx(_VM_URL).toString(36), h || 'sans-source'); } catch (e) { }
-        const j = await _vmJson();
+        const cle = String(VERSION) + '|' + h, memo = _vmLire();
+        const duCode = !!memo && memo.cle === cle, age = memo ? Date.now() - memo.t : -1;
+        const relire = async () => {
+            const lu = await _vmJson();
+            if (!lu) return null;
+            const u = _vmUtile(lu);
+            _vmGarder({ t: Date.now(), cle, complet: _vmComplet(lu), j: u });
+            return u;
+        };
+        let j;
+        if (duCode && memo.complet && age >= 0 && age < _VM_DELAI) j = memo.j;
+        else if (duCode && memo.refus) {
+            // Refus déjà lu pour ce code : il tient sans attendre le réseau ; la relecture ne servira qu'au chargement suivant.
+            relire();
+            j = memo.j;
+        } else {
+            j = await relire();
+            if (!j && duCode) j = memo.j;
+            else if (!j && memo) j = { min: memo.j.min, ecriture: memo.j.ecriture };
+        }
+        const verdict = await _vmJuger(j, src, h);
+        // Retenu avec la réponse : c'est lui qui dit, au chargement suivant, que ce code a déjà été refusé.
+        const m2 = _vmLire();
+        if (m2 && m2.cle === cle) { m2.refus = verdict ? verdict.motif : ''; _vmGarder(m2); }
+        return verdict;
+    };
+    // Rend null (démarrer) ou le motif du refus, et règle le levier des écritures.
+    const _vmJuger = async (j, src, h) => {
         if (!j || typeof j !== 'object') return null;
         const v = String(VERSION), num = /^\d+(\.\d+)*$/;
+        const ecr = j.ecriture;
+        _vmEcrCoupee = ecr === false || (!!ecr && typeof ecr === 'object' && typeof ecr.min === 'string' && num.test(ecr.min) && num.test(v) && _vmCmp(v, ecr.min) < 0);
+        if (_vmEcrCoupee) console.info('[' + String(SCRIPT_NAME) + ' v' + String(VERSION) + '] écritures coupées par version-min.json');
         if (num.test(v) && typeof j.min === 'string' && num.test(j.min) && _vmCmp(v, j.min) < 0) return { motif: 'retiree', min: j.min };
         if (!j.empreintes || typeof j.empreintes !== 'object') return null;
         const attendue = j.empreintes[v];
@@ -11243,6 +12219,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
         const d = document.createElement('div');
         d.id = ident;
         d.dir = l === 'he' ? 'rtl' : 'ltr';
+        d.lang = T[l] ? l : 'en';
         d.setAttribute('role', 'alert');
         d.style.cssText = 'position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:100000;max-width:560px;padding:10px 14px;' +
             'background:#ffebee;color:#b71c1c;border:1px solid #c62828;border-radius:8px;font:600 12px/1.5 Rubik,Arial,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25)';
@@ -11312,6 +12289,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
             ovEl.classList.toggle('wbc-sous', vu);
         }, 500);
         verifierMaj();
+        setTimeout(sonderWme, 20000);
         // WBC démarre souvent avant que WME connaisse l'éditeur : pseudo et rang attendus une minute au plus.
         const attendreEditeur = async () => {
             for (let k = 0; k < 120; k++) { const p = await _hp(); if (p.n >= 0 && p.nom) return; await new Promise(r => setTimeout(r, 500)); }
@@ -11331,7 +12309,7 @@ html:is([data-wme-studio-theme="dark"],[data-wme-studio-theme="black"]) #dsx-pan
                 try { sdk.Events.on({ eventName: ev, eventHandler: () => { suivrePile(vider).catch(e => log('pile : ' + e.message)); } }); } catch (e) { log(ev + ' : ' + e.message); }
             });
         });
-        try { sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: () => { if (calqueSuitLaVue) majCalque(); verifierDecharges(); } }); }
+        try { sdk.Events.on({ eventName: 'wme-map-move-end', eventHandler: () => { if (calqueSuitLaVue) majCalque(); verifierDecharges(); noterDeplacementAttente().catch(e => log('déplacement : ' + e.message)); } }); }
         catch (e) { log('événement de déplacement : ' + e.message); }
         try { sdk.Events.on({ eventName: 'wme-selection-changed', eventHandler: () => { surSelectionWme().catch(e => log('bulle : ' + e.message)); suivreSelection().catch(e => log('suivi de sélection : ' + e.message)); majBoutonSel().catch(e => log('bouton ⇄ : ' + e.message)); } }); }
         catch (e) { log('événement de sélection : ' + e.message); }
