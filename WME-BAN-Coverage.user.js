@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.30.28
+// @version      0.30.29
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4454,17 +4454,30 @@
             // variante). À un angle, le « 3 » de la rue voisine rendait « trouvé » le 3 manquant (règle 3) ; il appartient à sa rue.
             const surAutreVoieBan = (x, v) => x.type === 'HN' && !!x.seg && !!x.seg.principal && x.seg.principal !== v.norm
                 && !v.variantes.has(x.seg.principal) && nomsBan.has(x.seg.principal);
+            // 0.30.29 — Narbonne, place Lamourguier (auteur, 27/11) : le segment de la PLACE portait les numéros de la RUE voisine,
+            // posés au mètre près sur leurs adresses BAN. Le « 5 » de la place, caché sous le « 5 » de la rue, rendait « trouvé » le
+            // 5 place Lamourguier (règle 2) alors qu'aucun numéro n'est visible à son adresse. Un numéro WME posé sur l'adresse BAN
+            // d'une AUTRE voie au même numéro (à SUPERPOSE_M) appartient à cette adresse-là : il ne compte pour aucune autre voie.
+            const SUPERPOSE_M = 3;
+            // Relevé pendant la boucle des couples, qui mesure déjà ces distances (banc-perf : un index à part coûtait 150 à 2 000 ms
+            // sur une commune dense numérotée à 100 %). voiesSous : numéro WME ⇒ voies BAN dont l'adresse au même numéro est dessous.
+            const voiesSous = new Map();
+            const surAdresseAutreVoie = (x, v) => { const s = voiesSous.get(x); return !!s && s.length > (s.indexOf(v) >= 0 ? 1 : 0); };
+            const candidats = [];
             for (const v of voies.values()) {
                 for (const a of v.adresses) {
                     a.trouve = null;
                     for (const x of autourDe(a.num, a.lon, a.lat)) {
                         const dm = distWme(a, x);
                         if (dm > RAYON_M) continue;
+                        const d0 = dist(a, x);
+                        if (d0 <= SUPERPOSE_M) { const l = voiesSous.get(x); if (!l) voiesSous.set(x, [v]); else if (l.indexOf(v) < 0) l.push(v); }
                         const regle = memeNom(x, v) ? 1 : parSegment(x, v) ? 2 : dm <= PROCHE_M && !surAutreVoieBan(x, v) ? 3 : 0;
-                        if (regle) couples.push({ a, x, regle, dm, v });
+                        if (regle) candidats.push({ a, x, regle, dm, v, d0 });
                     }
                 }
             }
+            for (const c of candidats) if (!(c.d0 > SUPERPOSE_M && surAdresseAutreVoie(c.x, c.v))) couples.push(c);
             const rang = x => x.type === 'HN' ? 0 : 1;
             couples.sort((p, q) => p.regle - q.regle || rang(p.x) - rang(q.x) || p.dm - q.dm);
             const pris = new Set();
@@ -4507,6 +4520,7 @@
                 if (a.trouve || a.suffixe) continue;
                 for (const x of parNumTous.get(a.num) || []) {
                     if (pris.has(x) || !(memeNom(x, v) || parSegment(x, v)) || !dansContour(x.lon, x.lat, contourCommune)) continue;
+                    if (dist(a, x) > SUPERPOSE_M && surAdresseAutreVoie(x, v)) continue;   // 0.30.29 : même règle qu'au-dessus
                     const dm = distWme(a, x);
                     if (dm <= LOIN_MAX_M) candLoin.push({ a, x, dm });
                 }
