@@ -9,7 +9,7 @@
 // @name:he      WME BAN Coverage
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNCcgaGVpZ2h0PScyNCcgdmlld0JveD0nMCAwIDI0IDI0Jz48cGF0aCBkPSdNMTIgMi41IEwyIDExIEg1IFYyMSBIMTkgVjExIEgyMiBaJyBmaWxsPScjZWY2YzAwJyBzdHJva2U9JyNlZjZjMDAnIHN0cm9rZS13aWR0aD0nMS4yJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PHJlY3QgeD0nNi41JyB5PScxMy41JyB3aWR0aD0nNCcgaGVpZ2h0PSc3LjUnIGZpbGw9JyNmZmYnLz48Y2lyY2xlIGN4PScxNy41JyBjeT0nMTcuNScgcj0nNicgZmlsbD0nIzJlN2QzMicgc3Ryb2tlPScjZmZmJyBzdHJva2Utd2lkdGg9JzEuNicvPjxwYXRoIGQ9J00xNC42IDE3LjYgTDE2LjggMTkuOCBMMjAuNCAxNS42JyBmaWxsPSdub25lJyBzdHJva2U9JyNmZmYnIHN0cm9rZS13aWR0aD0nMicgc3Ryb2tlLWxpbmVjYXA9J3JvdW5kJyBzdHJva2UtbGluZWpvaW49J3JvdW5kJy8+PC9zdmc+
 // @namespace    https://github.com/DrSlump34
-// @version      0.30.27
+// @version      0.30.28
 // @description  Compare the French national address base (BAN) with the house numbers and residential places of WME, for a commune or a whole département: figures, statistics, and a street-by-street inventory. Computed live; scans are kept in your browser only, and flagged when the BAN or WME changed since.
 // @description:fr Compare la Base Adresse Nationale (BAN) aux numéros et aux points résidentiels de WME, pour une commune ou un département entier : chiffres, statistiques et état des lieux voie par voie. Calculé en direct ; les balayages restent dans votre navigateur, signalés quand la BAN ou WME a changé depuis.
 // @description:de Vergleicht die französische Adressdatenbank (BAN) mit den Hausnummern und Wohnorten im WME, für eine Gemeinde oder ein ganzes Département: Zahlen, Statistiken und Bestandsaufnahme Straße für Straße. Live berechnet; die Scans bleiben nur in Ihrem Browser und werden markiert, wenn sich BAN oder WME seitdem geändert haben.
@@ -4863,6 +4863,18 @@
                     const vAutre = villeAutre.find(s => distTrace(a.lon, a.lat, s.coords) <= SEG_MAX_M);
                     if (vAutre) { ecartes.ville++; villesWme.add(vAutre.ville); continue; }
                     const r = rppAuBoutDeLAllee(a, admis, segs);
+                    // 0.30.28 — Narbonne, chemin du Rec de las Tinos (27/11) : le 59 à 79 m de sa voie posé, le 61 à 99 m refusé,
+                    // alors que rien d'autre n'est roulable entre la maison et sa voie. Les 80 m servent à ne pas poser sur la mauvaise
+                    // rue ; quand la voie est la plus proche des voies roulables, elle se prend jusqu'à SEUL_MAX_M.
+                    const seule = r ? null : voieSeuleLoin(a, admis, segs);
+                    if (seule) {
+                        const altS = enAgglo.indexOf(seule) < 0 ? altBan(seule) : null;
+                        if (altS && sansRppLot) { ecartes.rppLot++; continue; }
+                        if (poses.length >= reste) { ecartes.quota++; continue; }
+                        vus.add(cle);
+                        poses.push({ number, lon: a.lon, lat: a.lat, segmentId: seule.id, adresse: a, rpp: altS ? { rue: altS.nom, ville: villeRpp(altS.ville) } : null });
+                        continue;
+                    }
                     if (!r) {
                         // Aucun segment au nom BAN à portée, mais une voie roulable d'un autre nom : RPP « nom BAN / commune »
                         // (il porte sa propre adresse), entrée sur cette voie ; en lot comme au « + ». Pas si la voie existe sous
@@ -4872,7 +4884,17 @@
                         // commune » sur le territoire voisin. Seulement ici : un numéro sur un segment admis reste posable.
                         if (a.horsCom != null) { ecartes.horsCom++; continue; }
                         const libre = voieRoulableProche(a, segs);
-                        if (!libre) { ecartes.loin++; continue; }
+                        if (!libre) {
+                            // 0.30.28 — règle de l'auteur (27/11) : le lot peut écarter un cas douteux, le « + » d'UN numéro ne l'interdit
+                            // pas ; l'éditeur l'a choisi et le voit. Sa voie la plus proche, jusqu'à MARGE_UN_M (au-delà, un homonyme).
+                            const un = opt && opt.lot ? null : voieSeuleLoin(a, admis, segs, MARGE_UN_M, true);
+                            if (!un) { ecartes.loin++; continue; }
+                            const altU = enAgglo.indexOf(un) < 0 ? altBan(un) : null;
+                            if (poses.length >= reste) { ecartes.quota++; continue; }
+                            vus.add(cle);
+                            poses.push({ number, lon: a.lon, lat: a.lat, segmentId: un.id, adresse: a, rpp: altU ? { rue: altU.nom, ville: villeRpp(altU.ville) } : null });
+                            continue;
+                        }
                         if (sansRppLot) { ecartes.rppLot++; continue; }
                         if (poses.length >= reste) { ecartes.quota++; continue; }
                         vus.add(cle);
@@ -4997,6 +5019,21 @@
                 if (d <= dMax) { dMax = d; choisi = s; }
             }
             return choisi;
+        }
+        // Segment admis (nom BAN, bonne ville) entre SEG_MAX_M et SEUL_MAX_M, pris seulement si aucun segment roulable d'une autre
+        // voie n'est plus proche de l'adresse que lui ; sinon null.
+        // sansConcurrente : au « + » d'UN numéro, la voie se prend même si une autre est plus proche (MARGE_UN_M au plus).
+        const SEUL_MAX_M = 150, MARGE_UN_M = 300;
+        function voieSeuleLoin(a, admis, segs, max, sansConcurrente) {
+            let best = null, bd = max || SEUL_MAX_M;
+            for (const s of admis) { if (!s.coords || s.coords.length < 2) continue; const d = distTrace(a.lon, a.lat, s.coords); if (d <= bd) { bd = d; best = s; } }
+            if (!best || sansConcurrente) return best;
+            const deLaVoie = new Set(admis.map(s => s.id));
+            for (const s of segs || []) {
+                if (!s || deLaVoie.has(s.id) || !s.coords || s.coords.length < 2 || NON_ROULABLES.has(s.rt)) continue;
+                if (distTrace(a.lon, a.lat, s.coords) < bd) return null;
+            }
+            return best;
         }
         function entreeRpp(lon, lat, segs, segNum) {
             let choisi = null, dMax = SEG_MAX_M;
@@ -6045,13 +6082,14 @@
         // Poses « + », lot et « ⇄ » en attente : sans « ↻ », WME seul le disait (boîte générique), sans rien sur WBC.
         let poses = 0;
         if (resultat) resultat.voies.forEach(v => v.adresses.forEach(a => { if (a.hnPose) poses++; }));
-        const suite = dech.length ? ' ' + t('corrSegDecharge', dech.map(x => x.seg).join(', ')) : '';
-        if (l.length) statut(t('corrSaveFail', nb(l.length), l.slice(0, 5).join(', ')) + suite, true);
-        else if (poses) statut(t('ajHnSaveFail', nb(poses)) + suite, true);
+        // Segment déchargé : cause NON établie d'un échec (sans effet sur des poses, mesuré le 27/11) ⇒ dans la console seulement.
+        if (l.length) statut(t('corrSaveFail', nb(l.length), l.slice(0, 5).join(', ')), true);
+        else if (poses) statut(t('ajHnSaveFail', nb(poses)), true);
         if (l.length || poses) echecEnregistrementAffiche = true;
     }
-    // Après un déplacement de la carte (geste de l'éditeur) : prévenir AVANT l'enregistrement si une correction en attente a
-    // perdu son segment. Hypothèse non mesurée : revenir sur la zone le recharge.
+    // Après un déplacement de la carte : une pose en attente dont WME a déchargé le segment est notée dans la console seulement.
+    // 0.30.28 — MESURÉ le 27/11 (Narbonne, 6 numéros posés en lot, carte déplacée de 3 km, segments déchargés) : l'enregistrement
+    // passe, les 6 numéros sont sur le serveur. L'alerte affichée à chaque déplacement était donc fausse, et revenait sans cesse.
     let alerteDechargePrevue = null;
     function verifierDecharges() {
         clearTimeout(alerteDechargePrevue);
@@ -6059,8 +6097,7 @@
             if (hnEnCours || !resultat || !resultat.voies.some(v => v.adresses.some(x => x.corrPose || x.hnPose))) return;
             const dech = await correctionsDechargees();
             if (!dech.length) return;
-            log('corrections en attente sur un segment non chargé : ' + dech.map(x => x.seg).join(', '));
-            statut(t('corrSegDecharge', dech.map(x => x.seg).join(', ')), true);
+            log('modifications WBC en attente sur un segment non chargé : ' + [...new Set(dech.map(x => x.seg))].join(', '));
         }, 800);
     }
     // « input » et non « change » : la carte suit le sélecteur de couleur pendant qu'on le règle.
